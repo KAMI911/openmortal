@@ -13,9 +13,7 @@
 
 #include <string>
 #include <fstream>
-#ifndef _WINDOWS
-#include <unistd.h>
-#endif
+//include <unistd.h>
 
 #include "Backend.h"
 #include "MszPerl.h"
@@ -54,6 +52,8 @@ std::string GetConfigFilename()
 
 SState::SState()
 {
+	// 1. SET THE TRIVIAL DEFAULTS
+
 	m_enGameMode = IN_DEMO;
 
 	m_bQuitFlag = false;
@@ -90,6 +90,32 @@ SState::SState()
 		for ( int j=0; j<9; ++j )
 			m_aiPlayerKeys[i][j] = aiDefaultKeys[i][j];
 
+
+	strcpy( m_acLatestServer, "apocalypse.rulez.org" );
+	m_bServer = false;
+
+	strcpy( m_acNick, "Mortal" );
+	strcpy( m_acLanguage, "en" );
+
+	// 2. SO FAR THESE WERE THE EASY DEFAULTS
+	// NOW MOVE ON TO THE TRICKIER ONES.
+
+	// 2.1. FIND THE LANGUAGE
+#ifdef _WINDOWS
+	LANGID iLangID = GetUserDefaultLangID() & 0x007f;
+	const char* pcLang;
+	switch ( iLangID )
+	{
+	case 0x0e: pcLang = "hu";
+	case 0x0c: pcLang = "fr";
+	case 0x0a: pcLang = "es";
+	default: pcLang = "en";
+	}
+
+	strcpy( m_acNick, pcLang );
+	
+
+#else
 	// Read the locale from the operating system
 	char* pcLocale = setlocale( LC_CTYPE, NULL );
 	debug( "The locale returned by the operating system is '%s'\n", pcLocale ? pcLocale : "NULL" );
@@ -111,13 +137,19 @@ SState::SState()
 	{
 		strcpy( m_acLanguage, "en" );
 	}
+#endif
 
-	strcpy( m_acLatestServer, "apocalypse.rulez.org" );
+	// 2.2. FIND THE USER NAME
 
 #ifdef _WINDOWS
 	m_acNick[0] = 0;
 	DWORD iLen = 127;
-	GetUserName( m_acNick, &iLen )
+	BOOL iResult = GetUserName( m_acNick, &iLen );
+	if ( 0 == iResult ) 
+	{
+		m_acNick[0] = 0;
+		debug( "GetUserName failed: %d.\n", iResult );
+	}
 #else
 	int iResult = getlogin_r( m_acNick, 127 );
 	if ( iResult )
@@ -126,12 +158,12 @@ SState::SState()
 		strcpy( m_acNick, getenv("USER") );
 	}
 #endif
+	
 	if ( !m_acNick[0] )
 	{
 		strcpy( m_acNick, "Mortal");	// Last-ditch default..
 	}
-	
-	m_bServer = false;
+
 };
 
 
