@@ -66,6 +66,36 @@ sub KeyUp {
 
 
 
+
+=comment
+GetDefaultAction is used by GetAction. It returns a "default"
+action when the last key is no longer pressed. The default
+action can be (in order of preference)
+* crouching
+* blocking
+* jumping (fw and bw)
+* walking
+=cut
+
+sub GetDefaultAction {
+	my ($self) = @_;
+	my $k = $self->{'Keys'};
+	
+	return 'down' if ($k->[1]);
+	return 'block'	if ($k->[4]);
+	if ( ${$k}[0] )			# Up
+	{
+		return 'jumpfw' if ${$k}[3];
+		return 'jumpbw' if ${$k}[2];
+		return 'jump';
+	}
+	return 'forw'	if ($k->[3]);
+	return 'back'	if ($k->[2]);
+	return '';
+}
+
+
+
 =comment
 
 GetAction returns two scalars: input and modifier.
@@ -102,16 +132,14 @@ sub GetAction {
 	
 	if ($p<0)								# No keys pushed
 	{
-		return 'down' if ($k->[1]);
-		return '';
+		return $self->GetDefaultAction();
 	}
 	
 	my $lastkey = ${$q}[$p];
 	unless ( ${$k}[$lastkey] )
 	{
 		# Not pushed anymore
-		return 'down' if ($k->[1]);
-		return '';
+		return $self->GetDefaultAction();
 	}
 	
 	if ($lastkey >=5)		# punch or kick
