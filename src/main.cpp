@@ -524,8 +524,8 @@ int main(int argc, char *argv[])
 	
 	DrawMainScreen();
 	
-	g_oPlayerSelect.SetPlayer( 0, ZOLI );
-	g_oPlayerSelect.SetPlayer( 1, ZOLI );
+	g_oPlayerSelect.SetPlayer( 0, UPI );
+	g_oPlayerSelect.SetPlayer( 1, ULMAR );
 	
 	/*
 	{
