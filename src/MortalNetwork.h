@@ -69,6 +69,7 @@ public:
 		Uint32					iGameTime;
 		Uint32					iGameSpeed;
 		Uint32					iHitPoints;
+		Uint32					iBackgroundNumber;
 	};
 	
 public:
@@ -99,7 +100,7 @@ public:
 	
 	virtual void		SendFighter( FighterEnum a_enFighter ) = 0;	// Let the other side know that I switched to fighter X.
 	virtual void		SendReady() = 0;			// Let the other side know that I am ready.
-	virtual void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints ) = 0;
+	virtual void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints, int a_iBackgroundNumber ) = 0;
 	virtual SGameParams	GetGameParams() = 0;
 	
 	// Game methods

@@ -233,7 +233,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	m_iHurryupCode = 0;
 	m_iIncomingBufferSize = 0;
 	m_aiAvailableRemoteFighters.clear();
-	m_oGameParams.iGameTime = m_oGameParams.iGameSpeed = m_oGameParams.iHitPoints = 0;
+	m_oGameParams.iGameTime = m_oGameParams.iGameSpeed = m_oGameParams.iHitPoints = m_oGameParams.iBackgroundNumber = 0;
 	m_sRemoteUserName = "HIM";
 	
 	m_poSocketSet = SDLNet_AllocSocketSet( 1 );
@@ -626,12 +626,13 @@ bool CMortalNetworkImpl::IsRemoteSideReady()
 
 
 
-void CMortalNetworkImpl::SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints )
+void CMortalNetworkImpl::SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints, int a_iBackgroundNumber )
 {
 	CHECKCONNECTION;
 	if ( (int)m_oGameParams.iGameSpeed == a_iGameSpeed
 		&& (int)m_oGameParams.iGameTime == a_iGameTime
-		&& (int)m_oGameParams.iHitPoints == a_iHitPoints )
+		&& (int)m_oGameParams.iHitPoints == a_iHitPoints
+		&& (int)m_oGameParams.iBackgroundNumber == a_iBackgroundNumber )
 	{
 		// Nothing to update.
 		return;
@@ -640,11 +641,13 @@ void CMortalNetworkImpl::SendGameParams( int a_iGameSpeed, int a_iGameTime, int 
 	m_oGameParams.iGameSpeed = a_iGameSpeed;
 	m_oGameParams.iGameTime = a_iGameTime;
 	m_oGameParams.iHitPoints = a_iHitPoints;
+	m_oGameParams.iBackgroundNumber = a_iBackgroundNumber;
 
 	SGameParams oPackage;
 	oPackage.iGameSpeed = SDL_SwapBE32( a_iGameSpeed );
 	oPackage.iGameTime = SDL_SwapBE32( a_iGameTime );
 	oPackage.iHitPoints = SDL_SwapBE32( a_iHitPoints );
+	oPackage.iBackgroundNumber = SDL_SwapBE32( a_iBackgroundNumber );
 	SendRawData( 'P', &oPackage, sizeof(SGameParams) );
 }
 
@@ -668,6 +671,8 @@ void CMortalNetworkImpl::ReceiveGameParams( void* a_pData, int a_iLength )
 		m_oGameParams.iHitPoints = SDL_SwapBE32( poPackage->iHitPoints );
 		m_asMsgs.push_back( std::string("*** ") + GetHitPointsString( m_oGameParams.iHitPoints ) );
 	}
+
+	m_oGameParams.iBackgroundNumber = SDL_SwapBE32( poPackage->iBackgroundNumber );
 }
 
 CMortalNetworkImpl::SGameParams CMortalNetworkImpl::GetGameParams()

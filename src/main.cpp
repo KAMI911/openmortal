@@ -438,8 +438,6 @@ int main(int argc, char *argv[])
 	}
 
 	*/
-	bool bNetworkGame = false;
-	
 	while ( 1 )
 	{
 		if ( g_oState.m_bQuitFlag ) break;

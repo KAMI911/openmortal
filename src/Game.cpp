@@ -173,6 +173,11 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 	m_bIsReplay = a_bIsReplay;
 	m_bDebug = a_bDebug;
 	m_enInitialGameMode = g_oState.m_enGameMode;
+
+	if ( IsNetworkGame() )
+	{
+		mg_iBackgroundNumber = g_poNetwork->GetGameParams().iBackgroundNumber;
+	}
 	
 	m_poBackground = new Background();
 	m_poBackground->Load(mg_iBackgroundNumber++);
@@ -1023,6 +1028,11 @@ void Game::DoReplay( const char* a_pcReplayFile )
 
 
 
+int Game::GetBackgroundNumber()		//static
+{
+	return mg_iBackgroundNumber;
+}
+
 
 
 
@@ -1064,3 +1074,7 @@ int DoGame( char* a_pcReplayFile, bool a_bIsReplay, bool a_bDebug )
 }
 
 
+int GetBackgroundNumber()
+{
+	return Game::GetBackgroundNumber();
+}

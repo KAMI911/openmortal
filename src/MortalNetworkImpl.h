@@ -73,7 +73,7 @@ public:
 
 	void		SendFighter( FighterEnum a_enFighter );	// Let the other side know that I switched to fighter X.
 	void		SendReady();			// Let the other side know that I am ready.
-	void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints );
+	void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints, int a_iBackgroundNumber );
 	SGameParams	GetGameParams();
 
 	// Game methods

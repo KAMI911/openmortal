@@ -65,6 +65,12 @@ FighterEnum ChooserCellsChat[4][5] = {
 
 
 
+
+
+int GetBackgroundNumber();		// defined in Game.cpp
+
+
+
 PlayerSelect::PlayerSelect()
 {
 	for ( int i=0; i<2; ++i )
@@ -495,7 +501,7 @@ void PlayerSelect::DoPlayerSelect()
 
 	if ( bNetworkMode && g_poNetwork->IsMaster() )
 	{
-		g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
+		g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints, GetBackgroundNumber() );
 	}
 
 	// 2. Run selection screen
@@ -675,7 +681,7 @@ void PlayerSelect::DoPlayerSelect()
 					DoMenu();
 					if ( IsNetworkGame() && g_poNetwork->IsMaster() )
 					{
-						g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
+						g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints, GetBackgroundNumber() );
 					}
 					break;
 					

@@ -75,6 +75,7 @@ public:
 	int Run();
 	std::string& GetReplay();
 	void DoReplay( const char* a_pcReplayFile );
+	static int GetBackgroundNumber();
 	
 protected:
 	void Draw();
