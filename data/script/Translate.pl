@@ -127,11 +127,12 @@ $::English = { 'LanguageCode' => 0,
 
 
 CODING - UPi
-MUSIC - Oedipus
+MUSIC - Purple Motion
+MUSIC - XTD / Mystic
 GRAPHICS - UPi
 German translation - ??
-French translation - ??
-Spanish translation - ??
+French translation - Vampyre
+Spanish translation - EdsipeR
 
 -- CAST --
 
@@ -311,11 +312,12 @@ $::Hungarian = {  'LanguageCode' => 3,
 
 
 PROGRAM - UPi
-ZENE - Oedipus
+ZENE - Purple Motion
+ZENE - XTD / Mystic
 GRAFIKA - UPi
 Német fordítás - ??
-Francia fordítás - ??
-Spanyol fordítás - ??
+Francia fordítás - Vampyre
+Spanyol fordítás - EdispeR
 
 -- SZEREPLÕK --
 
@@ -496,11 +498,12 @@ $::French = { 'LanguageCode' => 2,
 
 
 Programmation - UPi
-Musique - Oedipus
+Musique - Purple Motion
+Musique - XTD / Mystic
 Graphiques - UPi
 German translation - ??
 French translation - Vampyre
-Spanish translation - ??
+Spanish translation - EdsipeR
 
 -- Acteurs --
 
@@ -683,10 +686,11 @@ $::Spanish = { 'LanguageCode' => 1,
 
 
 CODING - UPi
-MUSIC - Oedipus
+MUSIC - Purple Motion
+MUSIC - XTD / Mystic
 GRAPHICS - UPi
 German translation - ??
-French translation - ??
+French translation - Vampyre
 Spanish translation - EdsipeR
 
 -- CAST --
