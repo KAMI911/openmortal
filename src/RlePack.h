@@ -48,6 +48,8 @@ public:
 	void		SetTint( TintEnum a_enTint );
 	void		ApplyPalette();
 	
+	int			GetWidth( int a_iIndex );
+	int			GetHeight( int a_iIndex );
 	void		Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped=false );
 	
 private:

@@ -338,19 +338,46 @@ Input:
 */
 void Game::Draw()
 {
+	#define GROUNDZERO 440
+	
 	DrawBackground();
+
+	// DRAW THE SHADOWS
+
+	int i;
+
+	for ( i=0; i<2; ++i )
+	{
+		Backend::SPlayer& roPlayer = g_oBackend.m_aoPlayers[i];
+		int iFrame = roPlayer.m_iFrame;
+		if ( iFrame == 0 )
+			continue;
+		
+		RlePack* poPack = g_oPlayerSelect.GetPlayerInfo(i).m_poPack;
+		int w = poPack->GetWidth( ABS(iFrame)-1 );
+		int h = poPack->GetHeight( ABS(iFrame)-1 );
+		
+		h = GROUNDZERO - ( h + roPlayer.m_iY );	// Distance of feet from ground
+		if ( h < 0 ) h = 0;
+		if ( h > 500 ) h = 500;
+		h = 500 - h;
+		int h2 = 15 * h / 500;
+		h = ( w / 2 ) * h / 500;
+
+		sge_FilledEllipse( gamescreen,
+			g_oBackend.m_aoPlayers[i].m_iX + w/2, GROUNDZERO,
+			h, h2, C_BLACK );
+	}
 
 	for ( int i=0; i<2; ++i )
 	{
-		int iFrame = g_oBackend.m_aoPlayers[i].m_iFrame;
-		if ( 0 != iFrame )
-		{
-			g_oPlayerSelect.GetPlayerInfo(i).m_poPack->Draw( 
-				ABS(iFrame)-1,
-				g_oBackend.m_aoPlayers[i].m_iX,
-				g_oBackend.m_aoPlayers[i].m_iY,
-				iFrame<0 );
-		}
+		Backend::SPlayer& roPlayer = g_oBackend.m_aoPlayers[i];
+		int iFrame = roPlayer.m_iFrame;
+		if ( iFrame == 0 )
+			continue;
+
+		RlePack* poPack = g_oPlayerSelect.GetPlayerInfo(i).m_poPack;
+		poPack->Draw( ABS(iFrame)-1, roPlayer.m_iX, roPlayer.m_iY, iFrame<0 );
 	}
 	
 	if ( m_bDebug )

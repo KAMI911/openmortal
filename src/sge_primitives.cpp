@@ -1155,8 +1155,6 @@ void sge_FilledEllipse(SDL_Surface *Surface, Sint16 x, Sint16 y, Sint16 rx, Sint
 
   		} while(i > h);
 	}
-
-	sge_UpdateRect(Surface, x-rx, y-ry, 2*rx+1, 2*ry+1);			
 }
 
 
@@ -1262,7 +1260,6 @@ void sge_FilledEllipseAlpha(SDL_Surface *Surface, Sint16 x, Sint16 y, Sint16 rx,
 		SDL_UnlockSurface(Surface);
 	}
 
-	sge_UpdateRect(Surface, x-rx, y-ry, 2*rx+1, 2*ry+1);			
 }
 
 

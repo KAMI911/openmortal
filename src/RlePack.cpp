@@ -471,12 +471,32 @@ void RlePack::ApplyPalette()
 	SDL_SetColors( gamescreen, p->m_aoTintedPalette, p->m_iColorOffset, p->m_iColorCount );
 }
 
-/*
-SDL_Color* RlePack::getPalette()
+
+int RlePack::GetWidth( int a_iIndex )
 {
-	return p->palette;
+	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
+		return -1;
+
+	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	if (!poSprite)
+		return -1;
+
+	return poSprite->w;
 }
-*/
+
+
+int RlePack::GetHeight( int a_iIndex )
+{
+	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
+		return -1;
+
+	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	if (!poSprite)
+		return -1;
+
+	return poSprite->h;
+}
+
 
 
 void draw_rle_sprite_v_flip( RLE_SPRITE* src, int dx, int dy )	// static method
