@@ -420,20 +420,21 @@ This is followed by as many bytes as the Length is.
 void CMortalNetworkImpl::SendRawData( char a_cID, const void* a_pData, int a_iLength )
 {
 	CHECKCONNECTION;
+
+	int iPacketLength = a_iLength + 4;
 	
-	char acBuffer[4];
-	acBuffer[0] = a_cID;
-	*((Uint16*)(acBuffer+1)) = SDL_SwapBE16( a_iLength );
-	acBuffer[3] = 0;
+	char *pcBuffer = new char[iPacketLength];
+	pcBuffer[0] = a_cID;
+	*((Uint16*)(pcBuffer+1)) = SDL_SwapBE16( a_iLength );
+	pcBuffer[3] = 0;
 
-	int iRetval = SDLNet_TCP_Send( m_poSocket, &acBuffer, 4 );
-	if ( iRetval != 4 ) DISCONNECTONCOMMUNICATIONERROR;
-
-	if ( a_iLength )
+	if ( a_iLength > 0 )
 	{
-		iRetval = SDLNet_TCP_Send( m_poSocket, (void*) a_pData, a_iLength );
-		if (iRetval != a_iLength ) DISCONNECTONCOMMUNICATIONERROR;
+		memcpy( pcBuffer+4, a_pData, a_iLength );
 	}
+	
+	int iRetval = SDLNet_TCP_Send( m_poSocket, pcBuffer, iPacketLength );
+	if ( iRetval != iPacketLength ) DISCONNECTONCOMMUNICATIONERROR;
 }
 
 
