@@ -312,7 +312,11 @@ void ChatLoop()
 	{
 		DoOnlineChat();
 		
-		if ( g_oState.m_bQuitFlag ) break;
+		if ( g_oState.m_bQuitFlag ||
+			SState::IN_CHAT != g_oState.m_enGameMode )
+		{
+			break;
+		}
 		
 		if ( SState::IN_NETWORK == g_oState.m_enGameMode )
 		{
