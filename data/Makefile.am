@@ -7,19 +7,8 @@ MSUBDIRS =
 endif
 
 
-if CHARACTERS
-CSUBDIRS = characters
-else
-if ADDITIONAL
-CSUBDIRS = characters
-else
-if THIRDPARTY
-CSUBDIRS = characters
-else
-CSUBDIRS =
-endif
-endif
-endif
+# CSUBDIRS = characters
+CSUBDIRS = 
 
 
 SUBDIRS= $(CSUBDIRS) $(MSUBDIRS)
