@@ -338,6 +338,12 @@ void Backend::WriteToString( std::string& a_rsOutString )
 
 void Backend::ReadFromString( const std::string& a_rsString )
 {
+	if ( a_rsString.length() < 10 )
+	{
+		m_iNumDoodads = m_iNumSounds = 0;
+		return;
+	}
+	
 	const char* pcBuffer = a_rsString.c_str();
 	
 	int iNumMatches;
