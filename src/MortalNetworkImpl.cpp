@@ -102,7 +102,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 
 	if ( a_pcServerName )
 	{
-		MortalNetworkMessage( Translate("Resolving hostname...") );
+		MortalNetworkMessage( Translate("Resolving hostname (%s)..."), a_pcServerName );
 	}
 
 	int iResult = SDLNet_ResolveHost( &oAddress, a_pcServerName, MORTALNETWORKPORT );
@@ -125,6 +125,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 		// SERVER-MODE CONNECTION
 		
 		m_poSocket = SDLNet_TCP_Open( &oAddress );
+		if ( NULL == m_poSocket ) RETURNWITHERROR;
 		
 		// Wait for connection ...
 		MortalNetworkMessage ( Translate("Waiting for connection... (press any key to abort)") );

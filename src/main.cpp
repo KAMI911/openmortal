@@ -47,6 +47,7 @@
 _sge_TTFont* inkFont;
 _sge_TTFont* impactFont;
 _sge_TTFont* titleFont;
+_sge_TTFont* chatFont;
 sge_bmpFont* fastFont;
 sge_bmpFont* creditsFont;
 sge_bmpFont* storyFont;
@@ -80,11 +81,6 @@ _sge_TTFont* LoadTTF( const char* a_pcFilename, int a_iSize )
 		Complain( ("Couldn't load font: " + sPath).c_str() );
 	}
 	
-
-
-
-
-
 	return poFont;
 }
 
@@ -146,6 +142,8 @@ int init( int iFlags )
 	if ( !impactFont ) return -1;
 	titleFont = LoadTTF( "deadgrit.ttf", 48 );		// deadgrit.ttf, 48
 	if ( !titleFont ) return -1;
+	chatFont = LoadTTF( "thin.ttf", 20 );		// deadgrit.ttf, 48
+	if ( !chatFont ) return -1;
 
 	fastFont = LoadBMPFont( "brandybun3.png" );
 	if ( !fastFont ) return -1;
@@ -324,21 +322,35 @@ int main(int argc, char *argv[])
 			DoGame( acReplayFile, true, bDebug );
 		}
 	}
+
 	*/
 	bool bNetworkGame = false;
 	
 	while ( 1 )
 	{
 		if ( g_oState.m_bQuitFlag ) break;
-		DoDemos();
-		if ( g_oState.m_bQuitFlag ) break;
+		
+		switch ( g_oState.m_enGameMode )
+		{
+		case SState::IN_DEMO:
+			DoDemos();
+			continue;
+		case SState::IN_CHAT:
+			DoOnlineChat();
+			continue;
+		default:
+			break;		// Handled below.
+		}
+
+		// Remaining are game modes: IN_SINGLE, IN_MULTI, IN_NETWORK
 		
 		Audio->PlaySample( "car_start.voc" );
 		Audio->PlayMusic( "GameMusic" );
 
 		bNetworkGame = false;
 
-		while ( g_oState.m_enGameMode != SState::IN_DEMO 
+		while ( g_oState.m_enGameMode != SState::IN_DEMO
+			&& g_oState.m_enGameMode != SState::IN_CHAT
 			&& !g_oState.m_bQuitFlag )
 		{
 			bNetworkGame = SState::IN_NETWORK == g_oState.m_enGameMode;

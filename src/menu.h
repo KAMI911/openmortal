@@ -36,6 +36,7 @@ public:
 
 	virtual void Draw();
 	virtual void Clear();
+	virtual void EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuItem* a_poMenuItem, int a_iMaxlen );
 
 protected:
 
@@ -45,6 +46,7 @@ protected:
 
 	typedef std::vector<MenuItem*> ItemList;
 	typedef ItemList::iterator ItemIterator;
+
 	
 	std::string			m_sTitle;
 	ItemList			m_oItems;
@@ -73,7 +75,7 @@ public:
 	virtual void SetEnabled( bool a_bEnabled );
 	
 	virtual bool GetEnabled() { return m_bEnabled; }
-
+	
 protected:
 	Menu*			m_poMenu;
 
@@ -100,6 +102,8 @@ public:
 	EnumMenuItem(  Menu* a_poMenu, int a_iInitialValue, const char* a_pcUtf8Text, int a_iCode = -1 );
 	virtual ~EnumMenuItem();
 	
+	int GetCurrentValue();
+	const char* GetCurrentText();
 	virtual void Draw();
 	virtual void Increment();
 	virtual void Decrement();
@@ -132,6 +136,32 @@ protected:
 
 
 
-void DoMenu( bool a_bDrawBackground );
+
+class CNetworkMenu: public Menu
+{
+public:
+	CNetworkMenu();
+	~CNetworkMenu();
+	
+	void Connect();
+	
+	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
+	void ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
+
+protected:
+	bool			m_bOK;
+	bool			m_bServer;
+	std::string		m_sHostname;
+	std::string		m_sNick;
+
+	TextMenuItem*	m_poServerMenuItem;
+	TextMenuItem*	m_poNickMenuItem;
+};
+
+
+
+
+void DoMenu();
+void DoMenu( Menu& a_roMenu );
 
 #endif

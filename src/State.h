@@ -18,8 +18,9 @@ struct SState
 	enum TGameMode {
 		IN_DEMO,
 		IN_SINGLE,
-		IN_NETWORK,
 		IN_MULTI,
+		IN_NETWORK,
+		IN_CHAT,
 	} m_enGameMode;
 	
 	bool	m_bQuitFlag;		// true if quit event came
