@@ -730,7 +730,7 @@ SDL_Rect sge_TTF_TextSizeUNI(sge_TTFont *font, const Uint16 *text)
 	return ret;
 }
 
-SDL_Rect sge_TTF_TextSize(sge_TTFont *font, const char *text)
+SDL_Rect sge_TTF_TextSize(sge_TTFont *font, const char *text, int a_iMaxLength)
 {
 	SDL_Rect ret; ret.x=ret.y=ret.w=ret.y=0;
 	Uint16 *unicode_text;
@@ -738,13 +738,18 @@ SDL_Rect sge_TTF_TextSize(sge_TTFont *font, const char *text)
 
 	/* Copy the Latin-1 text to a UNICODE text buffer */
 	unicode_len = strlen(text);
+	if ( unicode_len > a_iMaxLength
+		&& a_iMaxLength>=0 )
+	{
+		unicode_len = a_iMaxLength;
+	}
 	unicode_text = (Uint16 *)malloc((unicode_len+1)*(sizeof *unicode_text));
 	if ( unicode_text == NULL ) {
 		SDL_SetError("SGE - Out of memory");
 		return ret;
 	}
-	ASCII_to_UNICODE(unicode_text, text, unicode_len);
-
+	ASCII_to_UNICODE( unicode_text, text, unicode_len );
+	
 	/* Render the new text */
 	ret = sge_TTF_TextSizeUNI(font, unicode_text);
 
@@ -1473,7 +1478,8 @@ void CReadline::Restart( char *a_pcString, int a_iPos, int a_iLen,
 	m_iMax=m_iPos;
 	m_piString[m_iPos+1]=0;
 	m_piString[m_iPos]=m_iCursor;
-	m_oUpdateRect = sge_tt_textout_UNI( m_poScreen, m_poFont, m_piString, x, y, m_iFCol, m_iBCol, m_iAlpha );
+	Redraw();
+	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
 }
 
 
@@ -1483,6 +1489,8 @@ CReadline::~CReadline()
 	SDL_EnableUNICODE(0);
 	SDL_FreeSurface( m_poBackground );
 	m_poBackground = NULL;
+	
+	SDL_EnableKeyRepeat( 0, 0 );
 }
 
 
@@ -1498,6 +1506,8 @@ int CReadline::GetResult()
 	{
 		return m_iResult;
 	}
+
+	SDL_EnableKeyRepeat( 0, 0 );
 	
 	sge_Blit( m_poBackground, m_poScreen, m_oUpdateRect.x, m_oUpdateRect.y,
 		m_oUpdateRect.x, m_oUpdateRect.y, m_oUpdateRect.w, m_oUpdateRect.h);
@@ -1539,6 +1549,13 @@ void CReadline::Update( int a_iCode )
 	sge_UpdateRect( m_poScreen, m_oWorkArea.x, m_oWorkArea.y, m_oWorkArea.w, m_oWorkArea.h );
 	
 	SDL_SetClipRect( m_poScreen, &oOldClipRect );
+}
+
+
+void CReadline::Redraw()
+{
+	m_oUpdateRect = sge_tt_textout_UNI( m_poScreen, m_poFont, m_piString, x, y, m_iFCol, m_iBCol, m_iAlpha );
+	sge_UpdateRect( m_poScreen, m_oWorkArea.x, m_oWorkArea.y, m_oWorkArea.w, m_oWorkArea.h );
 }
 
 

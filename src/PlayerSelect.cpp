@@ -525,9 +525,9 @@ void PlayerSelect::DoPlayerSelect()
 
 	if ( bNetworkMode )
 	{
-		m_poReadline = new CReadline( IsNetworkGame() ? poBackground : NULL, impactFont,
+		m_poReadline = new CReadline( IsNetworkGame() ? poBackground : NULL, chatFont,
 			acMsg, strlen(acMsg), 256, 15, 465, 610, C_LIGHTCYAN, C_BLACK, 255 );
-		m_poTextArea = new CTextArea( poBackground, impactFont, 15, 313, 610, 32*4 );
+		m_poTextArea = new CTextArea( poBackground, chatFont, 15, 313, 610, 32*4 );
 	}
 	else
 	{
@@ -635,7 +635,8 @@ void PlayerSelect::DoPlayerSelect()
 					if ( strlen( acMsg ) )
 					{
 						g_poNetwork->SendMsg( acMsg );
-						m_poTextArea->AddString( acMsg, C_LIGHTCYAN );
+						std::string sMsg = std::string("<") + g_oState.m_acNick + "> " + acMsg;
+						m_poTextArea->AddString( sMsg.c_str(), C_LIGHTCYAN );
 						m_poTextArea->Redraw();
 						m_poReadline->Clear();
 						acMsg[0] = 0;
@@ -658,7 +659,7 @@ void PlayerSelect::DoPlayerSelect()
 				
 				if ( enKey == SDLK_ESCAPE )
 				{
-					DoMenu( false );
+					DoMenu();
 					if ( IsNetworkGame() && g_poNetwork->IsMaster() )
 					{
 						g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );

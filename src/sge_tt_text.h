@@ -63,7 +63,7 @@ DECLSPEC Uint8 sge_TTF_GetFontStyle(sge_TTFont *font);
 DECLSPEC void sge_TTF_CloseFont(sge_TTFont *font);
 
 DECLSPEC SDL_Rect sge_TTF_TextSizeUNI(sge_TTFont *font, const Uint16 *text);
-DECLSPEC SDL_Rect sge_TTF_TextSize(sge_TTFont *Font, const char *Text);
+DECLSPEC SDL_Rect sge_TTF_TextSize(sge_TTFont *Font, const char *Text, int a_iMaxLength=-1);
 
 DECLSPEC SDL_Rect sge_tt_textout(SDL_Surface *Surface, sge_TTFont *font, const char *string, Sint16 x, Sint16 y, Uint32 fcolor, Uint32 bcolor, int Alpha);
 DECLSPEC SDL_Rect sge_tt_textout_UTF8(SDL_Surface *Surface, sge_TTFont *font, const char *string, Sint16 x, Sint16 y, Uint32 fcolor, Uint32 bcolor, int Alpha);
@@ -111,6 +111,7 @@ public:
 		Uint32 a_iFCol, Uint32 a_iBCol, int a_iAlpha );
 	int GetResult();
 	void HandleKeyEvent( SDL_Event& a_roEvent );
+	void Redraw();
 	void Clear();
 
 	int Execute();

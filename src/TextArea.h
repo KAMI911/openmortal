@@ -27,7 +27,8 @@ class CTextArea
 public:
 	CTextArea( SDL_Surface* a_poScreen, _sge_TTFont* a_poFont, int a_x, int a_y, int a_w, int a_h );
 	~CTextArea();
-	
+
+	void TintBackground( int a_iColor, int a_iAlpha );
 	void AddString( const char* a_poText, int a_iColor );
 	void Redraw();
 	void Clear();

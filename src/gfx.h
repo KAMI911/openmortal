@@ -35,6 +35,7 @@ SDL_Surface*	LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_i
 extern _sge_TTFont* titleFont;		// Largest font, for titles
 extern _sge_TTFont* inkFont;		// Medium-size front, headings
 extern _sge_TTFont* impactFont;		// Smallest font, for long descriptions
+extern _sge_TTFont* chatFont;		// small but legible.
 
 #ifdef sge_bm_text_H
 extern sge_bmpFont* fastFont;		// In-game text, e.g. combo text
