@@ -1,0 +1,232 @@
+/***************************************************************************
+                          FighterStats.cpp  -  description
+                             -------------------
+    begin                : Tue Dec 10 2002
+    copyright            : (C) 2002 by upi
+    email                : upi@apocalypse.rulez.org
+ ***************************************************************************/
+
+#include <stdio.h>
+#include <string>
+
+#include "FlyingChars.h"
+#include "SDL.h"
+#include "SDL_video.h"
+#include "SDL_image.h"
+#include "sge_tt_text.h"
+
+#include "common.h"
+#include "gfx.h"
+#include "RlePack.h"
+#include "Backend.h"
+#include "Demo.h"
+
+
+#define LEFTMARGIN		160
+#define TOPMARGIN		70
+#define RIGHTMARGIN		630
+#define LINEHEIGHT		35
+#define GAPWIDTH		20
+#define DESCMARGIN		50
+
+
+#define LEFTMARGIN2		((LEFTMARGIN+RIGHTMARGIN+GAPWIDTH)/2)
+
+/*
+void DrawMultiLineText( const char* text, _sge_TTFont* font, int x, int y,
+	int fg, SDL_Surface* target )
+{
+	const char* s1, * s2;
+	char line[1024];
+	
+	s1 = s2 = text;
+	while (1)
+	{
+		while ( isspace(*s2) ) s2++;
+		if ( !*s2 )
+			break;
+
+		s1 = s2;	// s1: start of line.
+		while ( (*s2 != '\n') && *s2 ) s2++;
+		strncpy( line, s1, s2-s1 );
+		line[s2-s1] = 0;
+		DrawTextMSZ( line, font, x, y, 0, fg, target );
+		y += sge_TTF_FontLineSkip( font );
+	}
+}
+*/
+
+
+
+
+
+int FighterStatsDemo::mg_iLastFighter = -1;
+FighterEnum FighterStatsDemo::mg_aenFighterOrder[LASTFIGHTER-1];
+
+
+FighterStatsDemo::FighterStatsDemo()
+{
+	m_iTimeLeft = 500;
+	m_poStaff = NULL;
+	
+	m_poBackground = LoadBackground( "FighterStats.png", 64 );
+	DrawGradientText( "Figher Stats", titleFont, 10, m_poBackground );
+
+	SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
+	SDL_Flip( gamescreen );
+	
+	if ( mg_iLastFighter < 0 )
+	{
+		// First run; create shuffled array of figthers.
+		mg_iLastFighter = 0;
+		
+		int i, j;
+		FighterEnum k;
+		for ( i=0; i<LASTFIGHTER-1; ++i )
+		{
+			mg_aenFighterOrder[i] = (FighterEnum)(i+1);
+		}
+		for ( i=0; i<LASTFIGHTER-1; ++i )
+		{
+			j = rand() % (LASTFIGHTER-1);
+			k = mg_aenFighterOrder[i]; 
+			mg_aenFighterOrder[i] = mg_aenFighterOrder[j]; 
+			mg_aenFighterOrder[j] = k;
+		}
+	}
+	
+	mg_iLastFighter = (mg_iLastFighter+1) % (LASTFIGHTER-1);
+	m_enFighter = mg_aenFighterOrder[mg_iLastFighter];
+
+	if ( IsFighterAvailable( m_enFighter ) )
+	{
+		SetPlayer( 0, m_enFighter );
+		PERLEVAL("SelectStart();");
+	}
+	else
+	{
+		std::string sStaffFilename = DATADIR;
+		sStaffFilename += "/characters/STAFF.DAT";
+		m_poStaff = new RlePack( sStaffFilename.c_str() );
+	}
+
+	PERLCALL("GetFighterStats", m_enFighter, 0 );
+	_sge_TTFont* font = impactFont;
+	int y = TOPMARGIN;
+
+
+	AV *StatTags = get_av( "StatTags", FALSE );
+
+	char *s, *sTag;
+
+	s = SvPV_nolen(get_sv("Name", FALSE));
+	DrawTextMSZ( s, inkFont, (LEFTMARGIN + RIGHTMARGIN)/2, y, AlignHCenter, C_WHITE, m_poBackground );
+	y+= 10;
+
+	s = SvPV_nolen(get_sv("Team", FALSE ));
+	sTag = SvPV_nolen( *av_fetch( StatTags, 1, false ) );
+	int i = DrawTextMSZ( sTag, font, LEFTMARGIN, y+=LINEHEIGHT, 0, C_YELLOW, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground );
+
+	s = SvPV_nolen(get_sv("Style", FALSE ));
+	sTag = SvPV_nolen( *av_fetch( StatTags, 2, false ) );
+	i = DrawTextMSZ( sTag, font, LEFTMARGIN2, y, 0, C_YELLOW, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground );
+
+	s = SvPV_nolen(get_sv("Age", FALSE ));
+	sTag = SvPV_nolen( *av_fetch( StatTags, 3, false ) );
+	i = DrawTextMSZ( sTag, font, LEFTMARGIN, y+=LINEHEIGHT, 0, C_YELLOW, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground );
+
+	s = SvPV_nolen(get_sv("Weight", FALSE ));
+	sTag = SvPV_nolen( *av_fetch( StatTags, 4, false ) );
+	i = DrawTextMSZ( sTag, font, LEFTMARGIN2, y, 0, C_YELLOW, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground );
+
+	s = SvPV_nolen(get_sv("Height", FALSE ));
+	sTag = SvPV_nolen( *av_fetch( StatTags, 5, false ) );
+	i = DrawTextMSZ( sTag, font, LEFTMARGIN, y+=LINEHEIGHT, 0, C_YELLOW, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground );
+
+	s = SvPV_nolen(get_sv("Shoe", FALSE ));
+	sTag = SvPV_nolen( *av_fetch( StatTags, 6, false ) );
+	i = DrawTextMSZ( sTag, font, LEFTMARGIN2, y, 0, C_YELLOW, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground );
+
+	s = SvPV_nolen(get_sv("Story", FALSE ));
+	SDL_Rect oFlyingRect;
+	oFlyingRect.x = LEFTMARGIN; 
+	oFlyingRect.y = y+DESCMARGIN;
+	oFlyingRect.w = gamescreen->w - oFlyingRect.x - 20;
+	oFlyingRect.h = gamescreen->h - oFlyingRect.y - 10;
+	m_poFlyingChars = new FlyingChars( creditsFont, oFlyingRect );
+	m_poFlyingChars->AddText( s, FlyingChars::FC_AlignJustify, false );
+
+	if ( IsFighterAvailable( m_enFighter ) )
+	{
+		s = SvPV_nolen(get_sv("Keys", TRUE ));
+		m_poFlyingChars->AddText( "\nKEYS\n", FlyingChars::FC_AlignCenter, true );
+		m_poFlyingChars->AddText( s, FlyingChars::FC_AlignCenter, true );
+	}
+	else
+	{
+		m_poFlyingChars->AddText( "Unfortunately this figther is not yet playable.",
+			FlyingChars::FC_AlignLeft, true );
+	}
+}
+
+
+
+FighterStatsDemo::~FighterStatsDemo()
+{
+	delete m_poStaff;
+}
+
+
+
+int FighterStatsDemo::Advance( int a_iNumFrames, bool a_bFlip )
+{
+	if ( a_iNumFrames > 5 ) a_iNumFrames = 5;
+	
+	if ( m_poFlyingChars->IsDone() )
+	{
+		m_iTimeLeft -= a_iNumFrames;
+	}
+	
+	AdvanceFlyingChars( a_iNumFrames );
+	SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
+	m_poFlyingChars->Draw();
+	
+	// 2. Advance as many ticks as necessary..
+	
+	if ( IsFighterAvailable( m_enFighter ) )
+	{
+		for (int i=0; i<a_iNumFrames; ++i )
+		{
+			g_oBackend.AdvancePerl();
+		}
+		int p1x = SvIV(get_sv("p1x", TRUE));
+		int p1y = SvIV(get_sv("p1y", TRUE));
+		int p1f = SvIV(get_sv("p1f", TRUE));
+		if (p1f) pack1->draw( ABS(p1f)-1, p1x, p1y, p1f<0 );
+	}
+	else
+	{
+		static FighterEnum f[14] = {
+			UPI, ZOLI, SURBA, ULMAR, MISI, BENCE,
+			DESCANT, KINGA, GRIZLI, SIRPI, MACI, DANI, CUMI,
+			AMBRUS };
+		for ( int i=0; i<14; ++i )
+		{
+			if ( m_enFighter == f[i] )
+			{
+				//m_poStaff->draw( i, 10, 120 );
+				break;
+			}
+		}
+	}
+	SDL_Flip( gamescreen );
+	
+	return (m_iTimeLeft > 0) ? 0 : 1;
+}
+
