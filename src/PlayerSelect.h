@@ -17,6 +17,7 @@
 
 
 #include "FighterEnum.h"
+#include <string>
 
 class RlePack;
 struct SDL_Surface;
@@ -35,15 +36,16 @@ struct PlayerInfo
 	FighterEnum		m_enFighter;
 	TintEnum		m_enTint;
 	RlePack*		m_poPack;
+	std::string		m_sFighterName;
 };
 
 
 
 /** This class implements services that allows players to select their
-fighters. It also stores info about which player is available, and
+fighters. It also stores info about which fighter is available, and
 allows other parts of the program to programmatically assign a fighter
 to a player, and set fighter tints (this is used by e.g. the "frozen"
-effect. */
+effect.) */
 
 class PlayerSelect
 {
@@ -51,6 +53,8 @@ public:
 	PlayerSelect();
 	
 	const PlayerInfo& GetPlayerInfo( int a_iPlayer );
+	const char* GetFighterName( int a_iPlayer );
+	int GetFighterNameWidth( int a_iPlayer );
 	
 	void DoPlayerSelect();
 	void SetPlayer( int a_iPlayer, FighterEnum a_enFighter );
@@ -68,6 +72,7 @@ protected:
 	PlayerInfo	m_aoPlayers[2];
 	int			m_iP1, m_iP2;			// Chooser cells for player 1 and 2
 	bool		m_bDone1, m_bDone2;		// Has player n chosen a player?
+	int			m_aiFighterNameWidth[2];
 	
 };
 

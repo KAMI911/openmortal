@@ -33,8 +33,8 @@ public:
 	// Miscellaneous
 	
 	const char* PerlEvalF( const char* a_pcFormat, ... );
-	const char* GetPerlString( const char* acScalarName );
-	int GetPerlInt( const char* acScalarName );
+	const char* GetPerlString( const char* a_pcScalarName );
+	int GetPerlInt( const char* a_pcScalarName );
 	
 	// Game data
 	

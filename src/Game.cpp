@@ -190,6 +190,11 @@ void Game::DrawHitPointDisplay()
 		dst.x = 604; dst.y = 11;
 		SDL_BlitSurface( m_poDoodads, &src, gamescreen, &dst );
 	}
+	
+	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(0),
+		230 - g_oPlayerSelect.GetFighterNameWidth(0), 38 );
+	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(1),
+		410, 38 );
 }
 
 
@@ -561,7 +566,7 @@ void Game::DoOneRound()
 {
 	m_enGamePhase = Ph_START;
 	
-	g_oBackend.PerlEvalF( "GameStart(%d);", g_oState.m_iHitPoints );
+	g_oBackend.PerlEvalF( "GameStart(%d,%d);", g_oState.m_iHitPoints, m_bDebug );
 	
 	int iKoFrame = -1;
 	double dGameTime = 2 * 1000;

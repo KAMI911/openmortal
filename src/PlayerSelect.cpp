@@ -17,6 +17,7 @@
  
 #include "common.h"
 #include "Audio.h"
+#include "sge_bm_text.h"
 #include "gfx.h"
 #include "RlePack.h"
 #include "Backend.h"
@@ -81,6 +82,18 @@ PlayerSelect::PlayerSelect()
 const PlayerInfo& PlayerSelect::GetPlayerInfo( int a_iPlayer )
 {
 	return m_aoPlayers[ a_iPlayer ? 1 : 0 ];
+}
+
+
+const char* PlayerSelect::GetFighterName( int a_iPlayer )
+{
+	return m_aoPlayers[ a_iPlayer ? 1 : 0 ].m_sFighterName.c_str();
+}
+
+
+int PlayerSelect::GetFighterNameWidth( int a_iPlayer )
+{
+	return m_aiFighterNameWidth[ a_iPlayer ? 1 : 0 ];
 }
 
 
@@ -177,6 +190,8 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 	m_aoPlayers[a_iPlayer].m_enFighter = a_enFighter;
 	
 	g_oBackend.PerlEvalF( "SetPlayerNumber(%d,%d);", a_iPlayer, a_enFighter );
+	m_aoPlayers[a_iPlayer].m_sFighterName = g_oBackend.GetPerlString( "PlayerName" );
+	m_aiFighterNameWidth[a_iPlayer] = sge_BF_TextSize( fastFont, GetFighterName(a_iPlayer) ).w;
 	
 	TintEnum enTint = NO_TINT;
 	
@@ -457,6 +472,12 @@ void PlayerSelect::DoPlayerSelect()
 					g_oBackend.m_aoPlayers[i].m_iX, g_oBackend.m_aoPlayers[i].m_iY,
 					g_oBackend.m_aoPlayers[i].m_iFrame < 0 );
 			}
+			int x = ( CHOOSERLEFT - m_aiFighterNameWidth[i] ) / 2;
+			if ( x<10 ) x = 10;
+			if ( i ) x = gamescreen->w - x - m_aiFighterNameWidth[i];
+			
+			sge_BF_textout( gamescreen, fastFont, GetFighterName(i),
+				x, gamescreen->h - 30 );
 		}
 		
 		if ( !m_bDone1) DrawRect( m_iP1, 250 );
