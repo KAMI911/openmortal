@@ -24,6 +24,7 @@ class MszAudio
 public:
 	MszAudio();
 	~MszAudio();
+	void LoadSampleMap();
 
 public:
 	// Sample related methods

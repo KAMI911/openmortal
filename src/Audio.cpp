@@ -14,8 +14,9 @@
 
 #include <string>
 #include <map>
+#include <fstream>
 
-
+  
 typedef std::map<std::string,Mix_Chunk*>	SampleMap;
 typedef std::map<std::string,Mix_Music*>	MusicMap;
 typedef SampleMap::iterator			SampleMapIterator;
@@ -32,6 +33,8 @@ public:
 	int			m_iNumChannels;
 	SampleMap	m_oSamples;
 	MusicMap	m_oMusics;
+	
+	std::string	m_sSoundDir;
 };
 
 
@@ -46,7 +49,9 @@ MszAudio::MszAudio()
 	m_poPriv = new MszAudioPriv;
 	m_poPriv->m_bAudioOk = false;
 	m_poPriv->m_iNumChannels = 0;
-
+	m_poPriv->m_sSoundDir = DATADIR;
+	m_poPriv->m_sSoundDir += "/sound/";
+	
 	SDL_version compile_version;
 	const SDL_version *link_version;
 	MIX_VERSION(&compile_version);
@@ -68,6 +73,8 @@ MszAudio::MszAudio()
 	}
 
 	m_poPriv->m_iNumChannels = Mix_AllocateChannels(10);
+	
+	LoadSampleMap();
 }
 
 
@@ -78,14 +85,69 @@ MszAudio::~MszAudio()
 }
 
 
+void MszAudio::LoadSampleMap()
+{
+	CHECKOK;
+	
+	std::string sFilename = m_poPriv->m_sSoundDir + "soundmap.txt";
+	std::ifstream oInput( sFilename.c_str() );
+	
+	if ( !oInput.is_open() ) 
+	{
+		debug( "File %d could not be read.\n", sFilename.c_str() );
+		return;
+	}
+	
+	std::string sLine;
+	
+	while ( !oInput.eof() )
+	{
+		std::getline( oInput, sLine );
+		if ( sLine.size() == 0 ) continue;
+		
+		size_t iFirstChar = sLine.find_first_not_of( " \t\r\n" );
+		if ( sLine.npos == iFirstChar
+			|| sLine[iFirstChar] == '#' )
+		{
+			// Empty line or comment
+			continue;
+		}
+		
+		size_t iTitleEnd = sLine.find_first_of( " \t\r\n", iFirstChar );
+		if ( sLine.npos == iTitleEnd )
+		{
+			// Bad line
+			debug( "Bad line in config file: %s\n", sLine.c_str() );
+			continue;
+		}
+		
+		size_t iFilenameStart = sLine.find_first_not_of( " \t\r\n", iTitleEnd );
+		if ( sLine.npos == iTitleEnd )
+		{
+			// Bad line
+			debug( "Bad line in config file: %s\n", sLine.c_str() );
+			continue;
+		}
+		
+		size_t iFilenameEnd = sLine.find_last_not_of( " \t\r\n" );
+		
+		std::string sSampleName = sLine.substr( iFirstChar, iTitleEnd-iFirstChar );
+		std::string sSampleFile = sLine.substr( iFilenameStart, iFilenameEnd - iFilenameStart + 1 );
+		
+		debug( "MAPPING: '%s' => '%s'\n", sSampleName.c_str(), sSampleFile.c_str() );
+		LoadSample( sSampleFile.c_str(), sSampleName.c_str() );
+	}
+	
+	oInput.close();
+}
+
+
 void MszAudio::LoadSample( const char* a_pcFilename, const char* a_pcSampleName )
 {
 	CHECKOK;
 
 	std::string sSampleName( a_pcSampleName ? a_pcSampleName : a_pcFilename );
-	std::string sSampleFile = DATADIR;
-	sSampleFile += "/sound/";
-	sSampleFile += a_pcFilename;
+	std::string sSampleFile = m_poPriv->m_sSoundDir + a_pcFilename;
 
 	if ( m_poPriv->m_oSamples.count( sSampleName ) )
 	{
