@@ -1,6 +1,7 @@
 Characters:
 
 +   Surba
+    Misi
     Kinga
     Dia
     Judy
@@ -12,14 +13,14 @@ Others:
     Block after hit
     Doodads / projectiles.
     Color depth independent RlePack.draw()
-	
+
     No hitting falling opponent.
     Polish character graphics.
-	
+
     Single-player mode.
 
 
-SPLITTING:
+SPLITTING (done):
 	bin
 	data
 	characters-1: Macy, Boxer, Cumi, Grizzly, Bence, UPi [6]
@@ -27,13 +28,62 @@ SPLITTING:
 	characters-sch: Agent, Tejszin, Jacint, Mrsmith, Jozsi, Sleepy [6]
 
 
+NETWORK:
+x	HANGEFFEKTEK
+	Preserve MSGS between games.
+	Find local server.
 
-*** Background spec **
 
-Number_of_layers
-do_clear_background (0/1)
 
-Layer_filename
-Layer_offset_x  Layer_offset_y  Layer_distance
+X	Credits for Purple Motion!!
+X	Write to music authors
+Proofread Translate and FighterStats.
+X	Version string display on the intro screen.
+Clean up the garbage in stdout.
+Sound events throught network -> review this.
+Better chat font, greater left margin
+Synch backgrounds in the network game
+Music addon (playlist)
+More parallax backgrounds
+Return to MortalNet after network game disconnects
+Fix CTextArea last character bug
+Scrolling CReadLine
+Improve network lag
+X	"you need to have port X open to challenge".
+Options available in the MortalNet menu
 
-distance = (layer_width-640) / (1280)
+
+SOUND EFFECTS
+	menu start: crashhh.voc
+	menu ends: shades_rollup.voc
+	menu item selection: strange_quack.voc
+	menu item invoked: strange_button.voc
+	menu submenu ends: pop.voc
+	menu item value changes: ding.voc
+
+	game over countdown: alarm.voc
+	game over splat!: splat2.voc
+
+	new game: car_start.voc
+	game hurryup: aroooga.voc
+	game hurryup ends: machine_start.voc
+
+	player selected: magic.voc
+	player selection changed: strange_quack.voc
+	network message: pop.wav (not same as pop.voc!)
+	
+	falling player hits the ground: splat.wav
+	jumping player lands: thump.wav
+	attack misses: woosh.wav
+	player is KO'd: bowling.voc
+	attack is blocked: thump.wav
+	uppercut hits: evil_laughter.voc
+	groin kick hits: woman_scream.voc
+	other attack hits: thump3.voc
+	combo: ba_gooock.voc
+	jump: slip4.voc
+	
+	Jacint's intro: moo2.voc
+	
+	max combo reached: crashhh.voc
+

@@ -1,4 +1,4 @@
-OpenMortal 0.4 README
+OpenMortal 0.6 README
 
 OpenMortal is a spoof of the original Mortal Kombat fighting game. The
 funny thing about OpenMortal is that you can play the game AS YOURSELF.
@@ -13,7 +13,6 @@ features are:
 * Most of the projectiles aren't implemented yet.
 
 Other planned features:
-* Network play.
 * Downloadable characters.
 
 For further details, see the project's bug and feature request databases.
@@ -47,7 +46,25 @@ Forward, Back + LKick: Groin kick (ouch!)
 Plus, each character has a number of special attacks.. experiment to find
 them, or read them at the character screen.
 
-The length of rounds and strength of characters cna be changed in the menu.
+The length of rounds and strength of characters can be changed in the menu.
+
+
+NETWORK PLAY:
+
+You can set up the connection yourself, or go to MortalNet to find opponents.
+Setting up is relatively simple: one player needs to Create a game, the other
+has to Join, by enterin the other player's IP address or hostname in the
+network menu. When both players choose "Start network game", the connection
+is established.
+
+OpenMortal needs port 14882/TCP to be available on the game creator's side.
+
+MortalNet (also available in the Network menu) automates the creation / join
+process.
+
+The network play is still experimental, if you experience problems, please
+report them on the project's homepage.
+
 
 PACKAGERS:
 
