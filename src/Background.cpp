@@ -77,7 +77,7 @@ void Background::Load( int a_iBackgroundNumber )
 	{
 		// Description-based background not found. Try simple image-based
 		// background.
-		sprintf( acFilename, "level%d.png", a_iBackgroundNumber );
+		sprintf( acFilename, "level%d.jpg", a_iBackgroundNumber );
 		SDL_Surface* poImage = LoadBackground( acFilename, 64 );
 		if ( NULL == poImage )
 		{

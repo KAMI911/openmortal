@@ -342,15 +342,15 @@ SDLKey GetKey( bool a_bTranslate )
 
 SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset, bool a_bTransparent )
 {
-	char filepath[FILENAME_MAX+1];
-	strcpy( filepath, DATADIR );
-	strcat( filepath, "/gfx/" );
-	strcat( filepath, a_pcFilename );
+	char acFilepath[FILENAME_MAX+1];
+	strcpy( acFilepath, DATADIR );
+	strcat( acFilepath, "/gfx/" );
+	strcat( acFilepath, a_pcFilename );
 
-	SDL_Surface* poBackground = IMG_Load( filepath );
+	SDL_Surface* poBackground = IMG_Load( acFilepath );
 	if (!poBackground)
 	{
-		debug( "Can't load file: %s\n", filepath );
+		debug( "Can't load file: %s\n", acFilepath );
 		return NULL;
 	}
 	
@@ -362,19 +362,57 @@ SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_i
 		if (ncolors+a_iPaletteOffset > 255) ncolors = 255 - a_iPaletteOffset;
 		SDL_SetColors( gamescreen, pal->colors, a_iPaletteOffset, ncolors );
 	}
-	
+		
 	SDL_Surface* poRetval = SDL_DisplayFormat( poBackground );
 	SDL_FreeSurface( poBackground );
-
-/*	if ( !a_bTransparent && poRetval )
+	
+	// 2. TRY TO LOAD AN IMAGE MASK
+	// This means trying to load a .png file which acts as a mask for the
+	// original [jpg] image.
+	// If the original file is <Basename>.jpg, the mask is <Basename>.mask.png
+	
+	int iLength = strlen( acFilepath );
+	char acMaskFilename[FILENAME_MAX+1];
+	strncpy( acMaskFilename, acFilepath, iLength-4 );
+	acMaskFilename[iLength-4] = 0;
+	strcat( acMaskFilename, ".mask.png" );
+	
+	SDL_Surface* poMask = IMG_Load( acMaskFilename );
+	if ( !poMask )
 	{
-		SDL_SetColorKey( poRetval, 0, 0 );
+		// No mask.
+		return poRetval;
 	}
-	else
+	
+	if ( poMask->w < poRetval->w
+		|| poMask->h < poRetval->h )
 	{
-		SDL_SetColorKey( poRetval, SDL_SRCCOLORKEY, 0 );
+		debug( "Error loading mask for %s: mask is too small.\n", acFilepath );
+		SDL_FreeSurface( poMask );
+		return poRetval;
 	}
-*/
+	
+	debug( "Loading mask for %s.\n", acFilepath );
+	
+	Uint32 iTransparent = SDL_MapRGB( gamescreen->format, 255, 217, 0 ); // an unlikely color in openmortal..
+	Uint32 iMask = sge_GetPixel( poMask, 0, 0 );
+	Uint32 iPixel;
+	
+	for ( int y = 0; y < poRetval->h; ++y ) {
+		for ( int x=0; x< poRetval->w; ++x ) {
+			iPixel = sge_GetPixel( poMask, x, y );
+//			debug( "%d ", iPixel );
+			if ( iPixel == iMask ) { 
+				sge_PutPixel( poRetval, x, y, iTransparent );
+			}
+		}
+//		debug( "\n" );
+	}
+	
+	SDL_FreeSurface( poMask );
+	
+	SDL_SetColorKey( poRetval, SDL_SRCCOLORKEY, iTransparent );
+	
 	return poRetval;
 }
 
