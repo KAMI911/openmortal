@@ -77,7 +77,7 @@ SState::SState()
 	m_iTeamSize = 5;
 	m_bTeamMultiselect = false;
 
-	m_iGameTime = 60;
+	m_iRoundLength = 60;
 	m_iHitPoints = 100;
 	m_iGameSpeed = 12;
 
@@ -293,7 +293,7 @@ void SState::Load()
 	poSv = get_sv("TEAMSIZE", FALSE); if (poSv) m_iTeamSize = SvIV( poSv );
 	poSv = get_sv("TEAMMULTISELECT", FALSE); if (poSv) m_bTeamMultiselect = SvIV( poSv );
 
-	poSv = get_sv("GAMETIME", FALSE); if (poSv) m_iGameTime = SvIV( poSv );
+	poSv = get_sv("ROUNDLENGTH", FALSE); if (poSv) m_iRoundLength = SvIV( poSv );
 	poSv = get_sv("HITPOINTS", FALSE); if (poSv) m_iHitPoints = SvIV( poSv );
 	poSv = get_sv("GAMESPEED", FALSE); if (poSv) m_iGameSpeed = SvIV( poSv );
 
@@ -340,7 +340,7 @@ void SState::Save()
 	oStream << "TEAMSIZE=" << m_iTeamSize << '\n';
 	oStream << "TEAMMULTISELECT=" << m_bTeamMultiselect << '\n';
 
-	oStream << "GAMETIME=" << m_iGameTime << '\n';
+	oStream << "ROUNDLENGTH=" << m_iRoundLength << '\n';
 	oStream << "HITPOINTS=" << m_iHitPoints << '\n';
 	oStream << "GAMESPEED=" << m_iGameSpeed << '\n';
 

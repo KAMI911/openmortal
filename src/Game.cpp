@@ -472,7 +472,7 @@ void CGame::DrawDoodads()
 
 Input:
 \li m_enGamePhase
-\li g_oBackend.m_iGameTime
+\li g_oBackend.m_iRoundLength
 \li m_iNumberOfRounds
 \li oFpsCounter
 */
@@ -973,7 +973,7 @@ void CGame::DoOneRound()
 			if ( dGameTime <= 0 )
 			{
 				m_enGamePhase = Ph_NORMAL;
-				dGameTime = (IsMaster() ? g_oState.m_iGameTime : g_poNetwork->GetGameParams().iGameTime) * 1000;
+				dGameTime = (IsMaster() ? g_oState.m_iRoundLength : g_poNetwork->GetGameParams().iRoundLength) * 1000;
 			}
 		}
 		else if ( Ph_NORMAL == m_enGamePhase )	// Check for the end of the NORMAL phase

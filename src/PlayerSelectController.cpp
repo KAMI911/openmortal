@@ -169,7 +169,7 @@ void CPlayerSelectController::HandleEvents()
 				DoMenu();
 				if ( m_bNetworkGame && g_poNetwork->IsMaster() )
 				{
-					g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints, GetBackgroundNumber() );
+					g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iRoundLength, g_oState.m_iHitPoints, GetBackgroundNumber() );
 				}
 				break;
 				
@@ -462,7 +462,7 @@ void CPlayerSelectController::DoPlayerSelect()
 
 	if ( m_bNetworkGame && g_poNetwork->IsMaster() )
 	{
-		g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints, GetBackgroundNumber() );
+		g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iRoundLength, g_oState.m_iHitPoints, GetBackgroundNumber() );
 	}
 
 	g_oBackend.PerlEvalF( "SelectStart(%d);", g_oState.m_iNumPlayers );

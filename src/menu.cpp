@@ -26,8 +26,8 @@
 
 
 
-const char* g_ppcGameTime[] = { "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "3:00", "5:00", NULL };
-const int g_piGameTime[] = { 30, 45, 60, 75, 90, 105, 120, 180, 300 };
+const char* g_ppcRoundLength[] = { "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "3:00", "5:00", NULL };
+const int g_piRoundLength[] = { 30, 45, 60, 75, 90, 105, 120, 180, 300 };
 
 const char* g_ppcHitPoints[] = { "BABY", "VERY LOW", "LOW", "NORMAL", "HIGH", "VERY HIGH", "NEAR IMMORTAL", NULL };
 const int g_piHitPoints[] = { 1, 10, 50, 100, 150, 200, 500 };
@@ -256,10 +256,10 @@ const char* FindString( const char* a_ppcNames[], const int a_piValues[], int a_
 
 
 
-const char* GetGameTimeString( int a_iValue )
+const char* GetRoundLengthString( int a_iValue )
 {
 	strcpy( g_acMessageBuffer, Translate("GAME TIME: ") );
-	strcat( g_acMessageBuffer, Translate(FindString( g_ppcGameTime, g_piGameTime, a_iValue)) );
+	strcat( g_acMessageBuffer, Translate(FindString( g_ppcRoundLength, g_piRoundLength, a_iValue)) );
 	return g_acMessageBuffer;
 }
 
@@ -916,7 +916,7 @@ void CMenu::ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem )
 			if ( g_oState.m_enGameMode != SState::IN_NETWORK || g_poNetwork->IsMaster() )
 			{
 				poMenu->AddEnumMenuItem( "GAME SPEED: ", g_oState.m_iGameSpeed, g_ppcGameSpeed, g_piGameSpeed, MENU_GAME_SPEED );
-				poMenu->AddEnumMenuItem( "GAME TIME: ", g_oState.m_iGameTime, g_ppcGameTime, g_piGameTime, MENU_GAME_TIME );
+				poMenu->AddEnumMenuItem( "GAME TIME: ", g_oState.m_iRoundLength, g_ppcRoundLength, g_piRoundLength, MENU_ROUND_LENGTH );
 				poMenu->AddEnumMenuItem( "STAMINA: ", g_oState.m_iHitPoints, g_ppcHitPoints, g_piHitPoints, MENU_TOTAL_HIT_POINTS );
 			}
 			poMenu->AddMenuItem( "~SOUND", SDLK_s, MENU_SOUND );
@@ -1006,8 +1006,8 @@ void CMenu::ItemChanged( int a_iItemCode, int a_iValue, CMenuItem* a_poMenuItem 
 			g_oState.m_iSoundVolume = a_iValue;
 			break;
 			
-		case MENU_GAME_TIME:
-			g_oState.m_iGameTime = a_iValue;
+		case MENU_ROUND_LENGTH:
+			g_oState.m_iRoundLength = a_iValue;
 			break;
 			
 		case MENU_GAME_SPEED:
