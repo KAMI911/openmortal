@@ -8,6 +8,6 @@ Doodads.png       level2.png         level4.desc        level4_saturn.png  Morta
 FighterStats.png  level3_city.png    level4_earth.png   level5.png         PlayerSelect.png \
 Foot.png          level3.desc        level4_ground.png  level6.png         Story1.png \
 GameOver.png      level3_ground.png  level4_moon.png    level7.png         Story2.png \
-icon.bmp          level3_moon.png    level4_nebula.png
+icon.bmp          level3_moon.png    level4_nebula.png  PlayerSelect_chat.png
 
 EXTRA_DIST = $(gfxdata_DATA)
