@@ -68,6 +68,7 @@ protected:
 	void					ReceiveUser( char a_cID, char* a_pcData );
 
 	void					DrawNickList();
+	void					Menu();
 
 
 protected:

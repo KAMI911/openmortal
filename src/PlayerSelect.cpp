@@ -27,6 +27,7 @@
 #include "Chooser.h"
 #include "sge_tt_text.h"
 #include "TextArea.h"
+#include "Event.h"
 
 
 #ifndef NULL
@@ -599,27 +600,24 @@ void PlayerSelect::DoPlayerSelect()
 
 			// HANDLE SCROLLING THE TEXT AREA
 
-			if ( event.type == SDL_KEYDOWN )
+			if ( event.type == SDL_KEYDOWN && IsNetworkGame() )
 			{
 				SDLKey enKey = event.key.keysym.sym;
-				if ( IsNetworkGame() )
+				if ( enKey == SDLK_PAGEUP || enKey == SDLK_KP9 )
 				{
-					if ( enKey == SDLK_PAGEUP || enKey == SDLK_KP9 )
-					{
-						m_poTextArea->ScrollUp();
-						continue;
-					}
-					if ( enKey == SDLK_PAGEDOWN || enKey == SDLK_KP3 )
-					{
-						m_poTextArea->ScrollDown();
-						continue;
-					}
+					m_poTextArea->ScrollUp();
+					continue;
+				}
+				if ( enKey == SDLK_PAGEDOWN || enKey == SDLK_KP3 )
+				{
+					m_poTextArea->ScrollDown();
+					continue;
 				}
 			}
 			
 			// HANDLE CHATTING
 			
-			if ( bDoingChat )
+			if ( bDoingChat && SDL_KEYDOWN==event.type )
 			{
 				// The chat thingy will handle this event.
 				m_poReadline->HandleKeyEvent( event );
@@ -651,44 +649,47 @@ void PlayerSelect::DoPlayerSelect()
 				continue;
 			}
 
-			// HANDLE OTHER TYPES OF KEYBOARD EVENTS
-			
-			if ( event.type == SDL_KEYDOWN )
+			// HANDLE OTHER TYPES OF EVENTS
+
+			if ( IsNetworkGame() && bDoingChat == false &&
+				SDL_KEYDOWN == event.type &&
+				(event.key.keysym.sym == SDLK_RETURN || event.key.keysym.sym==SDLK_KP_ENTER) )
 			{
-				SDLKey enKey = event.key.keysym.sym;
+				bDoingChat = true;
+				acMsg[0] = 0;
+				m_poReadline->Clear();
+				m_poReadline->Restart( acMsg, strlen(acMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
+				break;
+			}
 				
-				if ( enKey == SDLK_ESCAPE )
-				{
+			SMortalEvent oEvent;
+			TranslateEvent( &event, &oEvent );
+			
+			switch ( oEvent.m_enType )
+			{
+				case Me_QUIT:
+					g_oState.m_bQuitFlag = true;
+					break;
+				
+				case Me_MENU:
 					DoMenu();
 					if ( IsNetworkGame() && g_poNetwork->IsMaster() )
 					{
 						g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
 					}
 					break;
-				}
-				if ( IsNetworkGame() && bDoingChat == false &&
-					(event.key.keysym.sym == SDLK_RETURN
-					|| event.key.keysym.sym==SDLK_KP_ENTER) )
-				{
-					bDoingChat = true;
-					acMsg[0] = 0;
-					m_poReadline->Clear();
-					m_poReadline->Restart( acMsg, strlen(acMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
+					
+				case Me_PLAYERKEYDOWN:
+					DrawRect( m_iP1, 240 );
+					DrawRect( m_iP2, 240 );
+					HandleKey( oEvent.m_iPlayer, oEvent.m_iKey );
 					break;
-				}
-				for ( i=0; i<2; i++ )
-				{
-					for ( j=0; j<9; j++ )
-					{
-						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
-						{
-							DrawRect( m_iP1, 240 );
-							DrawRect( m_iP2, 240 );
-							HandleKey( i, j );
-						}
-					}
-				}
-			}
+
+				case Me_NOTHING:
+				case Me_SKIP:
+				case Me_PLAYERKEYUP:
+					break;
+			} // end of switch statement
 			
 		}	// Polling events
 

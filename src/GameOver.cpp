@@ -14,6 +14,7 @@
 #include "State.h"
 #include "RlePack.h"
 #include "Audio.h"
+#include "Event.h"
 
 #include <stdio.h>
 
@@ -61,8 +62,6 @@ void GameOver( int a_iPlayerWon )
 	bool bKeyPressed = false;
 	int iCounter = -1;
 	
-	SDL_Event event;
-
 	while (1)
 	{
 		// 1. Wait for the next tick (on extremely fast machines..)
@@ -111,33 +110,32 @@ void GameOver( int a_iPlayerWon )
 			g_oBackend.AdvancePerl();
 		};
 		lastTick = thisTick;
-		
-		while (SDL_PollEvent(&event))
+
+		SMortalEvent oEvent;
+		while (MortalPollEvent(oEvent))
 		{
-			switch (event.type)
+			switch (oEvent.m_enType)
 			{
-				case SDL_QUIT:
+				case Me_QUIT:
 					g_oState.m_bQuitFlag = true;
 					break;
-				
-				case SDL_KEYDOWN:
-				{
-					if ( event.key.keysym.sym == SDLK_ESCAPE )
-					{
-						DoMenu();
-						break;
-					}
 
-					for (int j=4; j<9; j++ )
+				case Me_MENU:
+					DoMenu();
+					break;
+				
+				case Me_PLAYERKEYDOWN:
+					if ( 1-a_iPlayerWon == oEvent.m_iPlayer
+						&& oEvent.m_iKey>= 4 )
 					{
-						if (g_oState.m_aiPlayerKeys[1-a_iPlayerWon][j] == event.key.keysym.sym)
-						{
-							bKeyPressed = true;
-							break;
-						}
+						bKeyPressed = true;
 					}
-				}
-				break;
+					break;
+
+				case Me_NOTHING:
+				case Me_PLAYERKEYUP:
+				case Me_SKIP:
+					break;
 			}	// switch statement
 		}	// Polling events
 		

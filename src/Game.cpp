@@ -16,6 +16,7 @@
 #include "SDL_keysym.h"
 #include <fstream>
 
+#include "Event.h"
 #include "PlayerSelect.h"
 #include "Background.h"
 #include "common.h"
@@ -648,77 +649,49 @@ Returns 1 on quit event (e.g. if the current game or replay should be aborted), 
 
 int Game::ProcessEvents()
 {
-	SDL_Event event;
-	while (SDL_PollEvent(&event))
+	SMortalEvent oEvent;
+	
+	while (MortalPollEvent(oEvent))
 	{
-		switch (event.type)
+		switch (oEvent.m_enType)
 		{
-			case SDL_QUIT:
+			case Me_QUIT:
 				g_oState.m_bQuitFlag = true;
 				return 1;
+
+			case Me_MENU:
+				if ( Ph_REWIND == m_enGamePhase
+					|| Ph_SLOWFORWARD == m_enGamePhase )
+				{
+					// Menu counts as 'skip' during instant replay
+					return 1;
+				}
 				
-			case SDL_KEYDOWN:
-			{
-				if ( event.key.keysym.sym == SDLK_ESCAPE && !IsNetworkGame() )
+				if ( !IsNetworkGame() )
 				{
 					SState::TGameMode enMode = g_oState.m_enGameMode;
 					::DoMenu();
 					return g_oState.m_enGameMode == enMode ? 0 : 1;
 				}
-				if ( event.key.keysym.sym == SDLK_F1  /*&& !IsNetworkGame()*/ )
-				{
-					// shortcut: abort the current round. This shall is here
-					// to ease testing, and will be removed from the final
-					// version.
-					return 1;
-				}
-				
+
+			case Me_SKIP:
+				return 1;
+
+			case Me_PLAYERKEYDOWN:
+			case Me_PLAYERKEYUP:
+			{
 				if ( Ph_NORMAL != m_enGamePhase &&
 					Ph_REPLAY != m_enGamePhase )
 					break;
-				
-				for (int i=0; i<2; i++)
-				{
-					for (int j=0; j<9; j++ )
-					{
-						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
-						{
-							if (g_oState.m_enGameMode == SState::IN_DEMO)
-							{
-								g_oState.m_enGameMode = SState::IN_MULTI;
-								return 1;
-							}
-							HandleKey( i, j, true );
-							//g_oBackend.PerlEvalF( "KeyDown(%d,%d);", i, j );
-							return 0;
-						}
-					}
-				}
-				
-				break;
+					
+				HandleKey( oEvent.m_iPlayer, oEvent.m_iKey, Me_PLAYERKEYDOWN == oEvent.m_enType );
 			}
-			
-			case SDL_KEYUP:
-			{
-				if ( Ph_NORMAL != m_enGamePhase )
-					break;
 
-				for (int i=0; i<2; i++)
-				{
-					for (int j=0; j<9; j++ )
-					{
-						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
-						{
-							HandleKey( i, j, false );
-							//g_oBackend.PerlEvalF( "KeyUp(%d,%d);", i, j );
-							return 0;
-						}
-					}
-				}
+			case Me_NOTHING:
 				break;
-			}
+			
 		} // End of switch
-	} // End of while SDL_PollEvent;
+	} // End of while polling events;
 	
 	return 0;
 }

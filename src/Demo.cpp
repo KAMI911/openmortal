@@ -17,6 +17,7 @@
 #include "Backend.h"
 #include "RlePack.h"
 #include "FighterStats.h"	// #includes Demo.h
+#include "Event.h"
 #include "config.h"
 
 
@@ -93,13 +94,14 @@ int Demo::Run()
 	SState::TGameMode enOriginalGameMode = g_oState.m_enGameMode;
 
 	int thisTick, lastTick, firstTick, gameSpeed;
-	SDL_Event event;
 	gameSpeed = 12;
 
+	/*
 	if ( m_poBackground )
 	{
 		DrawTextMSZ( "Press Escape for the menu", impactFont, 10, 450, UseShadow, C_WHITE, m_poBackground );
 	}
+	*/
 	
 	thisTick = SDL_GetTicks() / gameSpeed;
 	lastTick = thisTick - 1;
@@ -132,36 +134,30 @@ int Demo::Run()
 		
 		// 3. Handle events.
 
-		while (SDL_PollEvent(&event))
+		SMortalEvent oEvent;
+		
+		while ( MortalPollEvent(oEvent) )
 		{
-			switch (event.type)
+			switch (oEvent.m_enType)
 			{
-				case SDL_QUIT:
+				case Me_QUIT:
 					g_oState.m_bQuitFlag = true;
 					break;
-				case SDL_KEYDOWN:
-					if ( event.key.keysym.sym == SDLK_ESCAPE )
-					{
-						OnMenu();
-						break;
-					}
-					if ( event.key.keysym.sym == SDLK_F1 )
-					{
-						return 0;
-					}
-					for ( int i=0; i<2; ++i )
-					{
-						for ( int j=0; j<9; ++j )
-						{
-							if ( g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
-							{
-								g_oState.m_enGameMode = SState::IN_MULTI;
-							}
-						}
-					}
+				
+				case Me_MENU:
+				case Me_PLAYERKEYDOWN:
+					OnMenu();
 					break;
+				
+				case Me_SKIP:
+					return 0;
+
+				case Me_NOTHING:
+				case Me_PLAYERKEYUP:
+					break;
+
 			} // switch
-		} // while SDL_PollEvent
+		} // while MortalPollEvent
 
 		if ( g_oState.m_enGameMode != enOriginalGameMode
 			|| g_oState.m_bQuitFlag )
@@ -268,7 +264,9 @@ public:
 		i = 0;
 		m_iTimeLeft = 50;
 		m_poBackground = LoadBackground( "Mortal.png", 240 );
-		DrawTextMSZ( VERSION, inkFont, 540, 430, UseShadow | AlignHCenter, C_WHITE, m_poBackground, false );
+		
+		DrawTextMSZ( "Version " VERSION "  © 2003-2004 by UPi", inkFont, 320, 430, UseShadow | AlignHCenter, C_WHITE, m_poBackground, false );
+		
 		std::string sStaffFilename = DATADIR;
 		sStaffFilename += "/characters/STAFF.DAT";
 		m_poPack = new RlePack( sStaffFilename.c_str(), 240 );

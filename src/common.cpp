@@ -47,6 +47,18 @@ bool FindPlayerKey( SDLKey a_enKey, int& a_riOutPlayer, int& a_riOutKey )
 
 
 
+/**
+TranslateEvent is an important function in the OpenMortal event processing
+chain. It takes an SDL_Event and converts it to a game related event. This
+allows for the "transparent" handling of joysticks and such.
+
+\param a_poInEvent		The SDL event which is to be translated.
+\param a_poOutEvent		The output event.
+
+\returns true if the event could be translated (it was relevant for the game),
+or false if it couldn't (a_poOutEvent will be set to Me_NOTHING).
+*/
+
 bool TranslateEvent( const SDL_Event* a_poInEvent, SMortalEvent* a_poOutEvent )
 {
 	a_poOutEvent->m_enType = Me_NOTHING;
@@ -118,4 +130,48 @@ bool TranslateEvent( const SDL_Event* a_poInEvent, SMortalEvent* a_poOutEvent )
 
 	return false;
 }
+
+
+
+/** MortalPollEvent works like SDL_PollEvent, except that it
+returns an SMortalEvent.
+*/
+
+bool MortalPollEvent( SMortalEvent& a_roOutEvent )
+{
+	SDL_Event oEvent;
+	
+	while ( SDL_PollEvent( &oEvent ) )
+	{
+		if ( TranslateEvent( &oEvent, &a_roOutEvent ) )
+		{
+			return true;
+		}
+	}
+
+	a_roOutEvent.m_enType = Me_NOTHING;
+	return false;
+}
+
+
+/** MortalWaitEvent works like SDL_WaitEvent, except that it
+returns an SMortalEvent.
+*/
+
+void MortalWaitEvent( SMortalEvent& a_roOutEvent )
+{
+	SDL_Event oEvent;
+
+	if ( SDL_WaitEvent( &oEvent ) )
+	{
+		if ( TranslateEvent( &oEvent, &a_roOutEvent ) )
+		{
+			return;
+		}
+	}
+
+	a_roOutEvent.m_enType = Me_NOTHING;
+	return;
+}
+
 

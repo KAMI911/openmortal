@@ -174,7 +174,8 @@ int init2()
 int DrawMainScreen()
 {
 	SDL_Surface* background = LoadBackground( "Mortal.png", 240 );
-	DrawTextMSZ( VERSION, inkFont, 540, 430, UseShadow | AlignHCenter, C_WHITE, background, false );
+	
+	DrawTextMSZ( "Version " VERSION "  © 2003-2004 by UPi", inkFont, 320, 430, UseShadow | AlignHCenter, C_WHITE, background, false );
 	SDL_Rect r;
 	r.x = r.y = 0;
 	
@@ -249,6 +250,7 @@ int main(int argc, char *argv[])
 
 	int iFlags = SDL_SWSURFACE | SDL_HWPALETTE;
 
+
 	if ( g_oState.m_bFullscreen )
 	{
 		iFlags |= SDL_FULLSCREEN;
@@ -289,7 +291,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	// InitJoystick();
+	InitJoystick();
 	
 	g_oState.SetLanguage( g_oState.m_acLanguage );
 	
@@ -350,6 +352,7 @@ int main(int argc, char *argv[])
 			continue;
 		case SState::IN_CHAT:
 			DoOnlineChat();
+
 			continue;
 		default:
 			break;		// Handled below.
@@ -383,6 +386,7 @@ int main(int argc, char *argv[])
 			if ( iGameResult >= 0 && !bNetworkGame )
 			{
 				GameOver( iGameResult );
+
 				FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );
 				oDemo.Run();		
 			}
@@ -393,7 +397,8 @@ int main(int argc, char *argv[])
 		{
 			DrawTextMSZ( "Connection closed.", inkFont, 320, 210, AlignHCenter | UseShadow, C_WHITE, gamescreen );
 			DrawTextMSZ( g_poNetwork->GetLastError(), impactFont, 320, 250, AlignHCenter | UseShadow, C_WHITE, gamescreen );
-			GetKey();
+			SDL_Delay( 1000 );
+			GetKey( true );
 		}
 		
 		if ( g_oState.m_bQuitFlag ) break;

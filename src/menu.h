@@ -18,8 +18,51 @@ class MenuItem;
 class EnumMenuItem;
 class TextMenuItem;
 
+
+enum
+{
+/* Master menu structure:
+MAIN MENU
+*/
+MENU_UNKNOWN,
+	MENU_SURRENDER,
+	MENU_SINGLE_PLAYER,
+		MENU_EASY,
+		MENU_MEDIUM,
+		MENU_HARD,
+	MENU_MULTI_PLAYER,
+	MENU_NETWORK_GAME,
+		MENU_SERVER,
+		MENU_HOSTNAME,
+		MENU_NICK,
+		MENU_CONNECT,
+		MENU_MORTALNET,
+		MENU_CANCEL,
+	MENU_OPTIONS,
+		MENU_GAME_SPEED,
+		MENU_GAME_TIME,			//	( :30 - 5:00 )
+		MENU_TOTAL_HIT_POINTS,	// ( 25 - 1000 )
+		MENU_SOUND,
+			MENU_CHANNELS,		// MONO / STEREO
+
+			MENU_MIXING_RATE,	// 11kHz / 22kHz / 44.1 kHz
+			MENU_BITS,			// 8 bit / 16 bit
+			MENU_MUSIC_VOLUME,	// (0% - 100%)
+			MENU_SOUND_VOLUME,	// (0% - 100%)
+			MENU_SOUND_OK,
+		MENU_FULLSCREEN,
+		MENU_KEYS_RIGHT,
+		MENU_KEYS_LEFT,
+		MENU_OPTIONS_OK,
+	MENU_LANGUAGE,
+	MENU_INFO,
+	MENU_QUIT,					// (confirm)
+};
+
+
 class Menu
 {
+
 public:
 	Menu( const char* a_pcTitle );
 	virtual ~Menu();

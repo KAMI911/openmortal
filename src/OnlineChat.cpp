@@ -16,6 +16,7 @@
 #include "gfx.h"
 #include "common.h"
 #include "config.h"
+#include "Event.h"
 
 //#include "SDL_video.h"
 
@@ -77,9 +78,11 @@ public:
 		{
 		case MENU_ACCEPTCHALLENGE:
 			m_bAccepted = true;
+			// intentional fall through
 		case MENU_REJECTHALLENGE:
 			m_iReturnCode = 100;
 			m_bDone = true;
+			break;
 		}
 	}
 
@@ -122,6 +125,8 @@ public:
 			AddEnumMenuItem( "CHALLENGE USER: ", 0, m_apcNicks, m_aiNicks, MENU_CHALLENGE );
 		}
 		m_poNickMenuItem = AddTextMenuItem( "Nickname: ", g_oState.m_acNick, MENU_CHANGENICK );
+		AddMenuItem( "~OPTIONS", SDLK_o, MENU_OPTIONS );
+		AddMenuItem( "QUIT", SDLK_UNKNOWN, MENU_QUIT );
 		AddOkCancel( MENU_OK );
 	}
 
@@ -168,7 +173,11 @@ public:
 			m_iReturnCode = -1;
 			break;
 		}
-		}
+		
+		default:
+			Menu::ItemActivated( a_iItemCode, a_poMenuItem );
+		
+		} // end of switch statement
 		
 	}
 
@@ -590,7 +599,7 @@ void COnlineChat::DoOnlineChat()
 		{
 			DrawTextMSZ( "Couldn't connect", inkFont, 320, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
 			DrawTextMSZ( m_sLastError.c_str(), impactFont, 320, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
-			GetKey();
+			GetKey( true );
 		}
 		return;
 	}
@@ -621,14 +630,28 @@ void COnlineChat::DoOnlineChat()
 
 		while (SDL_PollEvent(&event))
 		{
-			if ( SDL_QUIT == event.type )
+			if ( SDL_KEYDOWN != event.type )
 			{
-				g_oState.m_bQuitFlag = true;
-				break;
+				SMortalEvent oEvent;
+				TranslateEvent( &event, &oEvent );
+				switch (oEvent.m_enType)
+				{
+					case Me_MENU:
+						Menu();
+						break;
+					
+					case Me_QUIT:
+						g_oState.m_bQuitFlag = true;
+						break;
+					
+					default:
+						break;
+				}
+				continue;
 			}
-
+			
 			// HANDLE SCROLLING THE TEXT AREA
-
+			
 			if ( event.type == SDL_KEYDOWN )
 			{
 				SDLKey enKey = event.key.keysym.sym;
@@ -644,23 +667,7 @@ void COnlineChat::DoOnlineChat()
 				}
 				if ( enKey == SDLK_ESCAPE )
 				{
-					CChatMenu oMenu( m_asNicks );
-					DoMenu( oMenu );
-					if ( !g_oState.m_bQuitFlag )
-					{
-						if ( oMenu.GetNick() != g_oState.m_acNick )
-						{
-							SendRawData( 'N', oMenu.GetNick() );
-						}
-						if ( oMenu.GetChallengedNick().length() )
-						{
-							SendRawData( 'C', oMenu.GetChallengedNick() );
-							MortalNetworkResetMessages( true );
-							Connect( NULL );
-						}
-
-						Redraw();
-					}
+					Menu();
 					continue;
 				}
 			}
@@ -688,7 +695,8 @@ void COnlineChat::DoOnlineChat()
 	{
 		DrawTextMSZ( "Connection closed.", inkFont, 320, 210, AlignHCenter | UseShadow, C_WHITE, m_poScreen );
 		DrawTextMSZ( m_sLastError.c_str(), impactFont, 320, 250, AlignHCenter | UseShadow, C_WHITE, m_poScreen );
-		GetKey();
+		SDL_Delay( 1000 );
+		GetKey( true );
 	}
 
 	delete m_poReadline;
@@ -697,6 +705,28 @@ void COnlineChat::DoOnlineChat()
 	m_poTextArea = NULL;
 
 	Stop();
+}
+
+
+void COnlineChat::Menu()
+{
+	CChatMenu oMenu( m_asNicks );
+	DoMenu( oMenu );
+	if ( !g_oState.m_bQuitFlag )
+	{
+		if ( oMenu.GetNick() != g_oState.m_acNick )
+		{
+			SendRawData( 'N', oMenu.GetNick() );
+		}
+		if ( oMenu.GetChallengedNick().length() )
+		{
+			SendRawData( 'C', oMenu.GetChallengedNick() );
+			MortalNetworkResetMessages( true );
+			Connect( NULL );
+		}
+
+		Redraw();
+	}
 }
 
 

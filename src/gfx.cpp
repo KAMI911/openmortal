@@ -16,6 +16,7 @@
 
 
 
+
 #include "sge_tt_text.h"
 #include "sge_surface.h"
 
@@ -26,6 +27,7 @@
 #include "gfx.h"
 #endif
 #include "State.h"
+#include "Event.h"
 
 
 Uint16 *UTF8_to_UNICODE(Uint16 *unicode, const char *utf8, int len);
@@ -154,6 +156,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 #ifdef MSZ_USES_UTF8
 		sge_tt_textout_UTF8( target, font, string, dest.x+2, dest.y+2+sge_TTF_FontAscent(font), C_BLACK, C_BLACK, 255 );
 #else
+
 		sge_tt_textout( target, font, string, dest.x+2, dest.y+2+sge_TTF_FontAscent(font), C_BLACK, C_BLACK, 255 );
 #endif
 	}
@@ -265,27 +268,63 @@ SDL_Color MakeColor( Uint8 r, Uint8 g, Uint8 b )
 }
 
 
-SDLKey GetKey()
-{
-	SDL_Event event;
+/**
+Waits for a key event and returns it.
 
+\param a_bTranslate		If this is true, then keypad events will also be
+read and processed info keys (cursor, return and escape).
+*/
+
+SDLKey GetKey( bool a_bTranslate )
+{
+	SDL_Event oSdlEvent;
+	SMortalEvent oEvent;
 	
-	while (SDL_WaitEvent(&event))
+	while (SDL_WaitEvent(&oSdlEvent))
 	{
-		switch (event.type)
+		if ( SDL_KEYDOWN == oSdlEvent.type )
 		{
-			case SDL_QUIT:
+			return oSdlEvent.key.keysym.sym;
+		}
+		if ( SDL_QUIT == oSdlEvent.type )
+		{
+			g_oState.m_bQuitFlag = true;
+			return SDLK_ESCAPE;
+		}
+
+		if ( ! a_bTranslate )
+		{
+			continue;
+		}
+
+		// Handle gamepad and others
+		TranslateEvent( &oSdlEvent, &oEvent );
+		
+		switch (oEvent.m_enType)
+		{
+			case Me_QUIT:
 				g_oState.m_bQuitFlag = true;
 				return SDLK_ESCAPE;
 			
-			case SDL_KEYDOWN:
-			{
-				return event.key.keysym.sym;
-			}
-			break;
+			case Me_PLAYERKEYDOWN:
+				switch ( oEvent.m_iKey ) {
+					case Mk_UP:		return SDLK_UP;
+					case Mk_DOWN:	return SDLK_DOWN;
+					case Mk_LEFT:	return SDLK_LEFT;
+					case Mk_RIGHT:	return SDLK_RIGHT;
+					default:		return SDLK_RETURN;
+				}
+				break;
+
+			case Me_MENU:
+				return SDLK_ESCAPE;
+
+			default:
+				break;
 		}	// switch statement
 	}	// Polling events
 
+	// Code will never reach this point, unless there's an error.
 	return SDLK_ESCAPE;
 }
 

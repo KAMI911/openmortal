@@ -18,49 +18,11 @@
 #include "sge_tt_text.h"
 #include "sge_surface.h"
 #include "MortalNetwork.h"
+#include "Joystick.h"
 
 #include <stdarg.h>
 
 
-enum 
-{
-/* Master menu structure:
-MAIN MENU
-*/
-MENU_UNKNOWN,
-	MENU_SURRENDER,
-	MENU_SINGLE_PLAYER,
-		MENU_EASY,
-		MENU_MEDIUM,
-		MENU_HARD,
-	MENU_MULTI_PLAYER,
-	MENU_NETWORK_GAME,
-		MENU_SERVER,
-		MENU_HOSTNAME,
-		MENU_NICK,
-		MENU_CONNECT,
-		MENU_MORTALNET,
-		MENU_CANCEL,
-	MENU_OPTIONS,
-		MENU_GAME_SPEED,
-		MENU_GAME_TIME,			//	( :30 - 5:00 )
-		MENU_TOTAL_HIT_POINTS,	// ( 25 - 1000 )
-		MENU_SOUND,
-			MENU_CHANNELS,		// MONO / STEREO
-
-			MENU_MIXING_RATE,	// 11kHz / 22kHz / 44.1 kHz
-			MENU_BITS,			// 8 bit / 16 bit
-			MENU_MUSIC_VOLUME,	// (0% - 100%)
-			MENU_SOUND_VOLUME,	// (0% - 100%)
-			MENU_SOUND_OK,
-		MENU_FULLSCREEN,
-		MENU_KEYS_RIGHT,
-		MENU_KEYS_LEFT,
-		MENU_OPTIONS_OK,
-	MENU_LANGUAGE,
-	MENU_INFO,
-	MENU_QUIT,					// (confirm)
-};
 
 
 const char* g_ppcGameTime[] = { "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "3:00", "5:00", NULL };
@@ -107,9 +69,15 @@ void InputKeys( int a_iPlayerNumber )
 	int iY = 75;
 	int iYIncrement = 35;
 	SDLKey enKey;
+
+	const char* pcJoyName = g_oJoystick.GetJoystickName( a_iPlayerNumber );
+	if ( NULL != pcJoyName )
+	{
+		DrawTextMSZ( pcJoyName, inkFont, 320, iY, AlignHCenter|UseShadow, C_LIGHTCYAN, gamescreen );
+		iY += iYIncrement + 10;
+	}
 	
-	DrawTextMSZ( "Press Escape to abort", inkFont, 320, iY, AlignHCenter|UseShadow, C_LIGHTGRAY, gamescreen );
-	iY += iYIncrement + 10;
+	DrawTextMSZ( "Press Escape to abort", inkFont, 320, 470-iYIncrement, AlignHCenter|UseShadow, C_LIGHTGRAY, gamescreen );
 
 	strcpy( acSide, Translate(a_iPlayerNumber ? "Left" : "Right") );
 	strcpy( acFormat, Translate("%s player-'%s'?") );
@@ -125,7 +93,7 @@ void InputKeys( int a_iPlayerNumber )
 		
 		// 2. INPUT THE NEW KEY
 		
-		enKey = GetKey();
+		enKey = GetKey( false );
 		
 		if ( SDLK_ESCAPE == enKey )
 		{
@@ -146,8 +114,10 @@ void InputKeys( int a_iPlayerNumber )
 		iY += iYIncrement;
 	}
 	
+	sge_Blit( poBackground, gamescreen, 0, 470-iYIncrement, 0, 470-iYIncrement, 640, 480 );
+	sge_UpdateRect( gamescreen, 0, 470-iYIncrement, 640, 480 );
 	DrawTextMSZ( "Thanks!", inkFont, 320, iY + 20, UseShadow | AlignCenter, C_WHITE, gamescreen );
-	GetKey();
+	GetKey( true );
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	SDL_Flip( gamescreen );
 }
@@ -205,10 +175,9 @@ bool MortalNetworkCheckKey()
 				return true;
 			
 			case SDL_KEYDOWN:
-			{
+			case SDL_JOYBUTTONDOWN:
 				return true;
-			}
-			break;
+				
 		}	// switch statement
 	}	// Polling events
 	
@@ -251,7 +220,7 @@ bool Connect( const char* a_pcHostname )
 		}
 		else
 		{
-			GetKey();
+			GetKey( true );
 		}
 	}
 
@@ -1007,11 +976,10 @@ int Menu::Run()
 			break;
 		}
 		
-		SDLKey enKey = GetKey();
+		SDLKey enKey = GetKey( true );
 		
 		if ( g_oState.m_bQuitFlag ||
 			SDLK_ESCAPE == enKey )
-		
 		{
 			m_bDone = true;
 			m_iReturnCode = -1;

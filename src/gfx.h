@@ -29,7 +29,7 @@ void			DrawGradientText( const char* text, _sge_TTFont* font, int y,
 
 SDL_Color		MakeColor( Uint8 r, Uint8 g, Uint8 b );
 
-SDLKey			GetKey();
+SDLKey			GetKey( bool a_bTranslate );
 SDL_Surface*	LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset=0 );
 
 extern _sge_TTFont* titleFont;		// Largest font, for titles
