@@ -36,6 +36,7 @@
 #include "sge_tt_text.h"
 
 #ifndef _SGE_NOTTF
+#include <ft2build.h>
 #include <freetype/freetype.h>
 #include <freetype/ftoutln.h>
 #include <freetype/ttnameid.h>
