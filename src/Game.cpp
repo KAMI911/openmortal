@@ -33,6 +33,8 @@
 extern PerlInterpreter*	my_perl;
 
 
+int Game::mg_iBackgroundNumber = 1;
+
 /*
 
 GAME PALETTE
@@ -93,7 +95,15 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 	m_bIsReplay = a_bIsReplay;
 	m_bDebug = a_bDebug;
 	
-	m_poBackground = LoadBackground( "level1.png", 64 );
+	char acFilename[1024];
+	sprintf( acFilename, "level%d.png", mg_iBackgroundNumber++ );
+	m_poBackground = LoadBackground( acFilename, 64 );
+	if ( NULL == m_poBackground )
+	{
+		mg_iBackgroundNumber = 1;
+		m_poBackground = LoadBackground( "level1.png", 64 );
+	}
+	
 	m_poDoodads = LoadBackground( "Doodads.png", 48, 64 );
 	
 	m_aiRoundsWonByPlayer[0] = m_aiRoundsWonByPlayer[1] = 0;
@@ -578,12 +588,12 @@ void Game::DoOneRound()
 	g_oBackend.PerlEvalF( "GameStart(%d,%d);", g_oState.m_iHitPoints, m_bDebug );
 	
 	int iKoFrame = -1;
-	double dGameTime = 2 * 1000;
+	double dGameTime = 2 * 1000;	// Only for the "greeting phase", the real gametime will be set after.
 	int iThisTick, iLastTick, iGameSpeed;
 	bool bHurryUp = false;
 	bool bReplayAfter = true;
 	
-	iGameSpeed = 12;
+	iGameSpeed = g_oState.m_iGameSpeed;
 	iThisTick = SDL_GetTicks() / iGameSpeed;
 	iLastTick = iThisTick - 1;
 	
@@ -591,7 +601,7 @@ void Game::DoOneRound()
 
 	// 1. DO THE NORMAL GAME ROUND and HURRYUP
 	
-	while ( dGameTime > 0 )
+	while ( dGameTime >= 0 )
 	{
 		
 		// 1. Wait for the next tick (on extremely fast machines..)
@@ -610,7 +620,7 @@ void Game::DoOneRound()
 		
 		if ( Ph_START == m_enGamePhase )
 		{
-			if ( dGameTime < 0 )
+			if ( dGameTime <= 0 )
 			{
 				m_enGamePhase = Ph_NORMAL;
 				dGameTime = g_oState.m_iGameTime * 1000;
@@ -631,7 +641,7 @@ void Game::DoOneRound()
 				dGameTime = 10 * 1000;
 				iKoFrame = m_aReplayOffsets.size();
 			}
-			else if ( dGameTime < 0 )
+			else if ( dGameTime <= 0 )
 			{
 				m_enGamePhase = Ph_TIMEUP;
 				TimeUp();

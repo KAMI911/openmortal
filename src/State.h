@@ -30,6 +30,7 @@ struct SState
 	
 	int		m_iGameTime;		// Time of rounds in seconds.
 	int		m_iHitPoints;		// The initial number of hit points.
+	int		m_iGameSpeed;		// The speed of the game (fps = 1000/GameSpeed)
 	
 	bool	m_bFullscreen;		// True in fullscreen mode.
 	
@@ -50,6 +51,7 @@ struct SState
 		
 		m_iGameTime = 60;
 		m_iHitPoints = 100;
+		m_iGameSpeed = 12;
 		
 		#ifdef _WINDOWS
 			#ifdef _DEBUG

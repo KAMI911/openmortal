@@ -30,6 +30,7 @@ MENU_UNKNOWN,
 		MENU_HARD,
 	MENU_MULTI_PLAYER,
 	MENU_OPTIONS,
+		MENU_GAME_SPEED,
 		MENU_GAME_TIME,			//	( :30 - 5:00 )
 		MENU_TOTAL_HIT_POINTS,	// ( 25 - 1000 )
 		MENU_SOUND,
@@ -52,6 +53,8 @@ const char* g_ppcGameTime[] = { "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", 
 const int g_piGameTime[] = { 30, 45, 60, 75, 90, 105, 120, 180, 300 };
 const char* g_ppcHitPoints[] = { "BABY", "VERY LOW", "LOW", "NORMAL", "HIGH", "VERY HIGH", "NEAR IMMORTAL", NULL };
 const int g_piHitPoints[] = { 1, 10, 50, 100, 150, 200, 500 };
+const char* g_ppcGameSpeed[] = { "SNAIL RACE", "SLOW", "NORMAL", "TURBO", "KUNG-FU MOVIE", NULL };
+const int g_piGameSpeed[] = { 16, 14, 12, 10, 8 };
 const char* g_ppcChannels[] = { "MONO", "STEREO", NULL };
 const int g_piChannels[] = { 1, 2 };
 const char* g_ppcMixingRate[] = { "LOW", "MEDIUM", "HIGH", NULL };
@@ -455,6 +458,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		case MENU_OPTIONS:
 		{
 			Menu* poMenu = new Menu( "Options" );
+			poMenu->AddEnumMenuItem( "GAME SPEED: ", g_oState.m_iGameSpeed, g_ppcGameSpeed, g_piGameSpeed, MENU_GAME_SPEED );
 			poMenu->AddEnumMenuItem( "GAME TIME: ", g_oState.m_iGameTime, g_ppcGameTime, g_piGameTime, MENU_GAME_TIME );
 			poMenu->AddEnumMenuItem( "STAMINA: ", g_oState.m_iHitPoints, g_ppcHitPoints, g_piHitPoints, MENU_TOTAL_HIT_POINTS );
 			poMenu->AddMenuItem( "~SOUND", SDLK_s, MENU_SOUND );
@@ -507,7 +511,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 
 void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
 {
-	debug( "Menu::ItemActivated( %d )\n", a_iItemCode );
+	debug( "Menu::ItemChanged( %d, %d )\n", a_iItemCode, a_iValue );
 	
 	switch ( a_iItemCode )
 	{
@@ -522,6 +526,10 @@ void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
 			
 		case MENU_GAME_TIME:
 			g_oState.m_iGameTime = a_iValue;
+			break;
+			
+		case MENU_GAME_SPEED:
+			g_oState.m_iGameSpeed = a_iValue;
 			break;
 			
 		case MENU_TOTAL_HIT_POINTS:

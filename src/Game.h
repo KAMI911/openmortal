@@ -42,6 +42,9 @@ protected:
 	void InstantReplay( int a_iKoAt );
 	
 protected:
+	
+	static int			mg_iBackgroundNumber;
+
 	bool				m_bIsReplay;
 	bool				m_bDebug;
 	SDL_Surface*		m_poBackground;
