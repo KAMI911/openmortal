@@ -624,7 +624,7 @@ void COnlineChat::DoOnlineChat()
 		if ( NULL == m_poSocket ) break;
 		Update();
 		if ( NULL == m_poSocket ) break;
-		SDL_Delay( 100 );
+		SDL_Delay( 10 );
 
 		if ( g_oState.m_bQuitFlag ) break;
 

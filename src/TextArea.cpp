@@ -68,8 +68,9 @@ void CTextArea::AddString( const char* a_poText, int a_iColor )
 		for ( i=0; a_poText[i]; ++i )
 		{
 			oRect = sge_TTF_TextSize( m_poFont, a_poText, i );
-			if ( oRect.w > m_oClipRect.w )
+			if ( oRect.w > w )
 			{
+				if ( i>0 )--i;
 				break;
 			}
 		}
@@ -97,10 +98,13 @@ void CTextArea::AddString( const char* a_poText, int a_iColor )
 		
 		m_asRowTexts.push_front( std::string(a_poText,i) );
 		m_aiRowColors.push_front( a_iColor );
+		if ( m_iScrollOffset > 0 )
+		{
+			++m_iScrollOffset;
+		}
 		
 		a_poText += i;
-		
-		debug( "Added '%s', number of texts is %d\n", a_poText, m_asRowTexts.size() );
+		debug( "Added '%s', number of texts is %d\n", m_asRowTexts.front().c_str(), m_asRowTexts.size() );
 	}
 }
 

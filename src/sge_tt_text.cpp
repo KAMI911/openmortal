@@ -1479,7 +1479,7 @@ void CReadline::Restart( char *a_pcString, int a_iPos, int a_iLen,
 	m_piString[m_iPos+1]=0;
 	m_piString[m_iPos]=m_iCursor;
 	Redraw();
-	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+	SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY/2, SDL_DEFAULT_REPEAT_INTERVAL/2 );
 }
 
 
@@ -1659,6 +1659,8 @@ void CReadline::HandleKeyEvent( SDL_Event& a_roEvent )
 	}
 	
 	if( a_roEvent.key.keysym.unicode!=0
+		&& a_roEvent.key.keysym.unicode >=32
+		&& a_roEvent.key.keysym.unicode <=255
 		&& m_iMax != m_iLen )
 	{
 		m_iMax++;
