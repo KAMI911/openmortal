@@ -46,14 +46,84 @@ std::string GetConfigFilename()
 
 
 
+
+
+
+SState::SState()
+{
+	m_enGameMode = IN_DEMO;
+
+	m_bQuitFlag = false;
+	m_pcArgv0 = NULL;
+
+	m_iGameTime = 60;
+	m_iHitPoints = 100;
+	m_iGameSpeed = 12;
+
+	#ifdef _WINDOWS
+		#ifdef _DEBUG
+			m_bFullscreen = false;
+		#else
+			m_bFullscreen = true;
+		#endif
+	#else
+		m_bFullscreen = false;
+	#endif
+
+	m_iChannels = 2;
+	m_iMixingRate = MIX_DEFAULT_FREQUENCY;
+	m_iMixingBits = 2;
+	m_iMusicVolume = 50;
+	m_iSoundVolume = 100;
+
+	static const int aiDefaultKeys[2][9] = {
+  		{ SDLK_UP, SDLK_DOWN, SDLK_LEFT, SDLK_RIGHT, SDLK_PAGEDOWN,
+            SDLK_DELETE, SDLK_INSERT, SDLK_END, SDLK_HOME },
+  		{ SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_x,
+            SDLK_f, SDLK_r, SDLK_g, SDLK_t }
+	};
+
+	for ( int i=0; i<2; ++i )
+		for ( int j=0; j<9; ++j )
+			m_aiPlayerKeys[i][j] = aiDefaultKeys[i][j];
+
+	// Read the locale from the operating system
+	char* pcLocale = setlocale( LC_CTYPE, NULL );
+	debug( "The locale returned by the operating system is '%s'\n", pcLocale ? pcLocale : "NULL" );
+	
+	if ( NULL == pcLocale
+		|| strcmp( pcLocale, "C") == 0 )
+	{
+		// Try the 'GETENV' method
+		pcLocale = getenv( "LANG" );
+		debug( "The LANG envvar is '%s'\n", pcLocale ? pcLocale : "NULL" );
+	}
+
+	if ( NULL != pcLocale )
+	{
+		strncpy( m_acLanguage, pcLocale, 2 );
+		m_acLanguage[2] = 0;
+	}
+	else
+	{
+		strcpy( m_acLanguage, "en" );
+	}
+
+	strcpy( m_acLatestServer, "apocalypse.rulez.org" );
+	m_bServer = false;
+};
+
+
+
+
 void SState::ToggleFullscreen()
 {
 	m_bFullscreen = !m_bFullscreen;
-	
+
 	bool bPaletted = ( gamescreen->format->BitsPerPixel <= 8 );
 	SDL_Color aoPalette[256];
 	int iNumColors = 0;
-	
+
 	if ( bPaletted )
 	{
 		iNumColors = gamescreen->format->palette->ncolors;
@@ -66,17 +136,53 @@ void SState::ToggleFullscreen()
 			aoPalette[i].unused = 0;
 		}
 	}
-	
+
 	gamescreen = SDL_SetVideoMode( gamescreen->w, gamescreen->h,
-		gamescreen->format->BitsPerPixel, 
+		gamescreen->format->BitsPerPixel,
 		m_bFullscreen ? SDL_FULLSCREEN : SDL_SWSURFACE );
-	
+
 	if ( bPaletted )
 	{
 		SDL_SetPalette( gamescreen, SDL_LOGPAL | SDL_PHYSPAL, aoPalette, 0, iNumColors );
 	}
 }
 
+
+
+void SState::SetLanguage( const char* a_pcLanguage )
+{
+	if ( m_acLanguage != a_pcLanguage )
+	{
+		strncpy( m_acLanguage, a_pcLanguage, 9 );
+		m_acLanguage[9] = 0;
+	}
+	g_oBackend.PerlEvalF( "SetLanguage('%s');", m_acLanguage );
+	SV* poSv = get_sv("LanguageNumber", FALSE);
+	if (poSv)
+	{
+		m_iLanguageCode = SvIV( poSv );
+	}
+	else
+	{
+		m_iLanguageCode = 0;
+	}
+}
+
+
+
+void SState::SetServer( const char* a_pcServer )
+{
+	if ( a_pcServer )
+	{
+		strncpy( m_acLatestServer, a_pcServer, 255 );
+		m_acLatestServer[255] = 0;
+		m_bServer = false;
+	}
+	else
+	{
+		m_bServer = true;
+	}
+}
 
 
 void SState::Load()
@@ -94,6 +200,9 @@ void SState::Load()
 	poSv = get_sv("MIXINGBITS", FALSE); if (poSv) m_iMixingBits = SvIV( poSv );
 	poSv = get_sv("MUSICVOLUME", FALSE); if (poSv) m_iMusicVolume = SvIV( poSv );
 	poSv = get_sv("SOUNDVOLUME", FALSE); if (poSv) m_iSoundVolume = SvIV( poSv );
+	poSv = get_sv("LANGUAGE", FALSE); if (poSv) { strncpy( m_acLanguage, SvPV_nolen( poSv ), 9 ); m_acLanguage[9] = 0; }
+	poSv = get_sv("LATESTSERVER", FALSE); if (poSv) { strncpy( m_acLatestServer, SvPV_nolen( poSv ), 255 ); m_acLanguage[255] = 0; }
+	poSv = get_sv("SERVER", FALSE); if (poSv) m_bServer = SvIV( poSv );
 	
 	char pcBuffer[1024];
 	for ( int i=0; i<2; ++i )
@@ -127,6 +236,9 @@ void SState::Save()
 	oStream << "MIXINGBITS=" << m_iMixingBits << '\n';
 	oStream << "MUSICVOLUME=" << m_iMusicVolume << '\n';
 	oStream << "SOUNDVOLUME=" << m_iSoundVolume << '\n';
+	oStream << "LANGUAGE=" << m_acLanguage << '\n';
+	oStream << "LATESTSERVER=" << m_acLatestServer << '\n';
+	oStream << "SERVER=" << m_bServer << '\n';
 	
 	for ( int i=0; i<2; ++i )
 	{

@@ -82,7 +82,7 @@ void FlyingChars::DequeueText()
 	
 	EnqueuedText& oEnqueuedText = m_oEnqueuedTexts.front();
 	
-	m_pcText = oEnqueuedText.m_pcText;
+	m_pcText = (unsigned char*) oEnqueuedText.m_pcText;
 	m_enAlignment = oEnqueuedText.m_enAlignment;
 	m_iTextOffset = 0;
 	
@@ -112,7 +112,6 @@ void FlyingChars::Advance( int a_iNumFrames )
 	m_iTimeToNextLine -= a_iNumFrames;
 	if ( m_iTimeToNextLine < 0 )
 	{
-		m_iTimeToNextLine += g_iLineTime;
 		m_iDelay = 0;
 		
 		if ( !m_pcText 
@@ -122,6 +121,7 @@ void FlyingChars::Advance( int a_iNumFrames )
 		}
 		else
 		{
+			m_iTimeToNextLine += g_iLineTime;
 			AddNextLine();
 		}
 	}
@@ -223,7 +223,7 @@ void FlyingChars::Draw()
 		}
 		else
 		{
-			int iOfs = (roLetter.m_cLetter-33)*2 + 1;
+			int iOfs = ( ((unsigned int)roLetter.m_cLetter)-33)*2 + 1;
 			iSrcX = m_poFont->CharPos[iOfs];
 			iSrcW = m_poFont->CharPos[iOfs+1] - iSrcX;
 		}
@@ -258,7 +258,7 @@ void FlyingChars::AddNextLine()
 	}
 	
 	SDL_Rect oRect;
-	const char* pcLineStart = m_pcText + m_iTextOffset;
+	const unsigned char* pcLineStart = m_pcText + m_iTextOffset;
 	if ( '\n' == *pcLineStart ) ++pcLineStart;
 	while (*pcLineStart == 32 || *pcLineStart == '\t' ) ++pcLineStart;
 	if ( 0 == *pcLineStart )
@@ -269,8 +269,8 @@ void FlyingChars::AddNextLine()
 	
 	// 2. CALCULATE LINE WIDTH AND CONTENTS
 	
-	const char* pcLineEnd = pcLineStart;
-	const char* pcNextWord = pcLineEnd;
+	const unsigned char* pcLineEnd = pcLineStart;
+	const unsigned char* pcNextWord = pcLineEnd;
 	int iNumWords = 0;
 	int iLineWidth = 0;
 	int iWidth = 0;
@@ -347,7 +347,7 @@ void FlyingChars::AddNextLine()
 	FlyingLetter oLetter;
 	oLetter.m_iDY = m_iLastLineY * 2;
 	
-	for ( const char *pcChar = pcLineStart; pcChar<pcLineEnd; ++pcChar )
+	for ( const unsigned char *pcChar = pcLineStart; pcChar<pcLineEnd; ++pcChar )
 	{
 		if ( *pcChar < 33 ) 
 		{
@@ -363,7 +363,7 @@ void FlyingChars::AddNextLine()
 			continue;
 		}
 		
-		oRect = sge_BF_TextSize( m_poFont, pcLineStart, pcChar-pcLineStart );
+		oRect = sge_BF_TextSize( m_poFont, (char*) pcLineStart, pcChar-pcLineStart );
 		
 		oLetter.m_iDX = (int) dX * 2;
 		oLetter.m_iX = rand() % (gamescreen->w * 2);
@@ -383,7 +383,7 @@ void FlyingChars::AddNextLine()
 }
 
 
-int FlyingChars::GetCharWidth( char a_cChar )
+int FlyingChars::GetCharWidth( unsigned char a_cChar )
 {
 	if ( a_cChar == 0 )
 	{
@@ -397,7 +397,7 @@ int FlyingChars::GetCharWidth( char a_cChar )
 		}
 		else
 		{
-			int iOfs = (a_cChar - 33) * 2 + 1;
+			int iOfs = ( ((unsigned int)a_cChar) - 33) * 2 + 1;
 			return m_poFont->CharPos[iOfs+1] - m_poFont->CharPos[iOfs] + m_iFontDisplacement;
 		}
 	}

@@ -20,7 +20,8 @@
 #include "gfx.h"
 #include "RlePack.h"
 #include "Backend.h"
-#include "Demo.h"
+#include "State.h"
+#include "FighterStats.h"
 
 #include "MszPerl.h"
 
@@ -79,14 +80,14 @@ FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 	m_poStaff = NULL;
 	
 	m_poBackground = LoadBackground( "FighterStats.png", 64 );
-	DrawGradientText( "Figher Stats", titleFont, 10, m_poBackground );
+	DrawGradientText( "Fighter Stats", titleFont, 10, m_poBackground );
 
 	SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
 	SDL_Flip( gamescreen );
 	
 	if ( mg_iLastFighter < 0 )
 	{
-		// First run; create shuffled array of figthers.
+		// First run; create shuffled array of fighters.
 		mg_iLastFighter = 0;
 		
 		int i, j;
@@ -142,52 +143,52 @@ FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 	s = SvPV_nolen(get_sv("Team", FALSE ));
 	sTag = SvPV_nolen( *av_fetch( StatTags, 1, false ) );
 	int i = DrawTextMSZ( sTag, font, LEFTMARGIN, y+=LINEHEIGHT, 0, C_YELLOW, m_poBackground );
-	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground, false );
 
 	s = SvPV_nolen(get_sv("Style", FALSE ));
 	sTag = SvPV_nolen( *av_fetch( StatTags, 2, false ) );
 	i = DrawTextMSZ( sTag, font, LEFTMARGIN2, y, 0, C_YELLOW, m_poBackground );
-	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground, false );
 
 	s = SvPV_nolen(get_sv("Age", FALSE ));
 	sTag = SvPV_nolen( *av_fetch( StatTags, 3, false ) );
 	i = DrawTextMSZ( sTag, font, LEFTMARGIN, y+=LINEHEIGHT, 0, C_YELLOW, m_poBackground );
-	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground, false );
 
 	s = SvPV_nolen(get_sv("Weight", FALSE ));
 	sTag = SvPV_nolen( *av_fetch( StatTags, 4, false ) );
 	i = DrawTextMSZ( sTag, font, LEFTMARGIN2, y, 0, C_YELLOW, m_poBackground );
-	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground, false );
 
 	s = SvPV_nolen(get_sv("Height", FALSE ));
 	sTag = SvPV_nolen( *av_fetch( StatTags, 5, false ) );
 	i = DrawTextMSZ( sTag, font, LEFTMARGIN, y+=LINEHEIGHT, 0, C_YELLOW, m_poBackground );
-	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN+i, y, 0, C_ORANGE, m_poBackground, false );
 
 	s = SvPV_nolen(get_sv("Shoe", FALSE ));
 	sTag = SvPV_nolen( *av_fetch( StatTags, 6, false ) );
 	i = DrawTextMSZ( sTag, font, LEFTMARGIN2, y, 0, C_YELLOW, m_poBackground );
-	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground );
+	DrawTextMSZ( s, font, LEFTMARGIN2+i, y, 0, C_ORANGE, m_poBackground, false );
 
-	s = SvPV_nolen(get_sv("Story", FALSE ));
+	m_sStory = SvPV_nolen(get_sv("Story", FALSE ));
 	SDL_Rect oFlyingRect;
 	oFlyingRect.x = LEFTMARGIN; 
 	oFlyingRect.y = y+DESCMARGIN;
 	oFlyingRect.w = gamescreen->w - oFlyingRect.x - 20;
 	oFlyingRect.h = gamescreen->h - oFlyingRect.y - 10;
 	m_poFlyingChars = new FlyingChars( creditsFont, oFlyingRect );
-	m_poFlyingChars->AddText( s, FlyingChars::FC_AlignJustify, false );
+	m_poFlyingChars->AddText( m_sStory.c_str(), FlyingChars::FC_AlignJustify, false );
 
 	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{
-		s = SvPV_nolen(get_sv("Keys", TRUE ));
+		m_sKeys = SvPV_nolen(get_sv("Keys", TRUE ));
 		m_poFlyingChars->AddText( "\nKEYS\n", FlyingChars::FC_AlignCenter, true );
-		m_poFlyingChars->AddText( s, FlyingChars::FC_AlignCenter, true );
+		m_poFlyingChars->AddText( m_sKeys.c_str(), FlyingChars::FC_AlignCenter, true );
 	}
 	else
 	{
-		m_poFlyingChars->AddText( "Unfortunately this figther is not yet playable.",
-			FlyingChars::FC_AlignLeft, true );
+		m_sKeys = Translate("Unfortunately this fighter is not yet playable.");
+		m_poFlyingChars->AddText( m_sKeys.c_str(), FlyingChars::FC_AlignLeft, true );
 	}
 }
 
@@ -241,6 +242,12 @@ int FighterStatsDemo::Advance( int a_iNumFrames, bool a_bFlip )
 			}
 		}
 	}
+	
+	if ( SState::IN_DEMO != g_oState.m_enGameMode )
+	{
+		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 );
+	}
+	
 	SDL_Flip( gamescreen );
 	
 	return (m_iTimeLeft > 0) ? 0 : 1;

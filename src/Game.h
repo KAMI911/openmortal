@@ -40,6 +40,8 @@ protected:
 	void HurryUp();
 	void TimeUp();
 	void InstantReplay( int a_iKoAt );
+
+	bool IsNetworkGame();
 	
 protected:
 	

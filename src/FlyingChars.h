@@ -25,7 +25,7 @@ struct FlyingLetter
 	int m_iDX, m_iDY;
 	int m_iDelay;
 	int m_iTime;
-	char m_cLetter;
+	unsigned char m_cLetter;
 };
 
 
@@ -53,7 +53,7 @@ public:
 	
 protected:
 	void AddNextLine();
-	int GetCharWidth( char a_cChar );
+	int GetCharWidth( unsigned char a_cChar );
 	void DequeueText();
 
 protected:
@@ -79,7 +79,7 @@ protected:
 	int							m_iTimeToNextLine;
 
 	SDL_Rect					m_oRect;	
-	const char*					m_pcText;
+	const unsigned char*		m_pcText;
 	TextAlignment				m_enAlignment;
 	int							m_iTextOffset;
 	int							m_iLastLineY;

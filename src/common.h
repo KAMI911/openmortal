@@ -30,6 +30,8 @@ void DoMenu( bool a_bDrawBackground );
 void GameOver( int a_iPlayerWon );
 void DoDemos();
 
+const char* Translate( const char* a_pcText );
+const char* TranslateUTF8( const char* a_pcText );
 
 #define C_BLACK			240
 #define C_BLUE			241

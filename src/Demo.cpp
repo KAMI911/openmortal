@@ -15,7 +15,8 @@
 #include "gfx.h"
 #include "common.h"
 #include "Backend.h"
-#include "Demo.h"
+#include "RlePack.h"
+#include "FighterStats.h"	// #includes Demo.h
 
 
 
@@ -193,49 +194,21 @@ public:
 		oRect.y = 100; oRect.h = 350;
 		
 		m_poFlyingChars = new FlyingChars( creditsFont, oRect );
-		m_poFlyingChars->AddText( "OPENMORTAL CREDITS\n\n\n"
-			"-- THE OPENMORTAL TEAM ARE --\n\n"
-		  		"CODING - UPi\n"
-				"MUSIC - Oedipus\n"
-				"GRAPHICS - UPi\n"
-			"\n-- CAST --\n\n"
-				"Boxer - Zoli\n"
-				"Cumi - As himself\n"
-				"Descant - As himself\n"
-				"Fureszes Orult - Ambrus\n"
-				"Grizli - As himself\n"
-				"Kinga - As herself\n"
-				"Macy - As herself\n"
-				"Misi - As himself\n"
-				"Rising-san - Surba\n"
-				"Sirpi - As himself\n"
-				"Taka Ito - Bence\n"
-				"Tokeletlen Katona - Dani\n"
-				"Watasiwa Baka Janajo - Ulmar\n"
-				"Black Dark Evil Mage - UPi\n"
-			"\n-- HOSTING --\n\n"
-				"sourceforge.net\n"
-				"apocalypse.rulez.org\n"
-				"freshmeat.net\n"
-			"\nOpenMortal is Copyright 2003 of the OpenMortal Team\n"
-			"Distributed under the GNU General Public Licence Version 2\n\n",
-			FlyingChars::FC_AlignCenter, true );
-		m_poFlyingChars->AddText( "Thanks to Midway for not harrassing us with legal stuff so far, "
-			"even though we must surely violate at least 50 of their patents, international "
-			"copyrights and registered trademarks.\n\n"
-			"OpenMortal needs your help! If you can contribute music, graphics, improved code, "
-			"additional characters, cash, beer, pizza or any other consumable, please mail us "
-			"at upi@apocalypse.rulez.org! The same address is currently accepting comments and "
-			"fanmail too (hint, hint!).\n\n",
-			FlyingChars::FC_AlignJustify, true );
-		m_poFlyingChars->AddText( "Be sure to check out other stuff from\n"
-			"Apocalypse Production\n"
-			"and\n"
-			"Degec Entertainment\n\n",
-			FlyingChars::FC_AlignCenter, true );
+		
+		m_sText1 = Translate( "CreditsText1" );
+		m_sText2 = Translate( "CreditsText2" );
+		m_sText3 = Translate( "CreditsText3" );
+		
+		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignCenter, true );
+		m_poFlyingChars->AddText( m_sText2.c_str(), FlyingChars::FC_AlignJustify, true );
+		m_poFlyingChars->AddText( m_sText3.c_str(), FlyingChars::FC_AlignCenter, true );
 		
 		m_poFlyingChars->AddText( "\n\n\n\n\n\n:)", FlyingChars::FC_AlignRight, true );
 	}
+protected:
+	std::string m_sText1;
+	std::string m_sText2;
+	std::string m_sText3;
 };
 
 
@@ -253,18 +226,11 @@ public:
 		oRect.y = 50; oRect.h = gamescreen->h - 100;
 		
 		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
-		m_poFlyingChars->AddText( 
-			"We, the Gods of the Evil Killer Black Antipathic Dim (witted) Fire Mages "
-			"no longer tolerate the lack of evildoing.\n\n"
-			"We send them out on a "
-			"mission so diabolical, so evil that the world will never be the same "
-			"again!\n\n"
-			"We order our unworthy followers to "
-			"\nDESTROY THE SATURDAY\n"
-			"and plunge humanity into a dark age of 5 working days and 1 holiday "
-			"per week... FOREVER!\n\n\n\n\n\n\n\n\n",
-			FlyingChars::FC_AlignJustify, true );
+		m_sText1 = Translate( "Story1Text" );
+		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignJustify, true );
 	}
+protected:
+	std::string m_sText1;
 };
 
 
@@ -281,15 +247,11 @@ public:
 		oRect.y = 50; oRect.h = gamescreen->h - 100;
 
 		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
-		m_poFlyingChars->AddText(
-"Whenever EVIL looms on the horizon, the good guys are there to "
-"save the day. Son Goku, the protector of Earth and Humanity "
-"went to the rescue...\n\n"
-
-"Only to become ROADKILL on his way to the Mortal Szombat "
-"tournament! It was Cumi's first time behind the wheel, after all...\n\n\n\n\n\n\n\n\n",
-			FlyingChars::FC_AlignJustify, true );
+		m_sText1 = Translate( "Story2Text" );
+		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignJustify, true );
 	}
+protected:
+	std::string m_sText1;
 };
 
 
@@ -299,20 +261,80 @@ class MainScreenDemo: public Demo
 public:
 	MainScreenDemo()
 	{
-		m_iTimeLeft = 100;
-		
+		i = 0;
+		m_iTimeLeft = 50;
 		m_poBackground = LoadBackground( "Mortal.png", 240 );
+		std::string sStaffFilename = DATADIR;
+		sStaffFilename += "/characters/STAFF.DAT";
+		m_poPack = new RlePack( sStaffFilename.c_str(), 240 );
+		m_poPack->ApplyPalette();
+		SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
+		SDL_Flip( gamescreen );
+
+		int j, k, l;
+		for ( j=0; j<14; ++j )
+		{
+			m_aiOrder[j] = j;
+			m_bShown[j] = false;
+		}
+		for ( j=0; j<14; ++j )
+		{
+			k = rand() % 14;
+			l = m_aiOrder[j]; m_aiOrder[j] = m_aiOrder[k]; m_aiOrder[k] = l;
+		}
+	}
+
+	~MainScreenDemo()
+	{
+		delete m_poPack;
+		m_poPack = NULL;
 	}
 	
 	int Advance( int a_iNumFrames, bool a_bFlip )
 	{
+		static int x[14] = {
+			0, 26, 67, 125, 159, 209,
+			249, 289, 358, 397, 451, 489, 532, 161 };
+		static int y[14] = {
+			5, 4, 5, 5, 5, 7,
+			4, 0, 7, 5, 5, 6, 5, 243 };
+		
 		m_iTimeLeft -= a_iNumFrames;
-		Demo::Advance( a_iNumFrames, true );
-		return ( m_iTimeLeft <= 0 ) ? 1 : 0;
+
+		if ( m_iTimeLeft <= 0
+			&& i >= 14 )
+		{
+			return 1;
+		}
+
+		if ( m_iTimeLeft <= 0 )
+		{
+			m_bShown[ m_aiOrder[i] ] = true;
+			for ( int j=0; j<=14; ++j )
+			{
+				if ( m_bShown[j] )
+				{
+					m_poPack->Draw( j, x[j], y[j], false );
+				}
+			}
+			SDL_Flip( gamescreen );
+			++i;
+			m_iTimeLeft += 20;
+			if ( i >= 14 )
+			{
+				m_iTimeLeft += 50;
+			}
+		}
+		
+		return 0;
 	}
 	
 protected:
+	RlePack* m_poPack;
 	int m_iTimeLeft;
+	int i;
+	int m_aiOrder[14];
+	bool m_bShown[14];
 };
 
 
@@ -347,20 +369,28 @@ void DoReplayDemo()
 
 
 
+static bool g_bFirstTime = true;
+
+
 void DoDemos()
 {
 	#define DoDemos_BREAKONEND \
 		if ( g_oState.m_enGameMode != SState::IN_DEMO \
 				|| g_oState.m_bQuitFlag ) \
 			return;
+
+	if ( g_bFirstTime )
+	{
+		g_bFirstTime = false;
+	}
+	else
+	{
+		MainScreenDemo oDemo;
+		oDemo.Run();
+	}
 	
 	while (1)
 	{
-		DoDemos_BREAKONEND;
-		{
-			MainScreenDemo oDemo;
-			oDemo.Run();
-		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
 		DoDemos_BREAKONEND;
@@ -392,6 +422,11 @@ void DoDemos()
 		DoDemos_BREAKONEND;
 		{
 			CreditsDemo oDemo;
+			oDemo.Run();
+		}
+		DoDemos_BREAKONEND;
+		{
+			MainScreenDemo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;

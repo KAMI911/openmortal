@@ -25,6 +25,7 @@
 #include "State.h"
 #include "Game.h"
 #include "Audio.h"
+#include "MortalNetwork.h"
 
 
 #include "MszPerl.h"
@@ -94,16 +95,6 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 {
 	m_bIsReplay = a_bIsReplay;
 	m_bDebug = a_bDebug;
-	
-	/*char acFilename[1024];
-	sprintf( acFilename, "level%d.png", mg_iBackgroundNumber++ );
-	m_poBackground = LoadBackground( acFilename, 64 );
-	if ( NULL == m_poBackground )
-	{
-		mg_iBackgroundNumber = 1;
-		m_poBackground = LoadBackground( "level1.png", 64 );
-	}
-	*/
 	
 	m_poBackground = new Background();
 	m_poBackground->Load(mg_iBackgroundNumber++);
@@ -341,23 +332,24 @@ void Game::Draw()
 	{
 		char s[100];
 		sprintf( s, "%d", g_oBackend.m_iGameTime );
-		DrawTextMSZ( s, inkFont, 320, 10, AlignHCenter, C_LIGHTCYAN, gamescreen );
+		DrawTextMSZ( s, inkFont, 320, 10, AlignHCenter, C_LIGHTCYAN, gamescreen, false );
 	}
 	else if ( Ph_START == m_enGamePhase )
 	{
 		char s[100];
-		sprintf( s, "Round %d", m_iNumberOfRounds+1 );
-		DrawTextMSZ( s, inkFont, 320, 200, AlignHCenter, C_WHITE, gamescreen );
+		const char* format = TranslateUTF8( "Round %d" );
+		sprintf( s, format, m_iNumberOfRounds+1 );
+		DrawTextMSZ( s, inkFont, 320, 200, AlignHCenter, C_WHITE, gamescreen, false );
 	}
 	else if ( Ph_REWIND == m_enGamePhase )
 	{
 		DrawTextMSZ( "REW", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
-		sge_BF_textout( gamescreen, fastFont, "Press F1 to skip...", 230, 450 );
+		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 );
 	}
 	else if ( Ph_SLOWFORWARD == m_enGamePhase )
 	{
 		DrawTextMSZ( "REPLAY", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
-		sge_BF_textout( gamescreen, fastFont, "Press F1 to skip...", 230, 450 );
+		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 );
 	}
 	else if ( Ph_REPLAY == m_enGamePhase )
 	{
@@ -378,6 +370,12 @@ void Game::Draw()
                      GAME PROTECTED METHODS
 ***************************************************************************/
 
+
+
+bool Game::IsNetworkGame()
+{
+	return SState::IN_NETWORK == g_oState.m_enGameMode;
+}
 
 
 /**
@@ -403,6 +401,12 @@ void Game::Advance( int a_iNumFrames )
 		
 		g_oBackend.ReadFromString( sFrameDesc );
 		return;
+	}
+
+	if ( IsNetworkGame() )
+	{
+		bool bMaster = g_poNetwork->IsMaster();
+		
 	}
 	
 	while ( a_iNumFrames > 0 )

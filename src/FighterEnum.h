@@ -45,7 +45,7 @@ is used for two things:
 
 \li In case both players choose the same fighter, player 2's fighter is
 tinted so they won't get confused.
-\li Some special effects (e.g. frozen) make the figther tinted as well.
+\li Some special effects (e.g. frozen) make the fighter tinted as well.
 
 The Tint of players is stored by PlayerSelect and applied by RlePack::SetTint().
 */

@@ -41,8 +41,58 @@ SV
 	*perl_doodad_text;
 
 SV
-	*perl_sound;
+	*perl_sound, *perl_Translated;
 
+
+
+/***************************************************************************
+                  		TRANSLATION SERVICES
+***************************************************************************/
+
+const char* Translate( const char* a_pcText )
+{
+	dSP ;
+	
+	ENTER ;
+	SAVETMPS ;
+	
+	PUSHMARK(SP) ;
+	XPUSHs(sv_2mortal(newSVpv(a_pcText, 0)));
+	PUTBACK ;
+	
+	call_pv("Translate", G_DISCARD);
+	FREETMPS ;
+	LEAVE ;
+	
+	if ( NULL == perl_Translated )
+	{
+		perl_Translated = get_sv("Translated", TRUE);
+	}
+	return SvPV_nolen( perl_Translated );
+}
+
+
+const char* TranslateUTF8( const char* a_pcText )
+{
+	dSP ;
+	
+	ENTER ;
+	SAVETMPS ;
+	
+	PUSHMARK(SP) ;
+	XPUSHs(sv_2mortal(newSVpv(a_pcText, 0)));
+	PUTBACK ;
+	
+	call_pv("Translate", G_DISCARD);
+	FREETMPS ;
+	LEAVE ;
+	
+	if ( NULL == perl_Translated )
+	{
+		perl_Translated = get_sv("Translated", TRUE);
+	}
+	return SvPVutf8_nolen( perl_Translated );
+}
 
 
 /***************************************************************************

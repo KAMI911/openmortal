@@ -18,10 +18,10 @@ struct SState
 	enum TGameMode {
 		IN_DEMO,
 		IN_SINGLE,
+		IN_NETWORK,
 		IN_MULTI,
 	} m_enGameMode;
-
-
+	
 	bool	m_bQuitFlag;		// true if quit event came
 	const char* m_pcArgv0;		// Set by main to argv[0]
 	
@@ -41,50 +41,19 @@ struct SState
 	int		m_iSoundVolume;		// Volume of sound effects; 0: off, 100: max
 	
 	int		m_aiPlayerKeys[2][9];	// Player keysyms
+	char	m_acLanguage[10];	// Language ID (en,hu,fr,es,..)
+	int		m_iLanguageCode;	// Non-persistend language code (set by backend based on the language)
 	
-	SState()
-	{
-		m_enGameMode = IN_DEMO;
-		
-		m_bQuitFlag = false;
-		m_pcArgv0 = NULL;
-		
-		m_iGameTime = 60;
-		m_iHitPoints = 100;
-		m_iGameSpeed = 12;
-		
-		#ifdef _WINDOWS
-			#ifdef _DEBUG
-				m_bFullscreen = false;
-			#else
-				m_bFullscreen = true;
-			#endif
-		#else
-			m_bFullscreen = false;
-		#endif
-		
-		m_iChannels = 2;
-		m_iMixingRate = MIX_DEFAULT_FREQUENCY;
-		m_iMixingBits = 2;
-		m_iMusicVolume = 50;
-		m_iSoundVolume = 100;
-		
-		static const int aiDefaultKeys[2][9] = {
-      		{ SDLK_UP, SDLK_DOWN, SDLK_LEFT, SDLK_RIGHT, SDLK_PAGEDOWN,
-                SDLK_DELETE, SDLK_INSERT, SDLK_END, SDLK_HOME },
-      		{ SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_x,
-                SDLK_f, SDLK_r, SDLK_g, SDLK_t }
-		};
-		
-		for ( int i=0; i<2; ++i )
-			for ( int j=0; j<9; ++j )
-				m_aiPlayerKeys[i][j] = aiDefaultKeys[i][j];
-
-	};
+	char	m_acLatestServer[256];
+	bool	m_bServer;
+	
+	SState();
 	
 	void Load();
 	void Save();
 	void ToggleFullscreen();
+	void SetLanguage( const char* a_pcLanguage );
+	void SetServer( const char* a_pcServer );
 };
 
 

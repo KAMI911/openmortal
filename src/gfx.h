@@ -22,10 +22,10 @@ enum GFX_Constants {
 };
 
 int				DrawTextMSZ( const char* text, _sge_TTFont* font, int x, int y,
-					int flags, int fg, SDL_Surface* target );
+					int flags, int fg, SDL_Surface* target, bool a_bTranslate = true );
 
 void			DrawGradientText( const char* text, _sge_TTFont* font, int y,
-					SDL_Surface* target );
+					SDL_Surface* target, bool a_bTranslate = true );
 
 SDL_Color		MakeColor( Uint8 r, Uint8 g, Uint8 b );
 

@@ -215,11 +215,14 @@ SDL_Rect sge_BF_textout(SDL_Surface *surface, sge_bmpFont *font, const char *str
 		if(!font->CharPos) /* Fixed width */
 			xsrc = string[i] * font->CharWidth;
 		else{              /* Variable width */
-			if(string[i]==' ' || (string[i]-33)>font->Chars || string[i]<33){
+			unsigned char c = string[i];
+			
+			if(c==' ' || (c-33)>font->Chars || c<33){
 				xdest += font->CharPos[2]-font->CharPos[1];
 				continue;
-			}	
-			ofs = (string[i]-33)*2+1;
+			}
+			
+			ofs = ( ((unsigned int)c)-33)*2+1;
 			xsrc = (font->CharPos[ofs]+font->CharPos[ofs-1])/2;
 			//font->CharWidth = (font->CharPos[ofs+2]+font->CharPos[ofs+1])/2-(font->CharPos[ofs]+font->CharPos[ofs-1])/2-1;
 			font->CharWidth = (font->CharPos[ofs+2]+font->CharPos[ofs+1])/2-(font->CharPos[ofs]+font->CharPos[ofs-1])/2;
@@ -238,7 +241,8 @@ SDL_Rect sge_BF_textout(SDL_Surface *surface, sge_bmpFont *font, const char *str
 		}
 	}
 
-	ret.x=x; ret.y=y; ret.w=xdest-x+font->CharWidth; ret.h=font->CharHeight;
+	//ret.x=x; ret.y=y; ret.w=xdest-x+font->CharWidth; ret.h=font->CharHeight;
+	ret.x=x; ret.y=y; ret.w=xdest-x+adv; ret.h=font->CharHeight;
 	
 	if(surface && doupdate)
 		sge_UpdateRect(surface, x, y, ret.w, ret.h);

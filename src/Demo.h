@@ -15,6 +15,7 @@ class FlyingChars;
 struct SDL_Surface;
 
 
+
 class Demo
 {
 public:
@@ -38,22 +39,6 @@ protected:
 
 
 
-class FighterStatsDemo: public Demo
-{
-public:
-	FighterStatsDemo( FighterEnum a_iFighter = UNKNOWN );
-	virtual ~FighterStatsDemo();
-	
-	int Advance( int a_iNumFrames, bool a_bFlip );
-	
-protected:
-	int				m_iTimeLeft;
-	FighterEnum		m_enFighter;
-	RlePack*		m_poStaff;
-	
-	static int mg_iLastFighter;		// index of the last fighter in the fighter order
-	static FighterEnum mg_aenFighterOrder[LASTFIGHTER-1];
-};
 
 
 #endif // DEMO_H

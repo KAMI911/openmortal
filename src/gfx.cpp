@@ -7,10 +7,15 @@
  ***************************************************************************/
 
 #include <string.h>
+#include <malloc.h>
+
 
 #include "SDL.h"
 #include "SDL_video.h"
 #include "SDL_image.h"
+
+
+
 #include "sge_tt_text.h"
 #include "sge_surface.h"
 
@@ -23,19 +28,49 @@
 #include "State.h"
 
 
-void sge_TTF_SizeText( _sge_TTFont*font, const char* string, int* x, int* y )
+Uint16 *UTF8_to_UNICODE(Uint16 *unicode, const char *utf8, int len);
+
+
+void sge_TTF_SizeText( _sge_TTFont*font, const char* text, int* x, int* y )
 {
-	SDL_Rect r = sge_TTF_TextSize( font, (char*) string );
+#ifdef MSZ_USES_UTF8
+	Uint16 *unicode_text;
+	int unicode_len;
+
+	/* Copy the UTF-8 text to a UNICODE text buffer */
+	unicode_len = strlen(text);
+	unicode_text = (Uint16 *)malloc( (unicode_len+1) * sizeof (Uint16) );
+	if ( unicode_text == NULL )
+	{
+		SDL_SetError("SGE - Out of memory");
+		*x = *y = 0;
+		return;
+	}
+	UTF8_to_UNICODE(unicode_text, text, unicode_len);
+	
+	/* Render the new text */
+	SDL_Rect r = sge_TTF_TextSizeUNI(font, unicode_text);
+
+	/* Free the text buffer and return */
+	free(unicode_text);
+#else
+	SDL_Rect r = sge_TTF_TextSize( font, text );
+#endif
 	*x = r.w;
 	*y = r.h;
 }
 
 int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
-	int fg, SDL_Surface* target )
+	int fg, SDL_Surface* target, bool a_bTranslate )
 {
     int retval = 0;
 
 	if (!string || !*string) return retval;
+
+	if ( a_bTranslate )
+	{
+		string = Translate( string );
+	}
 
 	if (flags & UseTilde)
 	{
@@ -83,7 +118,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 			*c2 = 0;
 
 			sge_TTF_SizeText( font, c1, &i, &j);
-			DrawTextMSZ( c1, font, x, y, flags, fg, target );
+			DrawTextMSZ( c1, font, x, y, flags, fg, target, false );
 			x += i;
 
 			// At this point, we're either at a ~ or end of the text (notend)
@@ -92,7 +127,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 			onechar[0]= *++c2;						// Could be 0, if ~ at end.
 			if (!onechar[0]) break;
 			sge_TTF_SizeText( font, onechar, &i, &j);
-			DrawTextMSZ( onechar, font, x, y, flags, C_LIGHTCYAN, target );
+			DrawTextMSZ( onechar, font, x, y, flags, C_LIGHTCYAN, target, false );
 			x += i;
 			retval += i;
 			c1 = c2+1;
@@ -116,11 +151,19 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 	//debug( "X: %d, Y: %d, W: %d, H: %d\n", dest.x, dest.y, dest.w, dest.h );
 	if ( flags & UseShadow )
 	{
+#ifdef MSZ_USES_UTF8
 		sge_tt_textout_UTF8( target, font, string, dest.x+2, dest.y+2+sge_TTF_FontAscent(font), C_BLACK, C_BLACK, 255 );
+#else
+		sge_tt_textout( target, font, string, dest.x+2, dest.y+2+sge_TTF_FontAscent(font), C_BLACK, C_BLACK, 255 );
+#endif
 	}
 
 	sge_TTF_AAOn();
+#ifdef MSZ_USES_UTF8
 	dest = sge_tt_textout_UTF8( target, font, string, dest.x, dest.y+sge_TTF_FontAscent(font), fg, C_BLACK, 255 );
+#else
+	dest = sge_tt_textout( target, font, string, dest.x, dest.y+sge_TTF_FontAscent(font), fg, C_BLACK, 255 );
+#endif
 	sge_TTF_AAOff();
 	
 	return dest.w;
@@ -128,9 +171,14 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 
 
 
-void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* target )
+void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* target, bool a_bTranslate )
 {
 	int i, j;
+
+	if ( a_bTranslate )
+	{
+		text = Translate( text );
+	}
 
 	// 1. CREATE OFFSCREEN SURFACE
 	
@@ -170,8 +218,9 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 	// 3. DRAW TEXT, APPLY BORDER, APPLY GRADIENT.
 
 	int y1 = sge_TTF_FontAscent(font);
-	sge_tt_textout_UTF8( surface, font, text,
+	sge_tt_textout( surface, font, text,
 		1, y1, 255, 0, 255);
+
 
 
 	for ( y=1; y<size.h-1; ++y )
@@ -219,6 +268,7 @@ SDL_Color MakeColor( Uint8 r, Uint8 g, Uint8 b )
 SDLKey GetKey()
 {
 	SDL_Event event;
+
 	
 	while (SDL_WaitEvent(&event))
 	{
