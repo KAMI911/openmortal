@@ -176,7 +176,7 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 	char* pcNext = ((char*)p->m_pData) + sizeof(SHeader);
 	char* pcEnd = ((char*)p->m_pData) + iFileSize;
 	
-	while ( pcNext < pcEnd )
+	while ( pcNext < pcEnd - 4 )
 	{
 		if ( 0 == strncmp( pcNext, "prop", 4 ) )
 		{

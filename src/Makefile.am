@@ -10,7 +10,7 @@ openmortal_SOURCES = Audio.cpp Backend.cpp common.cpp \
 EXTRA_DIST = Audio.h Backend.h common.h Demo.h FlyingChars.h gfx.h \
 	menu.h RlePack.h sge_bm_text.h sge_config.h sge_internal.h \
 	sge_primitives.h sge_surface.h sge_tt_text.h State.h \
-	Game.h FighterEnum.h PlayerSelect.h\
+	Game.h FighterEnum.h PlayerSelect.h MszPerl.h \
 	Audio.cpp Backend.cpp common.cpp \
 	Demo.cpp FighterStats.cpp FlyingChars.cpp Game.cpp gfx.cpp main.cpp \
 	menu.cpp PlayerSelect.cpp RlePack.cpp sge_bm_text.cpp \

@@ -190,7 +190,7 @@ sge_bmpFont* sge_BF_OpenFont(const char *file, Uint8 flags)
 // Draws string to surface with the selected font
 // Returns pos. and size of the drawn text
 //==================================================================================
-SDL_Rect sge_BF_textout(SDL_Surface *surface, sge_bmpFont *font, const char *string, Sint16 x, Sint16 y, int length)
+SDL_Rect sge_BF_textout(SDL_Surface *surface, sge_bmpFont *font, const char *string, Sint16 x, Sint16 y, int length, bool doupdate)
 {
 	SDL_Rect ret;  ret.x=0;ret.y=0;ret.w=0;ret.h=0;
 
@@ -240,7 +240,7 @@ SDL_Rect sge_BF_textout(SDL_Surface *surface, sge_bmpFont *font, const char *str
 
 	ret.x=x; ret.y=y; ret.w=xdest-x+font->CharWidth; ret.h=font->CharHeight;
 	
-	if(surface)
+	if(surface && doupdate)
 		sge_UpdateRect(surface, x, y, ret.w, ret.h);
 	
 	return ret;

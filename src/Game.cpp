@@ -26,8 +26,7 @@
 #include "Audio.h"
 
 
-#include <EXTERN.h>
-#include <perl.h>
+#include "MszPerl.h"
 
 
 extern PerlInterpreter*	my_perl;
@@ -124,7 +123,7 @@ int Game::Run()
 {
 	do
 	{
-		m_sReplayString.clear();
+		m_sReplayString = "";
 		m_aReplayOffsets.clear();
 		DoOneRound();
 		

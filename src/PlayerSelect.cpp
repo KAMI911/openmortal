@@ -25,10 +25,10 @@
 
 
 #define CHOOSERLEFT		158
-#define CHOOSERTOP		98
+#define CHOOSERTOP		74
 #define CHOOSERHEIGHT	80
 #define CHOOSERWIDTH	80
-#define CHOOSERROWS		4
+#define CHOOSERROWS		5
 #define CHOOSERCOLS		4
 
 #ifndef NULL
@@ -56,11 +56,21 @@ bool	done2	= false;
 */
 
 
+/*
 FighterEnum ChooserCells[CHOOSERROWS][CHOOSERCOLS] = {
 	{ ZOLI, UPI, CUMI, SIRPI },
 	{ ULMAR, MACI, BENCE, GRIZLI },
 	{ AMBRUS, DESCANT, SURBA, DANI },
 	{ UNKNOWN, KINGA, MISI, UNKNOWN },
+};
+*/
+
+FighterEnum ChooserCells[CHOOSERROWS][CHOOSERCOLS] = {
+	{ ZOLI, UPI, CUMI, SIRPI },
+	{ ULMAR, MACI, GRIZLI, DESCANT },
+	{ DANI, AMBRUS, BENCE, SURBA },
+	{ (FighterEnum)100, (FighterEnum)101, (FighterEnum)102, (FighterEnum)103 },
+	{ (FighterEnum)104, (FighterEnum)105, KINGA, MISI }
 };
 
 
@@ -110,8 +120,7 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 	};
 	*/
 	
-	if ( a_enFighter < UNKNOWN 
-		|| a_enFighter >= LASTFIGHTER )
+	if ( a_enFighter <= UNKNOWN )
 	{
 		return false;
 	}
@@ -133,22 +142,7 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 {
 	char a_pcFilename[FILENAME_MAX+1];
 	const char* s;
-
-	/*
-	switch (m_enFighter)
-	{
-		case ZOLI:		s = "ZOLIDATA.DAT"; break;
-		case UPI:		s = "UPIDATA.DAT"; break;
-		case ULMAR:		s = "ULMARDATA.DAT"; break;
-		case CUMI:		s = "CUMIDATA.DAT"; break;
-		case SIRPI:		s = "SIRPIDATA.DAT"; break;
-		case MACI:		s = "MACIDATA.DAT"; break;
-		case BENCE:		s = "BENCEDATA.DAT"; break;
-		case DESCANT:	s = "DESCANTDATA.DAT"; break;
-		case GRIZLI:	s = "GRIZLIDATA.DAT"; break;
-		default:		return NULL; break;
-	}
-	*/
+	
 	g_oBackend.PerlEvalF( "GetFighterStats(%d);", m_enFighter );
 	s = g_oBackend.GetPerlString( "Datafile" );
 
@@ -179,6 +173,10 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 	if ( a_iPlayer ) a_iPlayer = 1;		// It's 0 or 1.
 	
 	if ( m_aoPlayers[a_iPlayer].m_enFighter == a_enFighter )
+	{
+		return;
+	}
+	if ( !IsFighterAvailable( a_enFighter ) )
 	{
 		return;
 	}
@@ -253,7 +251,7 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 			if ( (riP % CHOOSERCOLS) < (CHOOSERCOLS-1) ) riP++;
 			break;
 		default:
-			if ( ChooserCells[riP/4][riP%4] )
+			if ( IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
 			{
 				rbDone = true;
 				
@@ -263,15 +261,13 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 			}
 	}
 
-	if ( !IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
-	{
-		riP = iOldP;
-	}
-
 	if ( iOldP != riP )
 	{
 		Audio->PlaySample("strange_quack.voc");
-		SetPlayer( a_iPlayer, ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+		if ( IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
+		{
+			SetPlayer( a_iPlayer, ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+		}
 	}
 }
 
@@ -470,6 +466,8 @@ void PlayerSelect::DoPlayerSelect()
 		over = g_oBackend.m_iGameOver;
 		
 		SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
+		if ( !m_bDone1) DrawRect( m_iP1, 250 );
+		if ( !m_bDone2) DrawRect( m_iP2, 253 );
 		
 		for ( i=0; i<2; ++i )
 		{
@@ -488,8 +486,6 @@ void PlayerSelect::DoPlayerSelect()
 				x, gamescreen->h - 30 );
 		}
 		
-		if ( !m_bDone1) DrawRect( m_iP1, 250 );
-		if ( !m_bDone2) DrawRect( m_iP2, 253 );
 		SDL_Flip( gamescreen );
 
 		if (over || g_oState.m_bQuitFlag || SState::IN_DEMO == g_oState.m_enGameMode) break;

@@ -55,7 +55,7 @@ struct SState
 		
 		#ifdef _WINDOWS
 			#ifdef _DEBUG
-				m_bFullScreen = false;
+				m_bFullscreen = false;
 			#else
 				m_bFullscreen = true;
 			#endif

@@ -32,7 +32,16 @@
 #include "RlePack.h"
 #include "Backend.h"
 #include "State.h"
+#include "Demo.h"
 
+
+#ifdef _WINDOWS
+
+#undef DATADIR                // GRRR.. windows keyword...
+#include <windows.h>
+#define DATADIR "../data"
+
+#endif
 
 _sge_TTFont* inkFont;
 _sge_TTFont* impactFont;
@@ -70,6 +79,7 @@ _sge_TTFont* LoadTTF( const char* a_pcFilename, int a_iSize )
 		Complain( ("Couldn't load font: " + sPath).c_str() );
 	}
 	
+
 	return poFont;
 }
 
@@ -172,14 +182,11 @@ int DrawMainScreen()
 	SDL_BlitSurface( background, NULL, gamescreen, &r );
 	SDL_Flip( gamescreen );
 
-	FighterEnum f[14] = {
-		UPI, ZOLI, SURBA, ULMAR, MISI, BENCE,
-		DESCANT, KINGA, GRIZLI, SIRPI, MACI, DANI, CUMI,
-		AMBRUS };
-	char* filename[14] = {
-		"UPi.pl", "Zoli.pl", NULL, "Ulmar.pl", NULL, "Bence.pl",
-		"Descant.pl", NULL, "Grizli.pl", "Sirpi.pl", "Maci.pl", NULL, "Cumi.pl",
-		NULL };
+	char* filename[15] = {
+		"Jacint.pl", "Jozsi.pl", "Agent.pl", "Mrsmith.pl",
+		"Sleepy.pl", "Tejszin.pl",
+		"UPi.pl", "Zoli.pl", "Ulmar.pl", "Bence.pl",
+		"Descant.pl", "Grizli.pl", "Sirpi.pl", "Macy.pl", "Cumi.pl" };
 	int x[14] = {
 		0, 26, 67, 125, 159, 209,
 		249, 289, 358, 397, 451, 489, 532, 161 };
@@ -189,17 +196,20 @@ int DrawMainScreen()
 		
 	int i;
 
-	for ( i=0; i<14; ++i )
+	g_oBackend.PerlEvalF( "eval( \"require '%s/characters/Ambrus.pl';\" )", DATADIR );
+	g_oBackend.PerlEvalF( "eval( \"require '%s/characters/Dani.pl';\" )", DATADIR );
+
+	for ( i=0; i<15; ++i )
 	{
 		pack.Draw( i, x[i], y[i], false );
 		SDL_Flip( gamescreen );
 		if ( filename[i] != NULL )
 		{
 			debug( "Loading fighter %s", filename[i] );
-			g_oBackend.PerlEvalF( "require '%s';", filename[i] );
+			g_oBackend.PerlEvalF( "eval( \"require '%s/characters/%s';\" )", DATADIR, filename[i] );
 		}
 	}
-
+	
 	int retval = 0;
 	i = 0;
 	SDL_Event event;
@@ -333,6 +343,8 @@ int main(int argc, char *argv[])
 			if ( iGameResult >= 0 )
 			{
 				GameOver( iGameResult );
+				FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );
+				oDemo.Run();		
 			}
 			if ( g_oState.m_bQuitFlag || g_oState.m_enGameMode == SState::IN_DEMO  ) break;
 		}
@@ -342,5 +354,8 @@ int main(int argc, char *argv[])
 	}
 	
 	g_oState.Save();
+	
+	SDL_Quit();
+	
 	return EXIT_SUCCESS;
 }

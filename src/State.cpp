@@ -15,9 +15,7 @@
 #include <fstream>
 
 #include "Backend.h"
-
-#include <EXTERN.h>
-#include <perl.h>
+#include "MszPerl.h"
 
 extern PerlInterpreter* my_perl;
 

@@ -22,8 +22,7 @@
 #include "Backend.h"
 #include "Demo.h"
 
-#include <EXTERN.h>
-#include <perl.h>
+#include "MszPerl.h"
 
 
 extern PerlInterpreter*	my_perl;
@@ -74,7 +73,7 @@ int FighterStatsDemo::mg_iLastFighter = -1;
 FighterEnum FighterStatsDemo::mg_aenFighterOrder[LASTFIGHTER-1];
 
 
-FighterStatsDemo::FighterStatsDemo()
+FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 {
 	m_iTimeLeft = 500;
 	m_poStaff = NULL;
@@ -105,8 +104,15 @@ FighterStatsDemo::FighterStatsDemo()
 		}
 	}
 	
-	mg_iLastFighter = (mg_iLastFighter+1) % (LASTFIGHTER-1);
-	m_enFighter = mg_aenFighterOrder[mg_iLastFighter];
+	if ( a_iFighter <= UNKNOWN )
+	{
+		mg_iLastFighter = (mg_iLastFighter+1) % (LASTFIGHTER-1);
+		m_enFighter = mg_aenFighterOrder[mg_iLastFighter];
+	}
+	else
+	{
+		m_enFighter = a_iFighter;
+	}
 
 	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{

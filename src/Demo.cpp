@@ -89,6 +89,8 @@ int Demo::AdvanceGame( int a_iNumFrames )
 
 int Demo::Run()
 {
+	SState::TGameMode enOriginalGameMode = g_oState.m_enGameMode;
+
 	int thisTick, lastTick, firstTick, gameSpeed;
 	SDL_Event event;
 	gameSpeed = 12;
@@ -137,6 +139,10 @@ int Demo::Run()
 						OnMenu();
 						break;
 					}
+					if ( event.key.keysym.sym == SDLK_F1 )
+					{
+						return 0;
+					}
 					for ( int i=0; i<2; ++i )
 					{
 						for ( int j=0; j<9; ++j )
@@ -151,7 +157,7 @@ int Demo::Run()
 			} // switch
 		} // while SDL_PollEvent
 
-		if ( g_oState.m_enGameMode != SState::IN_DEMO
+		if ( g_oState.m_enGameMode != enOriginalGameMode
 			|| g_oState.m_bQuitFlag )
 		{
 			return 1;
@@ -262,6 +268,30 @@ public:
 };
 
 
+class Story2Demo: public Demo
+{
+public:
+	Story2Demo()
+	{
+		m_poBackground = LoadBackground( "Story2.png", 240 );
+		SDL_UnlockSurface( m_poBackground );
+
+		SDL_Rect oRect;
+		oRect.x = 50; oRect.w = gamescreen->w - 100;
+		oRect.y = 50; oRect.h = gamescreen->h - 100;
+
+		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
+		m_poFlyingChars->AddText(
+"Whenever EVIL looms on the horizon, the good guys are there to "
+"save the day. Son Goku, the protector of Earth and Humanity "
+"went to the rescue...\n\n"
+
+"Only to become ROADKILL on his way to the Mortal Szombat "
+"tournament! It was Cumi's first time behind the wheel, after all...\n\n\n\n\n\n\n\n\n",
+			FlyingChars::FC_AlignJustify, true );
+	}
+};
+
 
 
 class MainScreenDemo: public Demo
@@ -340,6 +370,18 @@ void DoDemos()
 		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
+		DoDemos_BREAKONEND;
+		{
+			FighterStatsDemo oDemo;
+			oDemo.Run();
+		}
+		DoDemos_BREAKONEND;
+		DoReplayDemo();
+		DoDemos_BREAKONEND;
+		{
+			Story2Demo oDemo;
+			oDemo.Run();
+		}
 		DoDemos_BREAKONEND;
 		{
 			FighterStatsDemo oDemo;

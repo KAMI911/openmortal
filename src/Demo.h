@@ -41,7 +41,7 @@ protected:
 class FighterStatsDemo: public Demo
 {
 public:
-	FighterStatsDemo();
+	FighterStatsDemo( FighterEnum a_iFighter = UNKNOWN );
 	virtual ~FighterStatsDemo();
 	
 	int Advance( int a_iNumFrames, bool a_bFlip );

@@ -13,8 +13,7 @@
 
 #include <string>
 #include <stdarg.h>
-#include <EXTERN.h>
-#include <perl.h>
+#include "MszPerl.h"
 
 
 /***************************************************************************
@@ -106,8 +105,10 @@ bool Backend::Construct()
 	
 	std::string sFileName = DATADIR;
 	sFileName += "/script";
-	
+
+#ifndef _WINDOWS
 	chdir( sFileName.c_str() );
+#endif
 	
 	char *perl_argv[] = {"", "Backend.pl"};
 	my_perl = perl_alloc();
@@ -260,7 +261,7 @@ void Backend::ReadFromPerl()
 		}
 		else
 		{
-			oDoodad.m_sText.clear();
+			oDoodad.m_sText = "";
 		}
 	}
 	
