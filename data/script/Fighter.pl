@@ -195,6 +195,7 @@ sub Advance {
 			# LANDING
 			if ( $st->{SITU} eq 'Falling')
 			{
+				::AddEarthquake( $self->{PUSHY} / 20 );
 				push @::Sounds, ('splat.wav') if $self->{PUSHY} > 40;
 				# print "PUSHY = ", $self->{PUSHY}, "; ";
 				if ( $self->{PUSHY} > 30 )
@@ -470,7 +471,11 @@ sub HitEvent($$$)
 
 	# Handle the rest of the events.
 
-	if ( $event eq 'Uppercut' ) { push @::Sounds, ('evil_laughter.voc'); }
+	if ( $event eq 'Uppercut' ) 
+	{ 
+		push @::Sounds, ('evil_laughter.voc');
+		::AddEarthquake( 20 );
+	}
 	elsif ($event eq 'Groinhit') { push @::Sounds, ('woman_screams.voc'); }
 	 { push @::Sounds, ('thump3.voc'); }
 	
@@ -665,6 +670,13 @@ die "ERROR IN STATE $nextst" unless defined $st->{DEL};
 	if ( defined $st->{SOUND} )
 	{
 		push @::Sounds, ($st->{SOUND});
+	}
+	
+	# HANDLE THE CODE ATTRIBUTE
+	
+	if ( defined ($st->{CODE}) )
+	{
+		eval ($st->{CODE}); print $@ if $@;
 	}
 
 	# HANDLE DOODADS

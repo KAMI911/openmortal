@@ -67,6 +67,7 @@ DOODAD	string	A doodad is created at the beginning of this state. The string con
 SOUND	string	The sound effect associated with this state (if any);
 HITSND	string	The sound effect if the HIT is successful.
 MISSSND	string	The sound effect if the HIT fails.
+CODE	string	This code will be evaled at the beginning of this state.
 
 
 =cut
@@ -263,6 +264,7 @@ sub SetStateData($$$)
 	$state->{SITU} = $FrameDesc->{"SITU$suffix"} if defined $FrameDesc->{"SITU$suffix"};
 	$state->{DOODAD} = $FrameDesc->{"DOODAD$suffix"} if defined $FrameDesc->{"DOODAD$suffix"};
 	$state->{SOUND} = $FrameDesc->{"SOUND$suffix"} if defined $FrameDesc->{"SOUND$suffix"};
+	$state->{CODE} = $FrameDesc->{"CODE$suffix"} if defined $FrameDesc->{"CODE$suffix"};
 }
 
 

@@ -132,7 +132,7 @@ JumpStates( \%FrameLookup,
 { 'N'=>'Poke',			'DEL'=>5,	'S'=>'+specpunch,_specpunch',
 	'HIT'=>'Highhit' },
 { 'N'=>'Stomp',			'DEL'=>7,	'S'=>'+stomp',
-	'HIT'=>'Fall' },
+	'HIT'=>'Fall',		'CODE6'=>'::AddEarthquake(25);', 'SOUND6'=>'crashhh.voc' },
 { 'N'=>'Nunchaku',		'DEL'=>7,	'S'=>'+nunchaku',
 	'HIT'=>'Hit' },
 

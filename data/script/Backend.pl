@@ -58,6 +58,7 @@ $BgPosition	= $BgMax >> 1;					# The logical camera position
 $BgScrollEnabled = 1;						# Can the background scroll?
 $HitPointScale = 10;						# Scale the hit points by this.
 $NextDoodad = 0;							# The next doodad to process
+$Debug		= 0;
 
 
 require 'PlayerInput.pl';
@@ -155,7 +156,9 @@ sub JudgementStart
 	$BgScrollEnabled = 0;
 	$OverTimer = 0;
 	$JudgementMode = 1;
+	$Debug = 0;
 	($JudgementWinner) = @_;
+	ResetEarthquake();
 	
 	$time = 0;
 	$over = 0;
@@ -191,7 +194,9 @@ sub SelectStart
 	$BgPosition = 0;
 	$BgScrollEnabled = 0;
 	$OverTimer = 0;
-	$JudgementMode = 0;	
+	$JudgementMode = 0;
+	$Debug = 0;
+	ResetEarthquake();
 	
 	$time = 0;
 	$over = 0;
@@ -234,6 +239,8 @@ sub SetPlayerNumber
 	
 	$f->{NEXTST} = 'Stand';
 	$f->Update();
+	
+	$::PlayerName = $::FighterStats[$number]->{NAME};
 }
 
 
@@ -250,13 +257,69 @@ sub PlayerSelected
 
 =comment
 
+EARTHQUAKE RELATED METHODS
+
+=cut
+
+
+
+@QUAKEOFFSET = ( 0,  6, 11, 15, 
+				16, 15, 11,  6, 
+				 0, -6,-11,-15,
+			   -16,-15,-11, -6, 0, 6 );
+
+
+sub ResetEarthquake
+{
+	$QuakeAmplitude = 0;
+	$QuakeOffset = 0;
+	$QuakeX = 0;
+	$QuakeY = 0;
+}
+
+
+sub AddEarthquake
+{
+	my ($amplitude) = @_;
+	$QuakeAmplitude += $amplitude;
+	$QuakeAmplitude = 20 if ( $QuakeAmplitude > 20 );
+}
+
+
+sub AdvanceEarthquake
+{
+	if ( $QuakeAmplitude <= 0.2 )
+	{
+		$QuakeAmplitude = $QuakeX = $QuakeY = 0;
+		return;
+	}
+	
+	$QuakeAmplitude -= $QuakeAmplitude / 30 + 0.1;
+	$QuakeOffset = ( $QuakeOffset + 1 ) % 16;
+	$QuakeX = $QUAKEOFFSET[$QuakeOffset] * $QuakeAmplitude / 16;
+	$QuakeY = $QUAKEOFFSET[$QuakeOffset + 1] * $QuakeAmplitude / 16;
+	
+	$bgx -= $QuakeX;
+	$bgy -= $QuakeY;
+	$p1x += $QuakeX;
+	$p1y += $QuakeY;
+	$p2x += $QuakeX;
+	$p2y += $QuakeY;
+	
+	# Do not quake doodads for now.
+}
+
+
+
+=comment
+
 GAME BACKEND METHODS
 
 =cut
 
 sub GameStart
 {
-	my ( $MaxHP ) = @_;
+	my ( $MaxHP, $debug ) = @_;
 	
 	$bgx = ( $SCRWIDTH2 - $BGWIDTH2) >> 1;
 	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
@@ -264,6 +327,8 @@ sub GameStart
 	$BgPosition = $BgMax >> 1;
 	$BgScrollEnabled = 1;
 	$HitPointScale = 1000 / $MaxHP;
+	$Debug = $debug;
+	ResetEarthquake();
 	
 	$time = 0;
 	$Fighter1->Reset();
@@ -399,6 +464,9 @@ sub DoFighterEvents
 
 sub GameAdvance
 {
+	# $::adv += 1;
+	# return if ( $::adv % 3 );
+
 	my ($hit1, $hit2);
 	
 	$time += 4/1000;
@@ -470,6 +538,12 @@ sub GameAdvance
 	$p1x -= $bgx;
 	$p2x -= $bgx;
 	$bgy = 0;
+	
+	AdvanceEarthquake();
+	
+	# 5. DEBUG POLYGONS
+	
+	return unless $Debug;
 
 	$fr1 = $Fighter1->{FRAMES}->[ $Fighter1->{FR} ];
 	@p1head = @{ $fr1->{head} };
@@ -512,6 +586,8 @@ sub GameAdvance
 	{
 		undef @p2hit;
 	}
+	
+	
 }
 
 
