@@ -32,7 +32,7 @@ SV
 	*perl_bgx, *perl_bgy,
 	*perl_p1x, *perl_p1y, *perl_p1f, *perl_p1h,
 	*perl_p2x, *perl_p2y, *perl_p2f, *perl_p2h,
-	*perl_over, *perl_ko;
+	*perl_gametick, *perl_over, *perl_ko;
 
 SV
 	*perl_doodad_x, *perl_doodad_y,
@@ -270,6 +270,7 @@ void Backend::ReadFromPerl()
 {
 	if ( perl_bgx == NULL )
 	{
+		perl_gametick = get_sv("gametick", TRUE);
 		perl_bgx = get_sv("bgx", TRUE);
 		perl_bgy = get_sv("bgy", TRUE);
 		perl_p1x = get_sv("p1x", TRUE);
@@ -284,6 +285,7 @@ void Backend::ReadFromPerl()
 		perl_ko = get_sv("ko", TRUE);
 	}
 
+	m_iGameTick = SvIV( perl_gametick );
 	m_iBgX = SvIV( perl_bgx );
 	m_iBgY = SvIV( perl_bgy );
 	m_aoPlayers[0].m_iX = SvIV( perl_p1x );

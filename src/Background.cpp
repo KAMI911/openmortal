@@ -15,6 +15,24 @@
 #include <string>
 #include <fstream>
 
+
+
+/* Calculating background distance:
+
+BW: background width
+SW: screen width (640)
+AW: arena width (1920)
+D: distance
+
+(AW - SW) * D = BW - SW
+
+D = (BW - SW) / (AW - SW)
+D = (BW - 640) / 1280
+
+*/
+
+
+
 Background::Background()
 {
 	m_bOK = false;

@@ -12,10 +12,60 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 struct SDL_Surface;
 class Background;
 
+
+
+
+/**
+CKeyQueue is used to introduce a certain amount of negative or positive
+lag to keystrokes.
+
+The keys are sent to the backend and the remote site set to a future time.
+The time is measured in the backend's game ticks. So if the current key
+is pressed at game time 80, and enqueued to game time 90, there will be an
+artificial lag of 10 game ticks.
+
+The actual length of game ticks depends on the game speed (set in the menu),
+for a normal game its 1000/80 = 12.5 ms. This artificial lag is useful for
+network games.
+*/
+
+class CKeyQueue
+{
+public:
+	CKeyQueue();
+	~CKeyQueue();
+
+	void Reset();
+	void EnqueueKey( int a_iAtTime, int a_iPlayer, int a_iKey, bool a_bDown );
+	void DequeueKeys( int a_iToTime );
+
+protected:
+	struct SEnqueuedKey
+	{
+		int		iTime;
+		int		iPlayer;
+		int		iKey;
+		bool	bDown;
+	};
+
+	typedef std::list<SEnqueuedKey> TEnqueuedKeyList;
+	TEnqueuedKeyList m_oKeys;
+};
+
+
+
+
+/**
+The Game class is for running the frontend of a game.
+
+This involves reading the game state data from a source (be it a replay
+file or the backend), handling the keystrokes and network, etc.
+*/
 
 class Game
 {
@@ -45,6 +95,7 @@ protected:
 
 	bool IsNetworkGame();
 	bool IsMaster();
+	void ReadKeysFromNetwork();
 	
 protected:
 	
@@ -59,6 +110,8 @@ protected:
 	int					m_iNumberOfRounds;
 	int					m_iFrame;
 	int					m_iGameTime;
+	CKeyQueue			m_oKeyQueue;
+	int					m_iEnqueueDelay;
 	
 	std::string			m_sReplayString;
 	std::vector<int>	m_aReplayOffsets;

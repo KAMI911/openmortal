@@ -54,6 +54,12 @@ From   To   Num   Desc
 
 
 
+/***************************************************************************
+                     SFpsCounter CLASS
+***************************************************************************/
+
+
+
 struct SFpsCounter
 {
 	int m_iLastCheck;		// Last second then Tick() was called
@@ -73,7 +79,7 @@ struct SFpsCounter
 			m_iLastCheck = iSecond;
 			m_iFps = m_iFrames;
 			m_iFrames = 0;
-			fprintf( stderr, "%d ", m_iFps);
+//			fprintf( stderr, "%d ", m_iFps);
 		}
 		++m_iFrames;
 	}
@@ -83,6 +89,76 @@ struct SFpsCounter
 
 
 
+/***************************************************************************
+                     CKeyQueue CLASS
+***************************************************************************/
+
+
+CKeyQueue::CKeyQueue()
+{
+	Reset();
+}
+
+
+CKeyQueue::~CKeyQueue() {}
+
+
+void CKeyQueue::Reset()
+{
+	m_oKeys.clear();
+}
+
+
+void CKeyQueue::EnqueueKey( int a_iAtTime, int a_iPlayer, int a_iKey, bool a_bDown )
+{
+	debug( "EnqueueKey( %d, %d, %d, %d ) at %d\n", a_iAtTime, a_iPlayer, a_iKey, a_bDown, g_oBackend.m_iGameTick );
+	SEnqueuedKey oKey;
+	oKey.iTime		= a_iAtTime;
+	oKey.iPlayer	= a_iPlayer;
+	oKey.iKey		= a_iKey;
+	oKey.bDown		= a_bDown;
+	
+	if ( m_oKeys.size() == 0 )
+	{
+		m_oKeys.push_front( oKey );
+		return;
+	}
+	
+	// Try to find the appropriate time in the list
+	// We maintain the list so that it is sorted in a descending time
+	// order. This means that usually we enqueue keys at the front and
+	// dequeue them at the end, but sometimes a key is inserted in mid-queue.
+
+	TEnqueuedKeyList::iterator it;
+	for ( it=m_oKeys.begin(); it!=m_oKeys.end(); ++it )
+	{
+		if ( it->iTime <= a_iAtTime )
+		{
+			m_oKeys.insert( it, oKey );
+			return;
+		}
+	}
+
+	// a_iAtTime is smaller than any time in the queue, so it goes to the end.
+	
+	m_oKeys.push_back( oKey );
+}
+
+
+/**
+If
+*/
+void CKeyQueue::DequeueKeys( int a_iToTime )
+{
+	while ( m_oKeys.size() > 0
+		&& m_oKeys.back().iTime <= a_iToTime )
+	{
+		SEnqueuedKey& roKey = m_oKeys.back();
+		debug( "Dequeued key at %d tick: %d time, %d player, %d key, %d down\n", a_iToTime, roKey.iTime, roKey.iPlayer, roKey.iKey, roKey.bDown );
+		g_oBackend.PerlEvalF( roKey.bDown ? "KeyDown(%d,%d);" : "KeyUp(%d,%d);", roKey.iPlayer, roKey.iKey );
+		m_oKeys.pop_back();
+	}
+}
 
 
 
@@ -111,6 +187,7 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 	m_iNumberOfRounds = 0;
 
 	SDL_EnableUNICODE( 0 );
+	m_iEnqueueDelay = 10;
 }
 
 
@@ -474,7 +551,7 @@ void Game::Advance( int a_iNumFrames )
 		// Replay mode...
 
 		m_iFrame += a_iNumFrames;
-		if ( m_iFrame >= ((int)m_aReplayOffsets.size())-1 ) m_iFrame = m_aReplayOffsets.size() - 2;		
+		if ( m_iFrame >= ((int)m_aReplayOffsets.size())-1 ) m_iFrame = m_aReplayOffsets.size() - 2;
 		if ( m_iFrame <= 0 ) m_iFrame = 0;
 		std::string sFrameDesc = m_sReplayString.substr(
 			m_aReplayOffsets[m_iFrame],
@@ -484,27 +561,45 @@ void Game::Advance( int a_iNumFrames )
 		return;
 	}
 
+	static std::string sFrameDesc;
+	int i;
+	
 	if ( IsNetworkGame() )
 	{
-		bool bMaster = g_poNetwork->IsMaster();
+		g_poNetwork->SendGameTick( g_oBackend.m_iGameTick );
 		g_poNetwork->Update();
-		if (!bMaster)
+
+		int i = 0;
+
+		while ( g_poNetwork->GetGameTick() + m_iEnqueueDelay < g_oBackend.m_iGameTick + a_iNumFrames )
 		{
-			// We don't run our own backend, just pull the data from the network.
-			const char* pcRemoteBackend = g_poNetwork->GetLatestGameData();
-			g_oBackend.ReadFromString( pcRemoteBackend );
-			g_oBackend.PlaySounds();
-			return;
+			++i;
+			if ( i > 300 ) {
+				// Waited for too long..
+				g_poNetwork->Stop();
+			}
+			// The remote side is lagging behind.. Wait for it.
+			SDL_Delay( 10 );
+			g_poNetwork->Update();
+			if ( m_enInitialGameMode != g_oState.m_enGameMode ) {
+				return;
+			}
+		}
+
+		int iTime;
+		int iKey;
+		bool bPressed;
+		while ( g_poNetwork->GetKeystroke( iTime, iKey, bPressed ) )
+		{
+			debug( "Got GetKeystroke: %d, %d, %d at %d\n", iTime, iKey, bPressed, g_oBackend.m_iGameTick );
+			// g_oBackend.PerlEvalF( bPressed ? "KeyDown(%d,%d);" : "KeyUp(%d,%d);", 1, iKey );
+			m_oKeyQueue.EnqueueKey( iTime, IsMaster() ? 1 : 0, iKey, bPressed );
+			if ( iTime <= g_oBackend.m_iGameTick )
+			{
+				debug( "KEY ARRIVED TOO LATE!!!\n" );
+			}
 		}
 	}
-
-	// OK. The trick here is to collect the sound information, and then
-	// inject it into the last frame to send it to the remote side.
-	
-	static std::string sFrameDesc;
-	int iSounds = 0;
-	std::string asSounds[ MAXSOUNDS ];
-	int i;
 	
 	while ( a_iNumFrames > 0 )
 	{
@@ -512,52 +607,34 @@ void Game::Advance( int a_iNumFrames )
 		g_oBackend.AdvancePerl();
 		g_oBackend.ReadFromPerl();
 		g_oBackend.PlaySounds();
-
+		m_oKeyQueue.DequeueKeys( g_oBackend.m_iGameTick );
+		
 		g_oBackend.WriteToString( sFrameDesc );
 		m_sReplayString += sFrameDesc;
 		m_sReplayString += '\n';
 		m_aReplayOffsets.push_back( m_sReplayString.size() );
-
-		for ( i=0;
-			IsNetworkGame() && i<g_oBackend.m_iNumSounds && iSounds<MAXSOUNDS;
-			++i, ++iSounds )
-		{
-			asSounds[iSounds] = g_oBackend.m_asSounds[i];
-		}
-	}
-
-	if ( IsNetworkGame() && sFrameDesc.size() )
-	{
-		g_oBackend.m_iNumSounds = iSounds;
-		for ( i=0; i<iSounds; ++i )
-		{
-			g_oBackend.m_asSounds[i] = asSounds[i];
-		}
-		g_oBackend.WriteToString( sFrameDesc );
-		g_poNetwork->SendGameData( sFrameDesc.c_str() );
 	}
 }
 
 
 
 /** A helper method of ProcessEvents; it manages keypresses and releases of
-players.
+players. It is only called when keypresses are actually relevant for the
+backend (not during instant replay, etc).
 */
 
 void Game::HandleKey( int a_iPlayer, int a_iKey, bool a_bDown )
 {
-	if ( IsMaster() )
+	int iCurrentTick = g_oBackend.m_iGameTick + m_iEnqueueDelay;
+	
+	if ( IsNetworkGame() )
 	{
-		if ( IsNetworkGame() )
-		{
-			a_iPlayer = 0;
-		}
-		g_oBackend.PerlEvalF( a_bDown ? "KeyDown(%d,%d);" : "KeyUp(%d,%d);", a_iPlayer, a_iKey );
+		a_iPlayer = IsMaster() ? 0 : 1;
+
+		g_poNetwork->SendKeystroke( iCurrentTick, a_iKey, a_bDown );
 	}
-	else
-	{
-		g_poNetwork->SendKeystroke( a_iKey, a_bDown );
-	}
+	
+	m_oKeyQueue.EnqueueKey( iCurrentTick, a_iPlayer, a_iKey, a_bDown );
 }
 
 
@@ -633,7 +710,7 @@ int Game::ProcessEvents()
 						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
 							HandleKey( i, j, false );
-							g_oBackend.PerlEvalF( "KeyUp(%d,%d);", i, j );
+							//g_oBackend.PerlEvalF( "KeyUp(%d,%d);", i, j );
 							return 0;
 						}
 					}
@@ -706,7 +783,7 @@ void Game::InstantReplay( int a_iKoAt )
 		iLastTick = iThisTick;
 		if ( iCurrentFrame < 0 ) iCurrentFrame = 0;
 
-		m_iFrame = iCurrentFrame;		
+		m_iFrame = iCurrentFrame;
 		if ( m_iFrame >= ((int)m_aReplayOffsets.size())-1 ) m_iFrame = m_aReplayOffsets.size() - 2;		
 		if ( m_iFrame <= 0 ) m_iFrame = 0;
 		std::string sFrameDesc = m_sReplayString.substr(
@@ -749,11 +826,15 @@ void Game::DoOneRound()
 {
 	m_enGamePhase = Ph_START;
 	
-	g_oBackend.PerlEvalF( "GameStart(%d,%d);", g_oState.m_iHitPoints, m_bDebug );
+	g_oBackend.PerlEvalF( "GameStart(%d,%d);",
+		IsMaster() ? g_oState.m_iHitPoints : g_poNetwork->GetGameParams().iHitPoints,
+		m_bDebug );
+	g_oBackend.ReadFromPerl();
 
 	if ( IsNetworkGame() )
 	{
 		g_poNetwork->SynchStartRound();
+		g_poNetwork->SendGameTick( g_oBackend.m_iGameTick-1 );
 	}
 
 	int iKoFrame = -1;
@@ -762,9 +843,10 @@ void Game::DoOneRound()
 	bool bHurryUp = false;
 	bool bReplayAfter = true;
 	
-	iGameSpeed = g_oState.m_iGameSpeed;
+	iGameSpeed = IsMaster() ? g_oState.m_iGameSpeed : g_poNetwork->GetGameParams().iGameSpeed;
 	iThisTick = SDL_GetTicks() / iGameSpeed;
 	iLastTick = iThisTick - 1;
+	m_oKeyQueue.Reset();
 	
 	oFpsCounter.Reset();
 	
@@ -797,77 +879,50 @@ void Game::DoOneRound()
 		// NORMAL -> TIMEUP
 		// bHurryUp flag can be set during NORMAL phase
 
-		if ( IsMaster() )
+		if ( Ph_START == m_enGamePhase )		// Check for the end of the START phase
 		{
-			if ( Ph_START == m_enGamePhase )		// Check for the end of the START phase
+			if ( dGameTime <= 0 )
 			{
-				if ( dGameTime <= 0 )
-				{
-					m_enGamePhase = Ph_NORMAL;
-					dGameTime = g_oState.m_iGameTime * 1000;
-				}
-			}
-			else if ( Ph_NORMAL == m_enGamePhase )	// Check for the end of the NORMAL phase
-			{
-				if ( dGameTime < 10 * 1000 
-					&& !bHurryUp )
-				{
-					bHurryUp = true;
-					g_poNetwork->SendHurryup( 1 );
-					HurryUp();
-					iGameSpeed = iGameSpeed * 3 / 4;
-				}
-				if ( g_oBackend.m_bKO )
-				{
-					m_enGamePhase = Ph_KO;
-					dGameTime = 10 * 1000;
-					iKoFrame = m_aReplayOffsets.size();
-				}
-				else if ( dGameTime <= 0 )
-				{
-					m_enGamePhase = Ph_TIMEUP;
-					g_poNetwork->SendHurryup( 2 );
-					TimeUp();
-					break;
-				}
-			}
-			
-			m_iGameTime = (int) ((dGameTime + 500.0) / 1000.0);
-			
-			if ( IsNetworkGame() )
-			{
-				g_poNetwork->SendGameTime( m_iGameTime, m_enGamePhase );
+				m_enGamePhase = Ph_NORMAL;
+				dGameTime = (IsMaster() ? g_oState.m_iGameTime : g_poNetwork->GetGameParams().iGameTime) * 1000;
 			}
 		}
-		else
+		else if ( Ph_NORMAL == m_enGamePhase )	// Check for the end of the NORMAL phase
 		{
-			m_iGameTime = g_poNetwork->GetGameTime();
-			m_enGamePhase = (TGamePhaseEnum) g_poNetwork->GetGamePhase();
-			dGameTime = 1000.0;	// ignored.
-			switch (g_poNetwork->GetHurryup() )
+			if ( dGameTime < 10 * 1000 
+				&& !bHurryUp )
 			{
-				case 1: HurryUp(); break;
-				case 2: TimeUp(); break;
+				bHurryUp = true;
+				g_poNetwork->SendHurryup( 1 );
+				HurryUp();
+				iGameSpeed = iGameSpeed * 3 / 4;
+			}
+			if ( g_oBackend.m_bKO )
+			{
+				m_enGamePhase = Ph_KO;
+				dGameTime = 10 * 1000;
+				iKoFrame = m_aReplayOffsets.size();
+			}
+			else if ( dGameTime <= 0 )
+			{
+				m_enGamePhase = Ph_TIMEUP;
+				g_poNetwork->SendHurryup( 2 );
+				TimeUp();
+				break;
 			}
 		}
+			
+		m_iGameTime = (int) ((dGameTime + 500.0) / 1000.0);
 		
 		iLastTick = iThisTick;
+		
+		// ProcessEvents will read keyboard/gamepad input
+		// It will also transmit them to the remote side in a network game.
 		
 		if ( ProcessEvents() || g_oState.m_bQuitFlag )
 		{
 			bReplayAfter = false;
 			break;
-		}
-
-		if ( IsNetworkGame() && IsMaster() )
-		{
-			int iKey;
-			bool bPressed;
-			while ( g_poNetwork->GetKeystroke( iKey, bPressed ) )
-			{
-				debug( "Got GetKeystroke: %d, %d\n", iKey, bPressed );
-				g_oBackend.PerlEvalF( bPressed ? "KeyDown(%d,%d);" : "KeyUp(%d,%d);", 1, iKey );
-			}
 		}
 		
 		oFpsCounter.Tick();
@@ -913,6 +968,7 @@ void Game::DoOneRound()
 		
 		if ( IsNetworkGame() )
 		{
+			g_poNetwork->SendGameTick( g_oBackend.m_iGameTick + m_iEnqueueDelay * 100 );
 			g_poNetwork->SendRoundOver( iWhoWon, m_iNumberOfRounds > 0 );
 		}
 	}

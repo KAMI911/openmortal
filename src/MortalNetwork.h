@@ -11,6 +11,7 @@
 #define MORTALNETWORK_H
 
 #include "FighterEnum.h"
+#include "SDL/SDL_types.h"
 
 
 /** Mortal Network messages:
@@ -63,6 +64,14 @@ However, they both use the "Player 1" keys.
 class CMortalNetwork
 {
 public:
+	struct SGameParams
+	{
+		Uint32					iGameTime;
+		Uint32					iGameSpeed;
+		Uint32					iHitPoints;
+	};
+	
+public:
 	
 	static void Create();
 	
@@ -91,6 +100,7 @@ public:
 	virtual void		SendFighter( FighterEnum a_enFighter ) = 0;	// Let the other side know that I switched to fighter X.
 	virtual void		SendReady() = 0;			// Let the other side know that I am ready.
 	virtual void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints ) = 0;
+	virtual SGameParams	GetGameParams() = 0;
 	
 	// Game methods
 
@@ -98,16 +108,15 @@ public:
 	virtual void		SendGameData( const char* a_pcGameData ) = 0;
 	virtual const char*	GetLatestGameData() = 0;
 	
-	virtual void		SendKeystroke( int a_iKey, bool a_bPressed ) = 0;
-	virtual bool		GetKeystroke( int& a_riOutKey, bool& a_rbPressed ) = 0;
+	virtual void		SendKeystroke( int a_iTime, int a_iKey, bool a_bPressed ) = 0;
+	virtual bool		GetKeystroke( int& a_riOutTime, int& a_riOutKey, bool& a_rbPressed ) = 0;
 	
-	virtual void		SendGameTime( int a_iGameTime, int a_iGamePhase ) = 0;
-	virtual int			GetGameTime() = 0;
-	virtual int			GetGamePhase() = 0;
-
+	virtual void		SendGameTick( int a_iGameTick ) = 0;
+	virtual int			GetGameTick() = 0;
+	
 	virtual void		SendHurryup( int a_iHurryUpCode ) = 0;
 	virtual int			GetHurryup() = 0;
-
+	
 	virtual void		SendRoundOver( int a_iWhoWon, bool a_bGameOver ) = 0;
 	virtual bool		IsRoundOver() = 0;
 	virtual bool		IsGameOver() = 0;

@@ -56,8 +56,7 @@ CMortalNetworkImpl::CMortalNetworkImpl()
 	m_bRoundOver = false;
 	m_iWhoWon = -1;
 	m_bGameOver = false;
-	m_iGameTime = 0;
-	m_iGamePhase = 0;
+	m_iGameTick = 0;
 	m_iHurryupCode = 0;
 	m_iIncomingBufferSize = 0;
 	
@@ -228,9 +227,9 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	m_bRemoteReady = false;
 	m_sLatestGameData = "";
 	m_aiKeystrokes.clear();
+	m_aiKeystrokes.clear();
 	m_abKeystrokes.clear();
-	m_iGameTime = 0;
-	m_iGamePhase = 0;
+	m_iGameTick = 0;
 	m_iHurryupCode = 0;
 	m_iIncomingBufferSize = 0;
 	m_aiAvailableRemoteFighters.clear();
@@ -324,8 +323,8 @@ void CMortalNetworkImpl::Update()
 			debug( "Maximum package size exceeded.\n" );
 			DISCONNECTONCOMMUNICATIONERROR;
 		}
-		debug( "Receiving stuff.. %c type, %d package length, offset %d in buffer, %d bytes in buffer\n",
-			m_acIncomingBuffer[iOffset], iLengthOfPackage, iOffset, m_iIncomingBufferSize );
+//		debug( "Receiving stuff.. %c type, %d package length, offset %d in buffer, %d bytes in buffer\n",
+//			m_acIncomingBuffer[iOffset], iLengthOfPackage, iOffset, m_iIncomingBufferSize );
 		
 		if ( iOffset + 4 + (int)iLengthOfPackage > m_iIncomingBufferSize )
 		{
@@ -345,7 +344,7 @@ void CMortalNetworkImpl::Update()
 			case 'G': ReceiveGameData( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'K': ReceiveKeystroke( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'O': ReceiveRoundOver( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
-			case 'T': ReceiveGameTime( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'T': ReceiveGameTick( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'H': ReceiveHurryup( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'A': ReceiveRemoteFighterAvailable( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'Q': ReceiveRemoteFighterQuery( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
@@ -670,6 +669,10 @@ void CMortalNetworkImpl::ReceiveGameParams( void* a_pData, int a_iLength )
 	}
 }
 
+CMortalNetworkImpl::SGameParams CMortalNetworkImpl::GetGameParams()
+{
+	return m_oGameParams;
+}
 
 
 
@@ -775,15 +778,17 @@ const char* CMortalNetworkImpl::GetLatestGameData()
 
 struct SKeystrokePackage
 {
+	Uint32	iTime;
 	char	cKey;
 	bool	bPressed;
 };
 
-void CMortalNetworkImpl::SendKeystroke( int a_iKey, bool a_bPressed )
+void CMortalNetworkImpl::SendKeystroke( int a_iTime, int a_iKey, bool a_bPressed )
 {
 	CHECKCONNECTION;
 	
 	SKeystrokePackage oPackage;
+	oPackage.iTime = SDL_SwapBE32( a_iTime );
 	oPackage.cKey = a_iKey;
 	oPackage.bPressed = a_bPressed;
 	
@@ -794,71 +799,61 @@ void CMortalNetworkImpl::ReceiveKeystroke( void* a_pData, int a_iLength )
 {
 	if ( a_iLength != (int)sizeof(SKeystrokePackage) ) DISCONNECTONCOMMUNICATIONERROR;
 	SKeystrokePackage* poPackage = (SKeystrokePackage*) a_pData;
-	
+
+	m_aiKeyTimes.push_back( SDL_SwapBE32(poPackage->iTime) );
 	m_aiKeystrokes.push_back( poPackage->cKey );
 	m_abKeystrokes.push_back( poPackage->bPressed );
 }
 
-bool CMortalNetworkImpl::GetKeystroke( int& a_riOutKey, bool& a_rbOutPressed )
+bool CMortalNetworkImpl::GetKeystroke( int& a_riOutTime, int& a_riOutKey, bool& a_rbOutPressed )
 {
 	if ( m_aiKeystrokes.size() == 0 )
 	{
 		return false;
 	}
+	a_riOutTime = m_aiKeyTimes.front();
 	a_riOutKey = m_aiKeystrokes.front();
 	a_rbOutPressed = m_abKeystrokes.front();
+	m_aiKeyTimes.pop_front();
 	m_aiKeystrokes.pop_front();
 	m_abKeystrokes.pop_front();
 	
-	debug( "GetKeystroke: %d, %d\n", a_riOutKey, a_rbOutPressed );
+	// debug( "GetKeystroke: %d, %d\n", a_riOutKey, a_rbOutPressed );
 	return true;
 }
 
 
 
-struct SGameTimePackage
+struct SGameTickPackage
 {
-	int iGameTime;
-	int iGamePhase;
+	Uint32 iGameTick;
 };
 
-void CMortalNetworkImpl::SendGameTime( int a_iGameTime, int a_iGamePhase )
+void CMortalNetworkImpl::SendGameTick( int a_iGameTick )
 {
 	CHECKCONNECTION;
+
+	if ( a_iGameTick < 0 ) a_iGameTick = 0;
 	
-	if ( a_iGameTime == m_iGameTime
-		&& a_iGamePhase == m_iGamePhase )
-	{
-		return;		// Nothing to update, the other side already knows.
-	}
+	SGameTickPackage oPackage;
+	oPackage.iGameTick  = SDL_SwapBE32( a_iGameTick );
 	
-	SGameTimePackage oPackage;
-	m_iGameTime  = a_iGameTime;
-	m_iGamePhase = a_iGamePhase;
-	oPackage.iGameTime  = SDL_SwapBE32( a_iGameTime );
-	oPackage.iGamePhase = SDL_SwapBE32( a_iGamePhase );
-	
-	SendRawData( 'T', &oPackage, sizeof(SGameTimePackage) );
+	SendRawData( 'T', &oPackage, sizeof(SGameTickPackage) );
 }
 
-void CMortalNetworkImpl::ReceiveGameTime( void* a_pData, int a_iLength )
+void CMortalNetworkImpl::ReceiveGameTick( void* a_pData, int a_iLength )
 {
-	if ( a_iLength != sizeof(SGameTimePackage) ) DISCONNECTONCOMMUNICATIONERROR;
-	SGameTimePackage* poPackage = (SGameTimePackage*) a_pData;
+	if ( a_iLength != sizeof(SGameTickPackage) ) DISCONNECTONCOMMUNICATIONERROR;
+	SGameTickPackage* poPackage = (SGameTickPackage*) a_pData;
 
-	m_iGameTime  = SDL_SwapBE32( poPackage->iGameTime );
-	m_iGamePhase = SDL_SwapBE32( poPackage->iGamePhase );
+	m_iGameTick  = SDL_SwapBE32( poPackage->iGameTick );
 }
 
-int CMortalNetworkImpl::GetGameTime()
+int CMortalNetworkImpl::GetGameTick()
 {
-	return m_iGameTime;
+	return m_iGameTick;
 }
 
-int CMortalNetworkImpl::GetGamePhase()
-{
-	return m_iGamePhase;
-}
 
 
 
@@ -905,6 +900,8 @@ void CMortalNetworkImpl::SendRoundOver( int a_iWhoWon, bool a_bGameOver )
 	{
 		m_enState = NS_CHARACTER_SELECTION;
 	}
+
+	debug ( "SendRoundOver: %d, %d\n", a_iWhoWon, a_bGameOver );
 }
 
 void CMortalNetworkImpl::ReceiveRoundOver( void* a_pData, int a_iLength )
@@ -914,6 +911,8 @@ void CMortalNetworkImpl::ReceiveRoundOver( void* a_pData, int a_iLength )
 	m_iWhoWon = poPackage->iWhoWon;
 	m_bGameOver = poPackage->bGameOver;
 	m_bRoundOver = true;
+	
+	debug ( "ReceiveRoundOver: %d, %d\n", m_iWhoWon, m_bGameOver );
 }
 
 bool CMortalNetworkImpl::IsRoundOver()

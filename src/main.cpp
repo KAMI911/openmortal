@@ -200,6 +200,7 @@ int DrawMainScreen()
 		
 	int i;
 
+	g_oBackend.PerlEvalF( "eval( \"require '%s/characters/Kinga.pl';\" )", DATADIR );
 	g_oBackend.PerlEvalF( "eval( \"require '%s/characters/Ambrus.pl';\" )", DATADIR );
 	g_oBackend.PerlEvalF( "eval( \"require '%s/characters/Dani.pl';\" )", DATADIR );
 
@@ -224,6 +225,13 @@ int DrawMainScreen()
 
 
 
+
+
+int InitJoystick();
+
+
+
+
 int main(int argc, char *argv[])
 {
 	srand( (unsigned int)time(NULL) );
@@ -240,6 +248,7 @@ int main(int argc, char *argv[])
 	bool bDebug = false;
 
 	int iFlags = SDL_SWSURFACE | SDL_HWPALETTE;
+
 	if ( g_oState.m_bFullscreen )
 	{
 		iFlags |= SDL_FULLSCREEN;
@@ -280,6 +289,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	// InitJoystick();
+	
 	g_oState.SetLanguage( g_oState.m_acLanguage );
 	
 	new MszAudio;
@@ -290,6 +301,7 @@ int main(int argc, char *argv[])
 	
 	DrawMainScreen();
 	
+
 	g_oPlayerSelect.SetPlayer( 0, ZOLI );
 	g_oPlayerSelect.SetPlayer( 1, SIRPI );
 

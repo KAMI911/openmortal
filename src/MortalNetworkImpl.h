@@ -74,6 +74,7 @@ public:
 	void		SendFighter( FighterEnum a_enFighter );	// Let the other side know that I switched to fighter X.
 	void		SendReady();			// Let the other side know that I am ready.
 	void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints );
+	SGameParams	GetGameParams();
 
 	// Game methods
 
@@ -81,12 +82,11 @@ public:
 	void		SendGameData( const char* a_pcGameData );
 	const char*	GetLatestGameData();
 	
-	void		SendKeystroke( int a_iKey, bool a_bPressed );
-	bool		GetKeystroke( int& a_riOutKey, bool& a_rbPressed );
+	void		SendKeystroke( int a_iTime, int a_iKey, bool a_bPressed );
+	bool		GetKeystroke( int& a_riOutTime, int& a_riOutKey, bool& a_rbPressed );
 
-	void		SendGameTime( int a_iGameTime, int a_iGamePhase );
-	int			GetGameTime();
-	int			GetGamePhase();
+	void		SendGameTick( int a_iGameTick );
+	int			GetGameTick();
 
 	void		SendHurryup( int a_iHurryUpCode );
 	int			GetHurryup() ;
@@ -106,7 +106,7 @@ protected:
 	void		ReceiveFighter( void* a_pData, int a_iLength );
 	void		ReceiveReady( void* a_pData, int a_iLength );
 	void		ReceiveRoundOver( void* a_pData, int a_iLength );
-	void		ReceiveGameTime( void* a_pData, int a_iLength );
+	void		ReceiveGameTick( void* a_pData, int a_iLength );
 	void		ReceiveHurryup( void* a_pData, int a_iLength );
 	void		ReceiveRemoteFighterAvailable( void* a_pData, int a_iLength );
 	void		ReceiveRemoteFighterQuery( void* a_pData, int a_iLength );
@@ -142,22 +142,17 @@ protected:
 	TIntList				m_aiAvailableRemoteFighters;
 	FighterEnum				m_enRemoteFighter;
 	bool					m_bRemoteReady;
-	struct SGameParams
-	{
-		Uint32					iGameTime;
-		Uint32					iGameSpeed;
-		Uint32					iHitPoints;
-	}						m_oGameParams;
+	SGameParams				m_oGameParams;
 	
 	std::string				m_sLatestGameData;
+	TIntList				m_aiKeyTimes;
 	TIntList				m_aiKeystrokes;
 	TIntList				m_abKeystrokes;
 
 	bool					m_bRoundOver;
 	int						m_iWhoWon;
 	bool					m_bGameOver;
-	int						m_iGameTime;
-	int						m_iGamePhase;
+	int						m_iGameTick;
 	int						m_iHurryupCode;
 	
 	// REMOTE QUERY RESPONSES

@@ -52,6 +52,7 @@ public:
 	
 	
 public:
+	int				m_iGameTick;
 	int				m_iGameOver;
 	bool			m_bKO;
 	int				m_iBgX, m_iBgY;
