@@ -148,7 +148,8 @@ JumpStates( \%FrameLookup,
 { 'N'=>'Dead',			'DEL'=>10000, 'S'=>'laying 1',
 	'SITU'=>'Falling', 'NEXTST'=>'Dead' },
 
-{ 'N'=>'Swept',			'DEL'=>7,	'S'=>'+swept' },
+{ 'N'=>'Swept',			'DEL'=>7,	'S'=>'+swept',
+	'MOVE'=>-1 },
 
 { 'N'=>'KneelingPunched', 'DEL'=>5,	'S'=>'+kneelingpunched,-kneelingpunched',
 	'SITU'=>'Crouch', 'NEXTSTN'=>'Onknees' },
