@@ -1,1 +1,55 @@
+OpenMortal 0.4 README
 
+OpenMortal is a spoof of the original Mortal Kombat fighting game. The
+funny thing about OpenMortal is that you can play the game AS YOURSELF.
+It takes some work, but if you follow the Character Creation-HOWTO at
+
+http://openmortal.sourceforge.net/Character_HOWTO.html
+
+OpenMortal is still under development. The most important missing
+features are:
+* There is no support single player game.
+* Throws are missing.
+* Most of the projectiles aren't implemented yet.
+
+Other planned features:
+* Network play.
+* Downloadable characters.
+
+For further details, see the project's bug and feature request databases.
+
+USAGE:
+
+Press Esc key to bring up the main menu.
+You can skip most scenes (such as instant replays) with the F1 key.
+The default keys are:
+         Player 1        Player 2
+Up       Cursor up       W
+Down     Cursor down     S
+Left     Cursor left     A
+Right    Cursor right    D
+HPunch   Insert          R
+LPunch   Delete          F
+HKick    Home            T
+LKick    End             G
+Block    PgDown          H
+
+Combinations:
+
+Up + Left: Jump to the left. Hit Kick or Punch for a jumpkick/punch.
+Up + Right: Jump to the right. Hit Kick or Punch for a jumpkick/punch.
+Back + HKick/HPunch: Spinning attack (depends on character)
+Back + LKick: Leg sweep
+Forward + LKick: Knee attack
+Down, HPunch: Uppercut
+Forward, Back + LKick: Groin kick (ouch!)
+
+Plus, each character has a number of special attacks.. experiment to find
+them, or read them at the character screen.
+
+The length of rounds and strength of characters cna be changed in the menu.
+
+PACKAGERS:
+
+It is possible to split OpenMortal into sub-packages, separating characters
+from the base package, and thus reduce download times.

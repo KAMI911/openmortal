@@ -1,3 +1,15 @@
+2004-01-10 17:10 upi
+	Summary of updates in version 0.4:
+	* One extra story screen.
+	* New "earthquake" visual effect.
+	* New "official" characters: Ambrus, Dani
+	* 5 new third party characters! (Thanks, guys!)
+	* 6 more arenas
+	* Projectile attacks
+	* Game speed can be set from menu
+	* Gameplay improvements: "Maximum combo" (no infinite combos) and no more "cornering"
+	* Several bugfixes
+
 2003-09-12 11:49  upi
 
 	* src/: Backend.h, Game.cpp, PlayerSelect.cpp, PlayerSelect.h:

@@ -1,10 +1,7 @@
 Characters:
 
 +   Surba
-    Bence
-    Dani
     Kinga
-    Ambrus
     Dia
     Judy
     Siska
@@ -14,10 +11,29 @@ Others:
 
     Block after hit
     Doodads / projectiles.
-    Resolution-free RlePack.draw()
-
+    Color depth independent RlePack.draw()
+	
     No hitting falling opponent.
     Polish character graphics.
-    More levels.
-
+	
     Single-player mode.
+
+
+SPLITTING:
+	bin
+	data
+	characters-1: Macy, Boxer, Cumi, Grizzly, Bence, UPi [6]
+	characters-2: Descant, Ulmar, Sirpi, Ambrus, Dani [5]
+	characters-sch: Agent, Tejszin, Jacint, Mrsmith, Jozsi, Sleepy [6]
+
+
+
+*** Background spec **
+
+Number_of_layers
+do_clear_background (0/1)
+
+Layer_filename
+Layer_offset_x  Layer_offset_y  Layer_distance
+
+distance = (layer_width-640) / (1280)
