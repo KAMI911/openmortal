@@ -11,7 +11,7 @@
 #include <config.h>
 #endif
 
-#include "FlyingChars.h"
+#include "PlayerSelect.h"
 
 #include "SDL_video.h"
 #include "sge_tt_text.h"
@@ -166,8 +166,9 @@ int DrawMainScreen()
 	
 	std::string sStaffFilename = DATADIR;
 	sStaffFilename += "/characters/STAFF.DAT";
-	RlePack pack( sStaffFilename.c_str() );
-	SDL_SetColors( gamescreen, pack.getPalette(), 0, 240 );
+	RlePack pack( sStaffFilename.c_str(), 240 );
+	pack.ApplyPalette();
+	//SDL_SetColors( gamescreen, pack.getPalette(), 0, 240 );
 	SDL_BlitSurface( background, NULL, gamescreen, &r );
 	SDL_Flip( gamescreen );
 
@@ -186,53 +187,23 @@ int DrawMainScreen()
 		5, 4, 5, 5, 5, 7, 
 		4, 0, 7, 5, 5, 6, 5, 243 };
 		
-	char s[100];
 	int i;
 
 	for ( i=0; i<14; ++i )
 	{
-		pack.draw( i, x[i], y[i], false );
+		pack.Draw( i, x[i], y[i], false );
 		SDL_Flip( gamescreen );
 		if ( filename[i] != NULL )
 		{
 			debug( "Loading fighter %s", filename[i] );
-			sprintf( s, "require '%s';", filename[i] );
-			PERLEVAL(s);
-			char *error = SvPV_nolen(get_sv("@", FALSE));
-			if ( error )
-			{
-				fprintf( stderr, "%s", error );
-			}
+			g_oBackend.PerlEvalF( "require '%s';", filename[i] );
 		}
 	}
 
 	int retval = 0;
 	i = 0;
 	SDL_Event event;
-
-	/*
-	while (retval == 0)
-	{
-		while (SDL_PollEvent(&event))
-		{
-			switch (event.type)
-			{
-				case SDL_QUIT:
-					SDL_FreeSurface( background );
-					retval = -1;
-				case SDL_KEYDOWN:
-					SDL_FreeSurface( background );
-					retval = -1;
-
-			}
-		}
-		SDL_Delay( 100 );
-		i ++;
-		if ( i > 30 )
-			break;
-	}
-    */
-
+	
     SDL_FreeSurface( background );
 	return retval;
 	
@@ -302,9 +273,8 @@ int main(int argc, char *argv[])
 	
 	DrawMainScreen();
 	
-	//game.execute();
-	SetPlayer( 0, ZOLI );
-	SetPlayer( 1, SIRPI );
+	g_oPlayerSelect.SetPlayer( 0, ZOLI );
+	g_oPlayerSelect.SetPlayer( 1, SIRPI );
 	
 	int nextFighter = 0;
 	int describeOrder[ (int)LASTFIGHTER ];
@@ -348,7 +318,7 @@ int main(int argc, char *argv[])
 		while ( g_oState.m_enGameMode != SState::IN_DEMO 
 			&& !g_oState.m_bQuitFlag )
 		{
-			PlayerSelect();
+			g_oPlayerSelect.DoPlayerSelect();
 			if ( g_oState.m_bQuitFlag || g_oState.m_enGameMode == SState::IN_DEMO  ) break;
 			
 			//sprintf( acReplayFile, "/tmp/msz%d.replay", ++iGameNumber );

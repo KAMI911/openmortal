@@ -29,7 +29,6 @@ extern SDL_Surface* gamescreen;
 void DoMenu( bool a_bDrawBackground );
 void GameOver( int a_iPlayerWon );
 void DoDemos();
-void PlayerSelect();
 
 
 #define C_BLACK			240

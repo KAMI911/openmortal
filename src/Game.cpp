@@ -16,6 +16,7 @@
 #include "SDL_keysym.h"
 #include <fstream>
 
+#include "PlayerSelect.h"
 #include "common.h"
 #include "gfx.h"
 #include "Backend.h"
@@ -24,6 +25,12 @@
 #include "Game.h"
 #include "Audio.h"
 
+
+#include <EXTERN.h>
+#include <perl.h>
+
+
+extern PerlInterpreter*	my_perl;
 
 
 /*
@@ -273,7 +280,8 @@ void Game::Draw()
 		int iFrame = g_oBackend.m_aoPlayers[i].m_iFrame;
 		if ( 0 != iFrame )
 		{
-			(i ? pack2 : pack1)->draw( ABS(iFrame)-1,
+			g_oPlayerSelect.GetPlayerInfo(i).m_poPack->Draw( 
+				ABS(iFrame)-1,
 				g_oBackend.m_aoPlayers[i].m_iX,
 				g_oBackend.m_aoPlayers[i].m_iY,
 				iFrame<0 );
@@ -411,7 +419,7 @@ int Game::ProcessEvents()
 					{
 						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
-							PERLCALL( "KeyDown", i, j );
+							g_oBackend.PerlEvalF( "KeyDown(%d,%d);", i, j );
 						}
 					}
 				}
@@ -429,7 +437,7 @@ int Game::ProcessEvents()
 					{
 						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
-							PERLCALL( "KeyUp", i, j );
+							g_oBackend.PerlEvalF( "KeyUp(%d,%d);", i, j );
 						}
 					}
 				}
@@ -643,10 +651,9 @@ void Game::DoReplay( const char* a_pcReplayFile )
 	
 	std::string sLine;
 	std::getline( oInput, sLine );
-	SetPlayer( 0, (FighterEnum) iPlayer1 );
-	SetPlayer( 1, (FighterEnum) iPlayer2 );
+	g_oPlayerSelect.SetPlayer( 0, (FighterEnum) iPlayer1 );
+	g_oPlayerSelect.SetPlayer( 1, (FighterEnum) iPlayer2 );
 	
-	int iCurrentFrame = 0;
 	int iThisTick, iLastTick, iGameSpeed;
 	
 	m_enGamePhase = Ph_REPLAY;
@@ -719,7 +726,9 @@ int DoGame( char* a_pcReplayFile, bool a_bIsReplay, bool a_bDebug )
 		if ( NULL != a_pcReplayFile )
 		{
 			std::ofstream oOutput( a_pcReplayFile );
-			oOutput << Fighter1 << ' ' << Fighter2 << '\n' << oGame.GetReplay();
+			oOutput << 
+				g_oPlayerSelect.GetPlayerInfo(0).m_enFighter << ' ' << 
+				g_oPlayerSelect.GetPlayerInfo(1).m_enFighter << '\n' << oGame.GetReplay();
 		}
 		return iRetval;
 	}

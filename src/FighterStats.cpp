@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string>
 
+#include "PlayerSelect.h"
 #include "FlyingChars.h"
 #include "SDL.h"
 #include "SDL_video.h"
@@ -20,6 +21,15 @@
 #include "RlePack.h"
 #include "Backend.h"
 #include "Demo.h"
+
+#include <EXTERN.h>
+#include <perl.h>
+
+
+extern PerlInterpreter*	my_perl;
+
+
+
 
 
 #define LEFTMARGIN		160
@@ -98,19 +108,19 @@ FighterStatsDemo::FighterStatsDemo()
 	mg_iLastFighter = (mg_iLastFighter+1) % (LASTFIGHTER-1);
 	m_enFighter = mg_aenFighterOrder[mg_iLastFighter];
 
-	if ( IsFighterAvailable( m_enFighter ) )
+	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{
-		SetPlayer( 0, m_enFighter );
-		PERLEVAL("SelectStart();");
+		g_oPlayerSelect.SetPlayer( 0, m_enFighter );
+		g_oBackend.PerlEvalF( "SelectStart();" );
 	}
 	else
 	{
 		std::string sStaffFilename = DATADIR;
 		sStaffFilename += "/characters/STAFF.DAT";
-		m_poStaff = new RlePack( sStaffFilename.c_str() );
+		m_poStaff = new RlePack( sStaffFilename.c_str(), 240 );
 	}
 
-	PERLCALL("GetFighterStats", m_enFighter, 0 );
+	g_oBackend.PerlEvalF("GetFighterStats(%d);", m_enFighter );
 	_sge_TTFont* font = impactFont;
 	int y = TOPMARGIN;
 
@@ -162,7 +172,7 @@ FighterStatsDemo::FighterStatsDemo()
 	m_poFlyingChars = new FlyingChars( creditsFont, oFlyingRect );
 	m_poFlyingChars->AddText( s, FlyingChars::FC_AlignJustify, false );
 
-	if ( IsFighterAvailable( m_enFighter ) )
+	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{
 		s = SvPV_nolen(get_sv("Keys", TRUE ));
 		m_poFlyingChars->AddText( "\nKEYS\n", FlyingChars::FC_AlignCenter, true );
@@ -199,7 +209,7 @@ int FighterStatsDemo::Advance( int a_iNumFrames, bool a_bFlip )
 	
 	// 2. Advance as many ticks as necessary..
 	
-	if ( IsFighterAvailable( m_enFighter ) )
+	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{
 		for (int i=0; i<a_iNumFrames; ++i )
 		{
@@ -208,7 +218,7 @@ int FighterStatsDemo::Advance( int a_iNumFrames, bool a_bFlip )
 		int p1x = SvIV(get_sv("p1x", TRUE));
 		int p1y = SvIV(get_sv("p1y", TRUE));
 		int p1f = SvIV(get_sv("p1f", TRUE));
-		if (p1f) pack1->draw( ABS(p1f)-1, p1x, p1y, p1f<0 );
+		if (p1f) g_oPlayerSelect.GetPlayerInfo(0).m_poPack->Draw( ABS(p1f)-1, p1x, p1y, p1f<0 );
 	}
 	else
 	{

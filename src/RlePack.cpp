@@ -6,47 +6,245 @@
     email                : upi@apocalypse.rulez.org
  ***************************************************************************/
 
+#include "RlePack.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "SDL.h"
-#include "SDL_video.h"
 
+#include "SDL.h"
 #include "common.h"
-#include "RlePack.h"
+
+
+/// Sanity: This is the maximal number of entries in a .DAT file.
+#define MAXDATACOUNT	65530
+
+
+inline void ChangeEndian32( Uint32& a_riArg )
+{
+	char* pcArg = (char*)&a_riArg;
+	char cTemp;
+	cTemp = pcArg[0]; pcArg[0] = pcArg[3]; pcArg[3] = cTemp;
+	cTemp = pcArg[1]; pcArg[1] = pcArg[2]; pcArg[2] = cTemp;
+}
+
+
+inline void ChangeEndian16( Uint16& a_riArg )
+{
+	char* pcArg = (char*)&a_riArg;
+	char cTemp;
+	cTemp = pcArg[0]; pcArg[0] = pcArg[1]; pcArg[1] = cTemp;
+}
+
+
+inline Uint32 ConvertEndian32( Uint32 a_iArg )
+{
+	char* pcArg = (char*)&a_iArg;
+	char cTemp;
+	cTemp = pcArg[0]; pcArg[0] = pcArg[3]; pcArg[3] = cTemp;
+	cTemp = pcArg[1]; pcArg[1] = pcArg[2]; pcArg[2] = cTemp;
+	return a_iArg;
+}
+
+
+inline Uint16 ConvertEndian16( Uint16 a_iArg )
+{
+	char* pcArg = (char*)&a_iArg;
+	char cTemp;
+	cTemp = pcArg[0]; pcArg[0] = pcArg[1]; pcArg[1] = cTemp;
+	return a_iArg;
+}
+
 
 
 typedef struct RLE_SPRITE           /* a RLE compressed sprite */
 {
-   int w, h;                        /* width and height in pixels */
-   int color_depth;                 /* color depth of the image */
-   int size;                        /* size of sprite data in bytes */
-   signed char dat[0];
+	Uint16 dummy;					// For better alignment... NASTY NASTY HACK!!
+	Uint16 color_depth;                 /* color depth of the image */
+	Uint16 w, h;                        /* width and height in pixels */
+	Uint32 size;
+	signed char dat[0];
 } RLE_SPRITE;
 
 
 struct RlePack_P
 {
-	SDL_Color palette[256];
-	int count, arraysize;
-	RLE_SPRITE** sprites;
+	SDL_Color		m_aoPalette[256];
+	SDL_Color		m_aoTintedPalette[256];
+	TintEnum		m_enTint;
+	int				m_iCount;
+	int				m_iArraysize;
+	RLE_SPRITE**	m_pSprites;
+	void*			m_pData;
+	
+	int				m_iColorCount;
+	int				m_iColorOffset;
 };
 
-RlePack::RlePack( const char* filename )
+
+
+RlePack::RlePack( const char* a_pcFilename, int a_iNumColors )
 {
 	p = new RlePack_P;
-	p->count = p->arraysize = 0;
-	p->sprites = NULL;
+	p->m_enTint = NO_TINT;
+	p->m_iCount = 0;
+	p->m_iArraysize = 0;
+	p->m_pSprites = NULL;
+	p->m_pData = NULL;
 	
-	//@ Load file and stuff
+	p->m_iColorCount = 0;
+	p->m_iColorOffset = 0;
+	
+	// Load file and stuff
+	
+	LoadFile( a_pcFilename, a_iNumColors );
+}
+
+
+RlePack::~RlePack()
+{
+	if (!p)
+		return;
+	
+	if (p->m_pSprites)
+	{
+		delete[] p->m_pSprites;
+		p->m_pSprites = NULL;
+	}
+	
+	free( p->m_pData );
+	delete( p );
+	p = NULL;
+}
+
+
+void RlePack::Clear()
+{
+	if ( p && p->m_pSprites )
+	{
+		delete[] p->m_pSprites;
+		p->m_pSprites = NULL;
+	}
+}
+
+
+int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
+{
 	FILE* f;
 	
-	f = fopen( filename, "rb" );
+	f = fopen( a_pcFilename, "rb" );
 	if (f==NULL)
 	{
-		debug( "Can't open file '%s'.\n", filename );
-		return;
+		debug( "Can't open file '%s'.\n", a_pcFilename );
+		return -1;
 	}
+	
+	fseek( f, 0, SEEK_END );
+	long iFileSize = ftell ( f );
+	p->m_pData = malloc( iFileSize );
+	if ( NULL == p->m_pData )
+	{
+		fclose( f );
+		return -1;
+	}
+	
+	fseek( f, 0, SEEK_SET );
+	int iRead = fread( p->m_pData, 1, iFileSize, f );
+	fclose( f );
+	
+	p->m_iColorCount = a_iNumColors;
+	
+	if ( iFileSize != iRead )
+	{
+		debug( "Warning RlePack(): iFileSize=%d, iRead=%d\n", iFileSize, iRead );
+	}
+	
+	struct SHeader
+	{
+		char	acDummy[8];
+		Uint32	iDatacount;
+	} *poHeader = (SHeader*) p->m_pData;
+	
+	ChangeEndian32( poHeader->iDatacount );
+	debug( "File '%s' contains %d entries.\n", a_pcFilename, poHeader->iDatacount );
+	
+	if (poHeader->iDatacount>MAXDATACOUNT) poHeader->iDatacount = MAXDATACOUNT;		// Sanity
+	
+	p->m_iArraysize = poHeader->iDatacount;
+	p->m_pSprites = new RLE_SPRITE*[ poHeader->iDatacount ];
+	
+	char* pcNext = ((char*)p->m_pData) + sizeof(SHeader);
+	char* pcEnd = ((char*)p->m_pData) + iFileSize;
+	
+	while ( pcNext < pcEnd )
+	{
+		if ( 0 == strncmp( pcNext, "prop", 4 ) )
+		{
+			struct SProperty
+			{
+				char	acName[4];
+				Uint32	iSize;
+			} *poProperty = (SProperty*) (pcNext+4);
+			ChangeEndian32( poProperty->iSize );
+			
+			pcNext += 4 + sizeof(SProperty) + poProperty->iSize;
+		}
+		else if ( 0 == strncmp( pcNext, "RLE ", 4 ) )
+		{
+			struct SRLE
+			{
+				RLE_SPRITE	oSprite;
+			} *poRle = (SRLE*) (pcNext+10);
+			poRle->oSprite.color_depth = ConvertEndian16(poRle->oSprite.color_depth);
+			poRle->oSprite.w = ConvertEndian16(poRle->oSprite.w);
+			poRle->oSprite.h = ConvertEndian16(poRle->oSprite.h);
+			poRle->oSprite.size = ConvertEndian32(poRle->oSprite.size);
+			
+			p->m_pSprites[p->m_iCount] = &(poRle->oSprite);
+			p->m_iCount++;
+			pcNext += 10 + sizeof( SRLE ) + poRle->oSprite.size;
+		}
+		else if ( 0 == strncmp( pcNext, "PAL ", 4 ) )
+		{
+			struct SPAL
+			{
+				Uint32		iLength1;
+				Uint32		iLength;
+				SDL_Color	aoColors[256];
+			} *poPal = (SPAL*) (pcNext+4);
+			ChangeEndian32( poPal->iLength );
+			
+			int iNumColors = poPal->iLength>1024 ? 1024 : poPal->iLength;
+			iNumColors /= 4;
+			
+			for (int i=0; i< iNumColors; i++)
+			{
+				p->m_aoPalette[i].r = poPal->aoColors[i].r*4;
+				p->m_aoPalette[i].g = poPal->aoColors[i].g*4;
+				p->m_aoPalette[i].b = poPal->aoColors[i].b*4;
+				p->m_aoPalette[i].unused = 0;
+				p->m_aoTintedPalette[i] = p->m_aoPalette[i];
+			}
+			
+			pcNext += 4 + 8 + poPal->iLength;
+		}
+		else
+		{
+			struct SUnknown
+			{
+				Uint32	iSize;
+			} *poUnknown = (SUnknown*) (pcNext+4);
+			ChangeEndian32( poUnknown->iSize );
+			
+			debug( "Unknown: '%4s', size: %d\n", pcNext, poUnknown->iSize );
+			
+			pcNext += 4 + sizeof(SUnknown) + poUnknown->iSize;
+		}
+	}
+	
+	return p->m_iCount;
+	
+#if 0
 	
 	int datacount;
 	
@@ -129,7 +327,7 @@ RlePack::RlePack( const char* filename )
 		{
 			debug( "Unknown: %s.", s );
 			datacount--;
-			
+		
 			unsigned int length;
 			READDW( length );
 			READDW( length );
@@ -138,32 +336,22 @@ RlePack::RlePack( const char* filename )
 	}
 	
 	fclose( f );
+#endif
 }
 
-RlePack::~RlePack()
+
+
+
+int RlePack::Count()
 {
-	if (!p)
-		return;
-	
-	if (p->sprites)
-	{
-		for ( int i=0; i<p->count; ++i )
-		{
-			delete p->sprites[i];
-			p->sprites[i] = NULL;
-		}
-		delete[] p->sprites;
-		p->sprites = NULL;
-	}
-	
-	delete( p );
-	p = NULL;
+	return p->m_iCount;
 }
 
-void OffsetRLESprite( RLE_SPRITE* spr, int offset )
+
+void OffsetRLESprite( RLE_SPRITE* spr, int offset ) // Static method
 {
 	if (!spr || !offset) return;
-
+	
 	signed char *s = spr->dat;
 	signed char c;
 	int y;
@@ -185,28 +373,105 @@ void OffsetRLESprite( RLE_SPRITE* spr, int offset )
 	}
 }
 
-void RlePack::offsetSprites( int offset )
+void RlePack::OffsetSprites( int a_iOffset )
 {
-	if ( (offset<=0) || (offset>255) )
+	if ( (a_iOffset<=0) || (a_iOffset>255) )
 		return;
+
+	p->m_iColorOffset = a_iOffset;
 
 	int i;
 	
 	// Offset every RLE_SPRITE
 	
-	for ( i=0; i<p->count; ++i )
+	for ( i=0; i<p->m_iCount; ++i )
 	{
-		OffsetRLESprite( p->sprites[i], offset );
+		OffsetRLESprite( p->m_pSprites[i], a_iOffset );
 	}
 }
 
+
+void RlePack::SetTint( TintEnum a_enTint )
+{
+	int i;
+
+	switch( a_enTint )
+	{
+		case ZOMBIE_TINT:
+		{
+			for ( i=0; i<p->m_iColorCount; ++i )
+			{
+				p->m_aoTintedPalette[i].r = 0;
+				p->m_aoTintedPalette[i].g = p->m_aoPalette[i].g;
+				p->m_aoTintedPalette[i].b = 0;
+			}
+			break;
+		}
+
+		case GRAY_TINT:
+		{
+			int j;
+			for ( i=0; i<p->m_iColorCount; ++i )
+			{
+				j = (p->m_aoPalette[i].r + p->m_aoPalette[i].g + p->m_aoPalette[i].b)/4;
+				p->m_aoTintedPalette[i].r = j;
+				p->m_aoTintedPalette[i].g = j;
+				p->m_aoTintedPalette[i].b = j;
+			}
+			break;
+		}
+
+		case DARK_TINT:
+		{
+			for ( i=0; i<p->m_iColorCount; ++i )
+			{
+				p->m_aoTintedPalette[i].r = int(p->m_aoPalette[i].r) * 2 / 3;
+				p->m_aoTintedPalette[i].g = int(p->m_aoPalette[i].g) * 2 / 3;
+				p->m_aoTintedPalette[i].b = int(p->m_aoPalette[i].b) * 2 / 3;
+			}
+			break;
+		}
+
+		case INVERTED_TINT:
+		{
+			for ( i=0; i<p->m_iColorCount; ++i )
+			{
+				p->m_aoTintedPalette[i].r = 255 - p->m_aoPalette[i].r;
+				p->m_aoTintedPalette[i].g = 255 - p->m_aoPalette[i].g;
+				p->m_aoTintedPalette[i].b = 255 - p->m_aoPalette[i].b;
+			}
+			break;
+		}
+
+		case NO_TINT:
+		default:
+		{
+			for ( i=0; i<p->m_iColorCount; ++i )
+			{
+				p->m_aoTintedPalette[i] = p->m_aoPalette[i];
+			}
+			break;
+		}
+		
+	} // end of switch( a_enTint )
+
+}
+
+
+void RlePack::ApplyPalette()
+{
+	SDL_SetColors( gamescreen, p->m_aoTintedPalette, p->m_iColorOffset, p->m_iColorCount );
+}
+
+/*
 SDL_Color* RlePack::getPalette()
 {
 	return p->palette;
 }
+*/
 
 
-void draw_rle_sprite_v_flip( RLE_SPRITE* src, int dx, int dy )
+void draw_rle_sprite_v_flip( RLE_SPRITE* src, int dx, int dy )	// static method
 {
 #define RLE_PTR					signed char*
 #define RLE_IS_EOL(c)			((c) == 0)
@@ -369,7 +634,7 @@ void draw_rle_sprite_v_flip( RLE_SPRITE* src, int dx, int dy )
    //@@@bmp_unwrite_line(dst);
 }
 
-void draw_rle_sprite( RLE_SPRITE* src, int dx, int dy )
+void draw_rle_sprite( RLE_SPRITE* src, int dx, int dy )		// static method
 {
 #define RLE_PTR					signed char*
 #define RLE_IS_EOL(c)			((c) == 0)
@@ -526,19 +791,19 @@ void draw_rle_sprite( RLE_SPRITE* src, int dx, int dy )
    //@@@bmp_unwrite_line(dst);
 }
 
-void RlePack::draw( int index, int x, int y, bool flipped )
+void RlePack::Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped )
 {
-	if ( (index<0) || (index>=p->count) )
+	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
 		return;
 	
-	RLE_SPRITE* sprite = p->sprites[index];
-	if (!sprite)
+	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	if (!poSprite)
 		return;
 	
-	if ( flipped )
-		draw_rle_sprite_v_flip( sprite, x, y );
+	if ( a_bFlipped )
+		draw_rle_sprite_v_flip( poSprite, a_iX, a_iY );
 	else
-		draw_rle_sprite( sprite, x, y );
+		draw_rle_sprite( poSprite, a_iX, a_iY );
 	
 }
 

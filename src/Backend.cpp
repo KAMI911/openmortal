@@ -13,6 +13,8 @@
 
 #include <string>
 #include <stdarg.h>
+#include <EXTERN.h>
+#include <perl.h>
 
 
 /***************************************************************************
@@ -46,6 +48,25 @@ SV
 /***************************************************************************
                   		BACKEND CLASS IMPLEMENTATION
 ***************************************************************************/
+
+
+#define PERLEVAL(A) eval_pv(A, TRUE);
+
+#define PERLCALL(PROC,A,B) {							\
+    dSP;												\
+    ENTER;												\
+    SAVETMPS;											\
+    PUSHMARK(SP);										\
+    XPUSHs(sv_2mortal(newSViv(A)));						\
+    XPUSHs(sv_2mortal(newSViv(B)));						\
+    PUTBACK ;											\
+														\
+    call_pv( (PROC),  G_DISCARD );						\
+														\
+    FREETMPS;											\
+    LEAVE;												\
+}
+
 
 Backend::Backend()
 {
@@ -113,7 +134,7 @@ bool Backend::Construct()
 }
 
 
-void Backend::PerlEvalF( const char* a_pcFormat, ... )
+const char* Backend::PerlEvalF( const char* a_pcFormat, ... )
 {
 	va_list ap;
 	va_start( ap, a_pcFormat );
@@ -123,7 +144,39 @@ void Backend::PerlEvalF( const char* a_pcFormat, ... )
 	acBuffer[1023] = 0;
 	PERLEVAL(acBuffer);
 	
+	const char *pcError = SvPV_nolen(get_sv("@", FALSE));
+	if ( pcError )
+	{
+		fprintf( stderr, "%s", pcError );
+	}
+	
 	va_end( ap );
+	
+	return pcError;
+}
+
+
+const char* Backend::GetPerlString( const char* acScalarName )
+{
+	SV* poScalar = get_sv( acScalarName, FALSE );
+	if ( NULL == poScalar )
+	{
+		return "";
+	}
+	
+	return SvPV_nolen( poScalar );
+}
+
+
+int Backend::GetPerlInt( const char* acScalarName )
+{
+	SV* poScalar = get_sv( acScalarName, FALSE );
+	if ( NULL == poScalar )
+	{
+		return 0;
+	}
+	
+	return SvIV( poScalar );
 }
 
 

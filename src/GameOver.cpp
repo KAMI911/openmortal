@@ -6,6 +6,7 @@
     email                : upi@apocalypse.rulez.org
  ***************************************************************************/
 
+#include "PlayerSelect.h"
 #include "SDL.h"
 #include "gfx.h"
 #include "Backend.h"
@@ -20,25 +21,39 @@
 void DoMenu( bool );
 
 
+
+void DrawPlayer( int i )
+{
+	int iFrame = g_oBackend.m_aoPlayers[i].m_iFrame;
+	if ( 0 != iFrame )
+	{
+		g_oPlayerSelect.GetPlayerInfo(i).m_poPack->Draw( 
+			ABS(iFrame)-1,
+			g_oBackend.m_aoPlayers[i].m_iX,
+			g_oBackend.m_aoPlayers[i].m_iY - 15,
+			iFrame<0 );
+	}
+}
+
+
+
 void GameOver( int a_iPlayerWon )
 {
 	SDL_Surface* poBackground = LoadBackground( "GameOver.png", 112 );
 	DrawGradientText( "Final Judgement", titleFont, 20, poBackground );
 	DrawTextMSZ( "Continue?", inkFont, 320, 100, AlignHCenter, C_LIGHTCYAN, poBackground );
-	
 	SDL_Surface* poFoot = LoadBackground( "Foot.png", 112 );
 	
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	
-	char acString[100];
-	sprintf( acString, "JudgementStart(%d);", a_iPlayerWon );
-	PERLEVAL( acString );
+	g_oBackend.PerlEvalF( "JudgementStart(%d);", a_iPlayerWon );
 	
 	int thisTick, lastTick, firstTick, iGameSpeed;
 	iGameSpeed = 14 ;
 	firstTick = thisTick = SDL_GetTicks() / iGameSpeed;
 	lastTick = thisTick - 1;
 	
+	char acString[100];
 	int iTimeLeft = 8000 / iGameSpeed;
 	int FOOTHEIGHT = poFoot->h;
 	int GROUNDLEVEL = 440;
@@ -127,23 +142,18 @@ void GameOver( int a_iPlayerWon )
 			}	// switch statement
 		}	// Polling events
 		
+		/*
 		int p1x = SvIV(get_sv("p1x", FALSE));
 		int p1y = SvIV(get_sv("p1y", FALSE)) - 15;
 		int p1f = SvIV(get_sv("p1f", FALSE));
 		int p2x = SvIV(get_sv("p2x", FALSE));
 		int p2y = SvIV(get_sv("p2y", FALSE)) - 15;
-		int p2f = SvIV(get_sv("p2f", FALSE));
+		int p2f = SvIV(get_sv("p2f", FALSE));*/
+		g_oBackend.ReadFromPerl();
 		
 		SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
-
-		if ( a_iPlayerWon )
-		{
-			if (p2f) pack2->draw( ABS(p2f)-1, p2x, p2y, p2f<0 );
-		}
-		else
-		{
-			if (p1f) pack1->draw( ABS(p1f)-1, p1x, p1y, p1f<0 );
-		}
+		
+		DrawPlayer( a_iPlayerWon );
 		
 		if ( bTimeUp )
 		{
@@ -154,14 +164,9 @@ void GameOver( int a_iPlayerWon )
 			oRect.h = gamescreen->h - oRect.y;
 			SDL_SetClipRect(gamescreen, &oRect);
 		}
-		if ( a_iPlayerWon )
-		{
-			if (p1f) pack1->draw( ABS(p1f)-1, p1x, p1y, p1f<0 );
-		}
-		else
-		{
-			if (p2f) pack2->draw( ABS(p2f)-1, p2x, p2y, p2f<0 );
-		}
+		
+		DrawPlayer( 1-a_iPlayerWon );
+
 		SDL_SetClipRect( gamescreen, NULL );
 		
 		if ( !bTimeUp )

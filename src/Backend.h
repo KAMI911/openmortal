@@ -7,31 +7,13 @@
  ***************************************************************************/
 
 
-#include <EXTERN.h>
-#include <perl.h>
+#ifndef BACKEND_H
+#define BACKEND_H
+
 #include <string>
+#include "FighterEnum.h"
 
 class RlePack;
-extern PerlInterpreter *my_perl;
-
-
-#define PERLEVAL(A) eval_pv(A, TRUE);
-
-#define PERLCALL(PROC,A,B) {							\
-    dSP;												\
-    ENTER;												\
-    SAVETMPS;											\
-    PUSHMARK(SP);										\
-    XPUSHs(sv_2mortal(newSViv(A)));						\
-    XPUSHs(sv_2mortal(newSViv(B)));						\
-    PUTBACK ;											\
-														\
-    call_pv( (PROC),  G_DISCARD );						\
-														\
-    FREETMPS;											\
-    LEAVE;												\
-}
-
 
 
 #define MAXDOODADS 20
@@ -50,7 +32,9 @@ public:
 	
 	// Miscellaneous
 	
-	void PerlEvalF( const char* a_pcFormat, ... );
+	const char* PerlEvalF( const char* a_pcFormat, ... );
+	const char* GetPerlString( const char* acScalarName );
+	int GetPerlInt( const char* acScalarName );
 	
 	// Game data
 	
@@ -59,6 +43,7 @@ public:
 	void PlaySounds();
 	void WriteToString( std::string& a_rsOutString );
 	void ReadFromString( const std::string& a_rsString );
+	
 	
 public:
 	int				m_iGameTime;
@@ -86,53 +71,7 @@ extern Backend g_oBackend;
 
 
 
-// FIGHTER ENUMERABLE
 
-enum FighterEnum {
-	UNKNOWN = 0,
-	
-	ULMAR,
-	UPI,
-	ZOLI,
-	CUMI,
-	SIRPI,
-	MACI,
-	BENCE,
-	GRIZLI,
-	DESCANT,
-	SURBA,
-	AMBRUS,
-	DANI,
-	KINGA,
-	MISI,
-	
-	LASTFIGHTER
-};
-
-
-enum TintEnum {
-	NO_TINT = 0,
-	RANDOM_TINT,
-	ZOMBIE_TINT,
-	GRAY_TINT,
-	DARK_TINT,
-	INVERTED_TINT,
-};
-
-
-bool		IsFighterAvailable( FighterEnum a_enFighter );
-RlePack*	LoadFighter( FighterEnum fighter, int offset );
-void		TintFighter( RlePack* fighter, TintEnum tint, int offset );
 int			DoGame( char* replay, bool isReplay, bool bDebug );
-void		PlayerSelect();
-void		SetPlayer( int player, FighterEnum fighter );
 
-
-
-extern FighterEnum Fighter1;
-extern FighterEnum Fighter2;
-extern TintEnum FingerTint1;
-extern TintEnum FingerTint2;
-extern RlePack* pack1;
-extern RlePack* pack2;
-
+#endif

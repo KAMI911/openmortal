@@ -15,6 +15,12 @@
 #include <fstream>
 
 #include "Backend.h"
+
+#include <EXTERN.h>
+#include <perl.h>
+
+extern PerlInterpreter* my_perl;
+
 SState g_oState;
 
 

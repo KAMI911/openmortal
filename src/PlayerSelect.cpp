@@ -7,6 +7,8 @@
  ***************************************************************************/
 
 #include <stdio.h>
+
+#include "PlayerSelect.h"
  
 #include "SDL.h"
 #include "SDL_video.h"
@@ -37,21 +39,20 @@
                      PUBLIC EXPORTED VARIABLES
 ***************************************************************************/
 
-FighterEnum Fighter1 = ZOLI;
-FighterEnum Fighter2 = ZOLI;
-RlePack* pack1;
-RlePack* pack2;
+
+PlayerSelect g_oPlayerSelect;
 
 
 /***************************************************************************
                      PRIVATE VARIABLES (perl variable space)
 ***************************************************************************/
 
+/*
 int		p1		= 0;
 int		p2		= 3;
 bool	done1	= false;
 bool	done2	= false;
-
+*/
 
 
 FighterEnum ChooserCells[CHOOSERROWS][CHOOSERCOLS] = {
@@ -63,8 +64,27 @@ FighterEnum ChooserCells[CHOOSERROWS][CHOOSERCOLS] = {
 
 
 
+PlayerSelect::PlayerSelect()
+{
+	for ( int i=0; i<2; ++i )
+	{
+		m_aoPlayers[i].m_enFighter = UNKNOWN;
+		m_aoPlayers[i].m_enTint = NO_TINT;
+		m_aoPlayers[i].m_poPack = NULL;
+	}
+	
+	m_iP1 = 0;
+	m_iP2 = CHOOSERCOLS-1;
+}
 
-bool IsFighterAvailable( FighterEnum a_enFighter )
+
+const PlayerInfo& PlayerSelect::GetPlayerInfo( int a_iPlayer )
+{
+	return m_aoPlayers[ a_iPlayer ? 1 : 0 ];
+}
+
+
+bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 {
 	static bool g_abFighterAvailable[ LASTFIGHTER ] =
 	{
@@ -86,12 +106,18 @@ bool IsFighterAvailable( FighterEnum a_enFighter )
 
 
 
-RlePack* LoadFighter( FighterEnum fighter, int offset )
+/** LoadFighter simply looks up the filename associated with the given
+fighter, loads it, and returns the RlePack. 
+
+\return The freshly loaded RlePack, or NULL if it could not be loaded.
+*/
+
+RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 {
-	char filename[FILENAME_MAX+1];
+	char a_pcFilename[FILENAME_MAX+1];
 	const char* s;
 
-	switch (fighter)
+	switch (m_enFighter)
 	{
 		case ZOLI:		s = "ZOLIDATA.DAT"; break;
 		case UPI:		s = "UPIDATA.DAT"; break;
@@ -102,254 +128,193 @@ RlePack* LoadFighter( FighterEnum fighter, int offset )
 		case BENCE:		s = "BENCEDATA.DAT"; break;
 		case DESCANT:	s = "DESCANTDATA.DAT"; break;
 		case GRIZLI:	s = "GRIZLIDATA.DAT"; break;
-		default:		s = "ZOLIDATA.DAT"; break;
+		default:		return NULL; break;
 	}
 
-	strcpy( filename, DATADIR );
-	strcat( filename, "/characters/" );
-	strcat( filename, s );
+	strcpy( a_pcFilename, DATADIR );
+	strcat( a_pcFilename, "/characters/" );
+	strcat( a_pcFilename, s );
 
-	RlePack* pack = new RlePack( filename );
-	pack->offsetSprites( offset );
-	SDL_SetColors( gamescreen, pack->getPalette(), offset, 64 );
+	RlePack* pack = new RlePack( a_pcFilename, COLORSPERPLAYER );
+	if ( pack->Count() <= 0 )
+	{
+		debug( "Couldn't load RlePack: '%s'\n", a_pcFilename );
+		delete pack;
+		return NULL;
+	}
+	
 	return pack;
 }
 
 
-void TintFighter( RlePack* fighter, TintEnum tint, int offset )
+
+/** SetPlayer loads the given fighter for the given player.
+
+The RlePack is loaded first. If that succeeds, then the perl backend is
+set too. The tint and palette of both players are set. */
+
+void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 {
-	if ( tint == RANDOM_TINT )
-	{
-		switch (rand() % 4 )
-		{
-			case 0: tint = ZOMBIE_TINT; break;
-			case 1: tint = GRAY_TINT; break;
-			case 2: tint = DARK_TINT; break;
-			case 3: tint = INVERTED_TINT; break;
-		}
-	}
-
-	SDL_Color palette[64];
-	int i;
-
-	memcpy( palette, fighter->getPalette(), sizeof(palette) );
-
-	switch( tint )
-	{
-		case ZOMBIE_TINT:
-		{
-			for ( i=0; i<64; ++i )
-			{
-				palette[i].r = 0;
-				palette[i].b = 0;
-			}
-			break;
-		}
-
-		case GRAY_TINT:
-		{
-			int j;
-			for ( i=0; i<64; ++i )
-			{
-				j = (palette[i].r + palette[i].g + palette[i].b)/4;
-				palette[i].r = j;
-				palette[i].g = j;
-				palette[i].b = j;
-			}
-			break;
-		}
-
-		case DARK_TINT:
-		{
-			for ( i=0; i<64; ++i )
-			{
-				palette[i].r = int(palette[i].r) * 2 / 3;
-				palette[i].g = int(palette[i].g) * 2 / 3;
-				palette[i].b = int(palette[i].b) * 2 / 3;
-			}
-			break;
-		}
-
-		case INVERTED_TINT:
-		{
-			for ( i=0; i<64; ++i )
-			{
-				palette[i].r = 255 - palette[i].r;
-				palette[i].g = 255 - palette[i].g;
-				palette[i].b = 255 - palette[i].b;
-			}
-			break;
-		}
-
-		default:
-			break;
-	}
-
-	SDL_SetColors( gamescreen, palette, offset, 64 );
-}
-
-
-
-void SetPlayer( int player, FighterEnum fighter )
-{
-	int offset = player ? 176 : 112;
-	RlePack* pack = LoadFighter( fighter, offset );
+	if ( a_iPlayer ) a_iPlayer = 1;		// It's 0 or 1.
 	
-	if ( player )
+	if ( m_aoPlayers[a_iPlayer].m_enFighter == a_enFighter )
 	{
-		delete pack2;
-		pack2 = pack;
+		return;
 	}
-	else
+	
+	int iOffset = a_iPlayer ? COLOROFFSETPLAYER2 : COLOROFFSETPLAYER1;
+	RlePack* poPack = LoadFighter( a_enFighter );
+	poPack->OffsetSprites( iOffset );
+	
+	if ( NULL == poPack )
 	{
-		delete pack1;
-		pack1 = pack;
+		debug( "SetPlayer(%d,%d): Couldn't load RlePack\n", a_iPlayer, a_enFighter );
+		return;
+	} 
+	
+	delete m_aoPlayers[a_iPlayer].m_poPack;
+	m_aoPlayers[a_iPlayer].m_poPack = poPack;
+	m_aoPlayers[a_iPlayer].m_enFighter = a_enFighter;
+	
+	g_oBackend.PerlEvalF( "SetPlayerNumber(%d,%d);", a_iPlayer, a_enFighter );
+	
+	TintEnum enTint = NO_TINT;
+	
+	if ( m_aoPlayers[0].m_enFighter == m_aoPlayers[1].m_enFighter )
+	{
+		enTint = TintEnum( (rand() % 4) + 1 );
 	}
-	PERLCALL( "SetPlayerNumber", player, fighter );
+	SetTint( 1, enTint );
+	m_aoPlayers[a_iPlayer].m_poPack->ApplyPalette();
+}
 
-	FighterEnum& thisPlayer = player ? Fighter2 : Fighter1;
 
-	thisPlayer = fighter;
-	if ( pack2 )
+
+void PlayerSelect::SetTint( int a_iPlayer, TintEnum a_enTint )
+{
+	m_aoPlayers[a_iPlayer].m_enTint = a_enTint;
+	if ( m_aoPlayers[a_iPlayer].m_poPack )
 	{
-		TintFighter( pack2, Fighter1 == Fighter2 ? RANDOM_TINT : NO_TINT, 176 );
+		m_aoPlayers[a_iPlayer].m_poPack->SetTint( a_enTint );
+		m_aoPlayers[a_iPlayer].m_poPack->ApplyPalette();
 	}
 }
 
 
 
 
-
-
-
-void handleKey( int player, int key )
+void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 {
-	int& p = player ? p2 : p1;
-	int oldp = p;
-	bool& done = player ? done2 : done1;
-	if ( done )
+	int& riP = a_iPlayer ? m_iP2 : m_iP1;
+	int iOldP = riP;
+	
+	bool& rbDone = a_iPlayer ? m_bDone2 : m_bDone1;
+	if ( rbDone )
 	{
 		return;
 	}
 	
 	
-	switch ( key )
+	switch ( a_iKey )
 	{
 		case 0:		// up
-			if ( p >= CHOOSERCOLS ) p -= CHOOSERCOLS;
+			if ( riP >= CHOOSERCOLS ) riP -= CHOOSERCOLS;
 			break;
 		case 1:		// down
-			if ( (p/CHOOSERCOLS) < (CHOOSERROWS-1) ) p += CHOOSERCOLS;
+			if ( (riP/CHOOSERCOLS) < (CHOOSERROWS-1) ) riP += CHOOSERCOLS;
 			break;
 		case 2:		// left
-			if ( (p % CHOOSERCOLS) > 0 ) p--;
+			if ( (riP % CHOOSERCOLS) > 0 ) riP--;
 			break;
 		case 3:		// right
-			if ( (p % CHOOSERCOLS) < (CHOOSERCOLS-1) ) p++;
+			if ( (riP % CHOOSERCOLS) < (CHOOSERCOLS-1) ) riP++;
 			break;
 		default:
-			if ( ChooserCells[p/4][p%4] )
+			if ( ChooserCells[riP/4][riP%4] )
 			{
-				done = true;
-				PERLCALL( "PlayerSelected", player, 0 );
+				rbDone = true;
+				
+				g_oBackend.PerlEvalF( "PlayerSelected(%d);", a_iPlayer );
 				Audio->PlaySample("magic.voc");
 				return;
 			}
 	}
 
-	if ( !IsFighterAvailable( ChooserCells[p/CHOOSERCOLS][p%CHOOSERCOLS] ) )
+	if ( !IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
 	{
-		p = oldp;
+		riP = iOldP;
 	}
 
-	if ( oldp != p )
+	if ( iOldP != riP )
 	{
 		Audio->PlaySample("strange_quack.voc");
-		SetPlayer( player, ChooserCells[p/CHOOSERCOLS][p%CHOOSERCOLS] );
+		SetPlayer( a_iPlayer, ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
 	}
 }
 
 
-void drawRect( int pos, int color )
+void PlayerSelect::DrawRect( int a_iPos, int a_iColor )
 {
-	int row = pos / CHOOSERCOLS;
-	int col = pos % CHOOSERCOLS;
+	int iRow = a_iPos / CHOOSERCOLS;
+	int iCol = a_iPos % CHOOSERCOLS;
 	SDL_Rect r, r1;
 	
-	r.x = CHOOSERLEFT + col * CHOOSERWIDTH;
-	r.y = CHOOSERTOP  + row * CHOOSERHEIGHT;
+	r.x = CHOOSERLEFT + iCol * CHOOSERWIDTH;
+	r.y = CHOOSERTOP  + iRow * CHOOSERHEIGHT;
 	r.w = CHOOSERWIDTH + 5;
 	r.h = 5;
 	r1 = r;
-	SDL_FillRect( gamescreen, &r1, color );
+	SDL_FillRect( gamescreen, &r1, a_iColor );
 	
 	r.y += CHOOSERHEIGHT;
 	r1 = r;
-	SDL_FillRect( gamescreen, &r1, color );
+	SDL_FillRect( gamescreen, &r1, a_iColor );
 	
 	r.y -= CHOOSERHEIGHT;
 	r.w = 5;
 	r.h = CHOOSERHEIGHT + 5;
 	r1 = r;
-	SDL_FillRect( gamescreen, &r1, color );
+	SDL_FillRect( gamescreen, &r1, a_iColor );
 
 	r.x += CHOOSERWIDTH;
 	r1 = r;
-	SDL_FillRect( gamescreen, &r1, color );
+	SDL_FillRect( gamescreen, &r1, a_iColor );
 }
 
 
-void checkPlayer( SDL_Surface* background, int row, int col )
+void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol )
 {
 	int x1, y1;
 
-	x1 = CHOOSERLEFT + col * CHOOSERWIDTH +5;
-	y1 = CHOOSERTOP  + row * CHOOSERHEIGHT +5;
+	x1 = CHOOSERLEFT + a_iCol * CHOOSERWIDTH +5;
+	y1 = CHOOSERTOP  + a_iRow * CHOOSERHEIGHT +5;
 	
-	sge_Line(background, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(background, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
 	x1++;
-	sge_Line(background, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(background, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
 	y1++;
-	sge_Line(background, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(background, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
 	x1--;
-	sge_Line(background, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(background, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
 }
 
 
-void PlayerSelect()
+void PlayerSelect::DoPlayerSelect()
 {
+	// 1. Set up: Load background, mark unavailable fighters
+
 	SDL_FillRect( gamescreen, NULL, C_BLACK );
 	SDL_Flip( gamescreen );
 
-	char filename[FILENAME_MAX+1];
-	strcpy( filename, DATADIR );
-	strcat( filename, "/gfx/" );
-	strcat( filename, "PlayerSelect.png" );
+	SDL_Surface* poBackground = LoadBackground( "PlayerSelect.png", 111 );
 	
-	SDL_Surface* background = IMG_Load( filename );
-	if (!background)
-	{
-		debug( "Can't load file: %s\n", filename );
-		g_oState.m_bQuitFlag = true;
-		return;
-	}
+	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, poBackground );
 
-	SDL_Palette* pal = background->format->palette;
-	if ( pal )
-	{
-		int ncolors = pal->ncolors;
-		if (ncolors>111) ncolors = 111;
-		SDL_SetColors( gamescreen, pal->colors, 0, ncolors );
-	}
-	background = SDL_DisplayFormat( background );
-	
-	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, background );
-
-	int i;	
+	int i, j;	
 	for ( i=0; i<CHOOSERROWS; ++i )
 	{
 		for ( int j=0; j<CHOOSERCOLS; ++j )
@@ -357,17 +322,24 @@ void PlayerSelect()
 			if ( !IsFighterAvailable(ChooserCells[i][j]) &&
 				UNKNOWN != ChooserCells[i][j] )
 			{
-				checkPlayer( background, i, j );
+				CheckPlayer( poBackground, i, j );
 			}
 		}
 	}
+
+	for ( i=0; i<2; ++i )
+	{
+		if ( m_aoPlayers[i].m_poPack ) m_aoPlayers[i].m_poPack->ApplyPalette();
+	}	
 	
-	if (pack1) SDL_SetColors( gamescreen, pack1->getPalette(), 112, 64 );
-	if (pack2) SDL_SetColors( gamescreen, pack2->getPalette(), 176, 64 );
+	SetPlayer( 0, ChooserCells[m_iP1/CHOOSERCOLS][m_iP1%CHOOSERCOLS] );
+	SetPlayer( 1, ChooserCells[m_iP2/CHOOSERCOLS][m_iP2%CHOOSERCOLS] );
+	
+	// 2. Run selection screen
+	
+	g_oBackend.PerlEvalF( "SelectStart();" );
 
-	PERLEVAL( "SelectStart();" );
-
-	done1 = done2 = false;
+	m_bDone1 = m_bDone2 = false;
 	
 	int thisTick, lastTick, gameSpeed;
 
@@ -376,7 +348,6 @@ void PlayerSelect()
 	lastTick = thisTick - 1;
 	
 			i		= 0;
-	bool	bDraw	= true;
 	int		over	= 0;
 	
 	int		iCourtain = 0;
@@ -433,7 +404,7 @@ void PlayerSelect()
 		
 		int iNumFrames = thisTick - lastTick;
 		if ( iNumFrames>5 ) iNumFrames = 5;
-		for ( int i=0; i<iNumFrames; ++i )
+		for ( i=0; i<iNumFrames; ++i )
 		{
 			g_oBackend.AdvancePerl();
 		}
@@ -454,15 +425,15 @@ void PlayerSelect()
 						break;
 					}
 
-					for (int i=0; i<2; i++)
+					for ( i=0; i<2; i++ )
 					{
-						for (int j=0; j<9; j++ )
+						for ( j=0; j<9; j++ )
 						{
 							if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 							{
-								drawRect( p1, 240 );
-								drawRect( p2, 240 );
-								handleKey( i, j );
+								DrawRect( m_iP1, 240 );
+								DrawRect( m_iP2, 240 );
+								HandleKey( i, j );
 							}
 						}
 					}
@@ -471,26 +442,31 @@ void PlayerSelect()
 			}	// switch statement
 		}	// Polling events
 		
-		int p1x = SvIV(get_sv("p1x", FALSE));
-		int p1y = SvIV(get_sv("p1y", FALSE));
-		int p1f = SvIV(get_sv("p1f", FALSE));
-		int p2x = SvIV(get_sv("p2x", FALSE));
-		int p2y = SvIV(get_sv("p2y", FALSE));
-		int p2f = SvIV(get_sv("p2f", FALSE));
-		over = SvIV(get_sv("over", FALSE));
+		g_oBackend.ReadFromPerl();
 		
-		SDL_BlitSurface( background, NULL, gamescreen, NULL );
-		if (p1f) pack1->draw( ABS(p1f)-1, p1x, p1y, p1f<0 );
-		if (p2f) pack2->draw( ABS(p2f)-1, p2x, p2y, p2f<0 );
+		over = g_oBackend.m_iGameOver;
 		
-		if ( !done1) drawRect( p1, 250 );
-		if ( !done2) drawRect( p2, 253 );
+		SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
+		
+		for ( i=0; i<2; ++i )
+		{
+			if ( g_oBackend.m_aoPlayers[i].m_iFrame )
+			{
+				m_aoPlayers[i].m_poPack->Draw( 
+					ABS(g_oBackend.m_aoPlayers[i].m_iFrame)-1,
+					g_oBackend.m_aoPlayers[i].m_iX, g_oBackend.m_aoPlayers[i].m_iY,
+					g_oBackend.m_aoPlayers[i].m_iFrame < 0 );
+			}
+		}
+		
+		if ( !m_bDone1) DrawRect( m_iP1, 250 );
+		if ( !m_bDone2) DrawRect( m_iP2, 253 );
 		SDL_Flip( gamescreen );
 
 		if (over || g_oState.m_bQuitFlag || SState::IN_DEMO == g_oState.m_enGameMode) break;
 	}
 
-	SDL_FreeSurface( background );
+	SDL_FreeSurface( poBackground );
 	SDL_SetClipRect( gamescreen, NULL );
 	return;
 }

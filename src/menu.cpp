@@ -92,7 +92,7 @@ void InputKeys( int a_iPlayerNumber )
 			return;
 		}
 		g_oBackend.PerlEvalF( "GetKeysym(%d);", enKey );
-		DrawTextMSZ( SvPV_nolen(get_sv("keysym",TRUE)), inkFont, 530, iY, UseShadow, C_WHITE, gamescreen );
+		DrawTextMSZ( g_oBackend.GetPerlString("keysym"), inkFont, 530, iY, UseShadow, C_WHITE, gamescreen );
 		g_oState.m_aiPlayerKeys[a_iPlayerNumber][i] = enKey;
 		iY += 35;
 	}
