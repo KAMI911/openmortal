@@ -81,9 +81,9 @@ const int g_piMixingBits[] = { 1, 2 };
 const char* g_ppcVolume[] = { "OFF", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%", NULL };
 const int g_piVolume[] = { 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
 
-const char* g_ppcLanguage[] = { "English", "Spanish", "Francais", "Magyar", NULL };
-const int g_piLanguage[] =    {    0,    1,    2,    3 };
-const char* g_ppcLanguageCodes[] = { "en", "es", "fr", "hu" };
+const char* g_ppcLanguage[] = { "English", "Spanish", "Francais", "Magyar", "Portugues", NULL };
+const int g_piLanguage[] =    {    0,    1,    2,    3,    4 };
+const char* g_ppcLanguageCodes[] = { "en", "es", "fr", "hu", "pt" };
 
 const char* g_ppcServer[] = { "Connect to game", "Create game", NULL };
 int g_piServer[] = { 0, 1 };
