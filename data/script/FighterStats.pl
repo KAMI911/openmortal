@@ -25,14 +25,20 @@ STORY		string
 
 
 =comment
-We store "official" characters in the @FighterStats array. Non-syndicated
-characters will have a unique ID and stored in a has.
+We store both official and 3rd-party characters in the %FighterStats hash.
+Official characters have ID's between 1 and 99, contributed characters have
+ID's >= 100.
+
+No file should access the %FighterStats hash directly, instead,
+RegisterFighter must be used to add fighters and
+GetFighterStats must be used to retrieve information.
 =cut
 
-@::FighterStats = (		
-{},	# Dummy UNKNOWN fighter entry..
+%::FighterStats = (		
 
+'1'=>
 {	'ID'	=> 1,
+	'CODENAME' => 'Ulmar',
 	'NAME'	=>'Watasiwa baka janajo',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Clown-fu',
@@ -75,7 +81,9 @@ is van éppen illetve mit is csinál...)',
 
 
 
+'2'=>
 {	'ID'	=> 2,
+	'CODENAME' => 'UPi',
 	'NAME'	=>'Dark Black Evil Mage',
 	'TEAM'	=>'Evil leader',
 	'STYLE'	=>'Piro-fu',
@@ -110,7 +118,9 @@ mindörökre. Talán van valami hátsó szándéka, amirõl senki sem tud? Nincs!',
 
 
 
+'3'=>
 {	'ID'	=> 3,
+	'CODENAME' => 'Zoli',
 	'NAME'	=>'Boxer',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Kickbox-fu',
@@ -143,7 +153,9 @@ kívül nincs, de ez is remekül elszórakoztatja középtávon',
 
 
 
+'4'=>
 {	'ID'	=> 4,
+	'CODENAME' => 'Cumi',
 	'NAME'	=>'Cumi',
 	'TEAM'	=>'Good Leader',
 	'STYLE'	=>'N/A',
@@ -163,7 +175,7 @@ Forward Forward HPunch - Spit
 Back Down Forward - Baseball',
 
 	'NAME-hu'  =>'Cumi',
-	'TEAM-hu'  =>'JÃ³ vezÃ©r',
+	'TEAM-hu'  =>'Jo vezer',
 	'STYLE-hu' =>'N/A',
 	'AGE-hu'   =>'15',
 	'WEIGHT-hu'=>'55',
@@ -178,7 +190,9 @@ a Kung fu sorozatot elejetol vegeig egyulteben. Kepzettsege jelenleg ebbol all.'
 
 
 
+'5'=>
 {	'ID'	=> 5,
+	'CODENAME' => 'Sirpi',
 	'NAME'	=>'Sirpi',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Don\'tHurtMe-FU',
@@ -211,7 +225,9 @@ Ezért csatlakozott a jók kicsiny csapatához... Meg amúgy is fél egyedül.',
 
 
 
+'6'=>
 {	'ID'	=> 6,
+	'CODENAME' => 'Macy',
 	'NAME'	=>'Macy',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Macy-fu',
@@ -242,7 +258,9 @@ következõ harcig a gonosz ellen...',
 
 
 
+'7'=>
 {	'ID'	=> 7,
+	'CODENAME' => 'Bence',
 	'NAME'	=>'Jan Ito',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Kururin-do',
@@ -279,7 +297,9 @@ vasaltorrú bakancsok iránt szárnyalja túl.',
 
 
 
+'8'=>
 {	'ID'	=> 8,
+	'CODENAME' => 'Grizli',
 	'NAME'	=>'Grizzly',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Bear dance',
@@ -325,7 +345,9 @@ Grizli a szombat ellenesek ádáz gyûlölõje, a jó csapat oszlopos tagja.',
 
 
 
+'9'=>
 {	'ID'	=> 9,
+	'CODENAME' => 'Descant',
 	'NAME'	=>'Descant',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Murderization',
@@ -363,7 +385,9 @@ bajba kerül most is azon az oldalon van, ahol vastagabb a BUKSZA, most épp a...'
 
 
 
+'10'=>
 {	'ID'	=> 10,
+	'CODENAME' => 'Surba',
 	'NAME'	=>'Rising-san',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Flick-fu',
@@ -394,7 +418,9 @@ megbízását...',
 
 
 
+'11'=>
 {	'ID'	=> 11,
+	'CODENAME' => 'Ambrus',
 	'NAME'	=>'Mad Sawman',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Sawing',
@@ -428,7 +454,9 @@ emberfejeket. Forró nyári éjszakákon mindig hallatszik õrült kacaja.',
 
 
 
+'12'=>
 {	'ID'	=> 12,
+	'CODENAME' => 'Dani',
 	'NAME'	=>'Imperfect Soldier',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Pub Fight',
@@ -468,7 +496,9 @@ Alantasait folytonosan kocsmai bunyóinak történeteivel traktálja, amíg azok
 
 
 
+'13'=>
 {	'ID'	=> 13,
+	'CODENAME' => 'Kinga',
 	'NAME'	=>'Aisha',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Death Dance',
@@ -498,7 +528,9 @@ tulelem, csatlakozom azokhoz a hulye Mortalosokhoz!',
 
 
 
+'14'=>
 {	'ID'	=> 14,
+	'CODENAME' => 'Misi',
 	'NAME'	=>'Papatsuka Mamatsuba',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Gloom',
@@ -543,8 +575,8 @@ sub RegisterFighter($)
 {
 	my ($reginfo) = @_;
 	
-	# reginfo must contain: ID, GENDER, DATAVERSION, DATASIZE, STARTCODE, FRAMES, STATES, DATAFILE
-	foreach my $attr (qw(ID GENDER DATAVERSION DATASIZE STARTCODE FRAMES STATES DATAFILE))
+	# reginfo must contain: ID, GENDER, DATAVERSION, DATASIZE, STARTCODE, FRAMES, STATES, CODENAME
+	foreach my $attr (qw(ID GENDER DATAVERSION DATASIZE STARTCODE FRAMES STATES CODENAME))
 	{
 		die "RegisterFighter: Attribute $attr not found" unless defined $reginfo->{$attr};
 	}
@@ -553,30 +585,29 @@ sub RegisterFighter($)
 	my ($fighterenum, $fighterstats);
 	$fighterenum = $reginfo->{ID};
 	
-	$fighterstats = $::FighterStats[$fighterenum];
+	$fighterstats = $::FighterStats{$fighterenum};
 	if ( not defined $fighterstats )
 	{
 		print "RegisterFighter: Fighter $fighterenum not found, non-syndicated?\n";
 		$fighterstats = {
-			'ID'	=> $fighterenum,
-			'NAME'	=>'Unknown (non-syndicated)',
-			'TEAM'	=>'Unknown',
-			'STYLE'	=>'Unknown',
-			'AGE'	=>'Unknown',
-			'WEIGHT'=>'Unknown',
-		  	'HEIGHT'=>'Unknown',
-			'SHOE'	=>'Unknown',
-			'STORY'	=>'...',
-			'DATAFILE'=>'ZOLIDATA.DAT',
+			'ID'		=> $fighterenum,
+			'NAME'		=>'Unknown (non-syndicated)',
+			'TEAM'		=>'Unknown',
+			'STYLE'		=>'Unknown',
+			'AGE'		=>'Unknown',
+			'WEIGHT'	=>'Unknown',
+		  	'HEIGHT'	=>'Unknown',
+			'SHOE'		=>'Unknown',
+			'STORY'		=>'...',
+			'DATAFILE'	=> $reginfo->{CODENAME} . '.dat',
 			%{$reginfo}
   		};
-		$::FighterStats[$fighterenum] = $fighterstats;
+		$::FighterStats{$fighterenum} = $fighterstats;
 		return;
 	}
 	
 	# Add the reginfo to the fighter stats:
-	%{$fighterstats} = ( %{$fighterstats}, %{$reginfo} );
-	
+	%{$fighterstats} = ( 'DATAFILE' => $reginfo->{CODENAME}.'.dat', %{$fighterstats}, %{$reginfo} );
 }
 
 
@@ -594,8 +625,9 @@ sub GetFighterStats($)
 {
 	my ($fighterenum) = @_;
 	
-	my ($source) = $::FighterStats[$fighterenum];
-	
+	my ($source) = $::FighterStats{$fighterenum};
+
+	$::Codename	= $source->{CODENAME};
 	$::Name		= GetStatsTranslated( $source, 'NAME' );
 	$::Team		= GetStatsTranslated( $source, 'TEAM' );
 	$::Style	= GetStatsTranslated( $source, 'STYLE' );
@@ -605,13 +637,14 @@ sub GetFighterStats($)
 	$::Shoe		= GetStatsTranslated( $source, 'SHOE' );
 	$::Story	= GetStatsTranslated( $source, 'STORY' );
 	$::Keys		= GetStatsTranslated( $source, 'KEYS' );
-	$::Datafile	= GetStatsTranslated( $source, 'DATAFILE' );
+	$::Datafile	= $source->{'DATAFILE'};
+	$::Portrait	= $::Codename . ".icon.png";
 	
 	$::Story =~ s/([^\n])\n([^\n])/$1 $2/gms;
 	
 	@::StatTags = ( 'Name: ', 'Team: ', 'Style: ', 'Age: ', 'Weight: ', 'Height: ', 'Shoe size: ' );
 	
-	#print "The data file of $fighterenum is '$::Datafile'\n";
+	# print "The data file of $fighterenum is '$::Datafile'\n";
 	
 	return $source;
 }
