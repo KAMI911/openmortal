@@ -38,29 +38,38 @@ MAIN CONSTANTS
 
 =cut
 
-$GAMEBITS	= 3;							# Number of oversampling bits in coordinates
-$GAMEBITS2	= 1 << $GAMEBITS;				# 2^(oversampling)
-$SCRWIDTH	= 640;							# The physical horizontal screen resolution
-$SCRHEIGHT	= 480;							# The physical vertical screen resolution
-$SCRWIDTH2	= ($SCRWIDTH << $GAMEBITS);		# The logical horizontal screen resolution
-$SCRHEIGHT2	= ($SCRHEIGHT << $GAMEBITS);	# The logical vertical screen resolution
-$MOVEMARGIN2= 50 << $GAMEBITS;				# The logical border for fighters.
+sub InitMainConstants($$)
+{
+	my ($wide, $numplayers) = @_;
+	
+	$MAXPLAYERS	= 4;							# The maximal number of players in the game
+	$WIDE		= $wide;
+	$NUMPLAYERS	= $numplayers;					# Number of players in the game
+	$GAMEBITS	= 3;							# Number of oversampling bits in coordinates
+	$GAMEBITS2	= 1 << $GAMEBITS;				# 2^(oversampling)
+	$SCRWIDTH	= $wide ? 800 : 640;			# The physical horizontal screen resolution
+	$SCRHEIGHT	= 480;							# The physical vertical screen resolution
+	$SCRWIDTH2	= ($SCRWIDTH << $GAMEBITS);		# The logical horizontal screen resolution
+	$SCRHEIGHT2	= ($SCRHEIGHT << $GAMEBITS);	# The logical vertical screen resolution
+	$MOVEMARGIN2= 50 << $GAMEBITS;				# The logical border for fighters.
 
-$BGWIDTH2	= 1920 << $GAMEBITS;			# The logical background width
-$BGHEIGHT2	= 480 << $GAMEBITS;				# The logical background height
+	$BGWIDTH2	= 1920 << $GAMEBITS;			# The logical background width
+	$BGHEIGHT2	= 480 << $GAMEBITS;				# The logical background height
 
-$GROUND2	= 160 << $GAMEBITS;				# The logical ground level.
-$DELMULTIPLIER = 1;							# DEL values in states are multiplied by this.
-$MAXCOMBO	= 5;							# Maximum combo count.
+	$GROUND2	= 160 << $GAMEBITS;				# The logical ground level.
+	$DELMULTIPLIER = 1;							# DEL values in states are multiplied by this.
+	$MAXCOMBO	= 5;							# Maximum combo count.
 
-$BgMax		= $BGWIDTH2 - $SCRWIDTH2;		# The logical maximum camera position
-$BgSpeed	= 0;							# The current speed of the background movement
-$BgPosition	= $BgMax >> 1;					# The logical camera position
-$BgScrollEnabled = 1;						# Can the background scroll?
-$HitPointScale = 10;						# Scale the hit points by this.
-$NextDoodad = 0;							# The next doodad to process
-$Debug		= 0;
+	$BgMax		= $BGWIDTH2 - $SCRWIDTH2;		# The logical maximum camera position
+	$BgSpeed	= 0;							# The current speed of the background movement
+	$BgPosition	= $BgMax >> 1;					# The logical camera position
+	$BgScrollEnabled = 1;						# Can the background scroll?
+	$HitPointScale = 10;						# Scale the hit points by this.
+	$NextDoodad = 0;							# The next doodad to process
+	$Debug		= 0;
+}
 
+InitMainConstants( 0, 2 );
 
 require 'PlayerInput.pl';
 require 'Fighter.pl';
@@ -79,17 +88,28 @@ MAIN OBJECTS
 
 =cut
 
+sub CreateFighters()
+{
+	my ( $i, $fighter );
+		
+	@Fighters = ();
+	
+	for ( $i=0; $i<$MAXPLAYERS; ++$i )
+	{
+		$fighter = Fighter->new();
+		$fighter->{NUMBER} = $i;
+		$fighter->{OTHER} = $fighter;
+		$Fighters[$i] = $fighter;
+	}
+	
+	$Fighters[1]->{OTHER} = $Fighters[0];
+	$Fighters[0]->{OTHER} = $Fighters[1];
+}
 
-$Fighter1 = Fighter->new();
-$Fighter2 = Fighter->new();
 
-$Fighter1->{NUMBER} = 0;
-$Fighter1->{OTHER} = $Fighter2;
+CreateFighters();
+CreatePlayerInputs();
 
-$Fighter2->{NUMBER} = 1;
-$Fighter2->{OTHER} = $Fighter1;
-
-@Fighters = ( $Fighter1, $Fighter2 );
 
 
 =comment
@@ -102,17 +122,19 @@ $gametick = 0;	# Number of Advance()'s called since the start.
 $p1x = 10;		# Player 1 X position
 $p1y = 100;		# Player 1 Y position
 $p1f = 10;		# Player 1 frame
-$p1h = 100;		# Player 1 HP
+$p1h = 100;		# Player 1 HP (the displayed bar)
+$p1hreal = 100;	# Player 1 real HP (actual value, not the displayed bar)
 
 $p2x = 400;		# Player 2 X position
 $p2y = 100;		# Player 2 Y position
 $p2f = -40;		# Player 2 frame. Negative means flipped.
 $p2h = 100;		# Player 2 HP
+$p2hreal = 100;	# Player 2 real HP (actual value, not the displayed bar)
 
 $bgx = 0;		# Background X position
 $bgy = 0;		# Background Y position
-$over = 0;		# Is the game over?
-$ko = 0;		# Is one fighter knocked down?
+$over = 0;		# Is the game over? Used to end the game / player selection.
+$ko = 0;		# Is one fighter knocked down? Used for instant replay, to capture the moment of the KO. Also disables player input / connections
 
 
 $doodad_x = -1;			# Doodad X position
@@ -120,13 +142,23 @@ $doodad_y = -1;			# Doodad Y position
 $doodad_t = -1;			# Doodad type
 $doodad_f = -1;			# Doodad frame number
 $doodad_dir = 0;		# The direction of the doodad; 1: normal; -1: flipped
-$doodad_gfxowner = -1;	# 0: first player; 1: second player; 2: Global doodad
+$doodad_gfxowner = -1;	# 0: first player; 1: second player; -1: Global doodad
 $doodad_text = '';		# The text of type 0 doodads.
 
 
-sub ResetGame($)
+
+=comment
+ResetGame clears 'most' game variables. It should not be called by the 
+frontend directly, instead it is used by the various starting functions,
+e.g. "SelectStart" or "JudgementStart".
+=cut
+
+sub ResetGame($$$)
 {
-	my ($bgposition) = @_;
+	my ($bgposition, $wide, $numplayers) = @_;
+
+	InitMainConstants( $wide, $numplayers );
+	
 	$gametick		= 0;
 	$over			= 0;
 	$ko				= 0;
@@ -137,6 +169,8 @@ sub ResetGame($)
 	$BgPosition		= $bgposition;
 	$BgScrollEnabled = $bgposition != 0;
 	
+	$ActiveFighters	= $numplayers;		# Number of fighters not in the Win2 / Dead states.
+	$ActiveTeams	= $numplayers;		# Number of teams not in the Win2 / Dead states or have more team members.
 	$OverTimer		= 0;
 	$JudgementMode	= 0;
 	$Debug			= 0;
@@ -147,10 +181,17 @@ sub ResetGame($)
 	ResetEarthquake();
 	ResetRewind();
 
-	$Fighter1->Reset() if $Fighter1->{OK};
-	$Fighter2->Reset() if $Fighter2->{OK};
-	$Input1->Reset();
-	$Input2->Reset();
+	my ($fighter, $input);
+	foreach $fighter (@Fighters)
+	{
+		$fighter->Reset if $fighter->{OK};
+		$fighter->{TEAMSIZE} = 1;
+	}
+
+	foreach $input (@Inputs)
+	{
+		$input->Reset();
+	}
 }
 
 
@@ -163,20 +204,18 @@ JUDGEMENT METHODS
 
 sub JudgementStart($)
 {
-	ResetGame(0);
-	# $bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
+	ResetGame(0, 0, 2);
 	$JudgementMode = 1;
 	($JudgementWinner) = @_;
 	
-	$Fighter1->{X} =  ($JudgementWinner ? 150 : 520 ) * $GAMEBITS2;
-	$Fighter1->{DIR} = ($JudgementWinner ? 1 : -1 );
-	$Fighter1->{NEXTST} = 'Stand';
-	$Fighter1->Update();
-	
-	$Fighter2->{X} = ($JudgementWinner ? 520 : 150 ) * $GAMEBITS2;
-	$Fighter2->{DIR} = ($JudgementWinner ? -1 : 1 );
-	$Fighter2->{NEXTST} = 'Stand';
-	$Fighter2->Update();
+	my ($i);
+	for ( $i=0; $i<$NUMPLAYERS; ++$i )
+	{
+		$Fighters[$i]->{X} =  ($JudgementWinner!=$i ? 150 : 520 ) * $GAMEBITS2;
+		$Fighters[$i]->{DIR} = ($JudgementWinner!=$i ? 1 : -1 );
+		$Fighters[$i]->{NEXTST} = 'Stand';
+		$Fighters[$i]->Update();
+	}
 }
 
 
@@ -186,21 +225,38 @@ PLAYER SELECTION METHODS
 
 =cut
 
-sub SelectStart
+sub SelectStart($)
 {
-	ResetGame(0);
+	my ( $numplayers ) = @_;
+	ResetGame(0,0,$numplayers);
+	my ( $i, $fighter);
 	
-	if ( $Fighter1->{OK} )
+	$ActiveTeams = 10000;		# Make sure we don't trigger an accidental 'Won' event...
+	
+	if ( 2 == $NUMPLAYERS )
 	{
-		$Fighter1->{X} = 80 * $GAMEBITS2;
-		$Fighter1->{NEXTST} = 'Stand';
-		$Fighter1->Update();
+		for ( $i=0; $i<$NUMPLAYERS; ++$i )
+		{
+			if ($Fighters[$i]->{OK})
+			{
+				$Fighters[$i]->{X} = (100 + 440*$i) * $GAMEBITS2;
+				$Fighters[$i]->{NEXTST} = 'Stand';
+				$Fighters[$i]->{DIR} = $i ? -1 : 1;
+				$Fighters[$i]->Update();
+			}
+		}
 	}
-	if ( $Fighter2->{OK} )
+	else
 	{
-		$Fighter2->{X} = 560 * $GAMEBITS2;
-		$Fighter2->{NEXTST} = 'Stand';
-		$Fighter2->Update();
+		foreach $fighter (@Fighters)
+		{
+			next unless $fighter->{OK};
+			last if $fighter->{NUMBER} == $NUMPLAYERS;
+			$fighter->{X} = $MOVEMARGIN2 + $SCRWIDTH2 / $NUMPLAYERS * $fighter->{NUMBER};
+			$fighter->{DIR} = 1;
+			$fighter->{NEXTST} = 'Start';
+			$fighter->Update();
+		}
 	}
 }
 
@@ -212,25 +268,37 @@ sub SetPlayerNumber
 	
 	DeleteDoodadsOf( $player );
 	
-	$f = $player ? $Fighter2 : $Fighter1;
+	$f = $Fighters[$player];
+	return unless defined $f;
 	
 	$f->Reset($fighterenum);
-	
 	$f->{NEXTST} = 'Stand';
 	$f->Update();
 	
 	GetFighterStats($fighterenum);
-	$::PlayerName = $::Name
+	$::PlayerName = $::Name;
+	$over = 0;
+	$OverTimer = 0;
+	
+	if ( 2 != $NUMPLAYERS )
+	{
+		$f->{X} = $MOVEMARGIN2 + $SCRWIDTH2 / $NUMPLAYERS * $f->{NUMBER};
+		$f->{DIR} = 1;
+	}
 }
 
 
 sub PlayerSelected
 {
 	my ($number) = @_;
-	my ($f) = $number ? $Fighter2 : $Fighter1;
+	my ($f) = $Fighters[$number];
 	
+	$f->{NEXTST} = 'Stand';
+	$f->Update();
 	$f->Event( 'Won' );
 	$f->Update();
+	$over = 0;
+	$OverTimer = 1;
 }
 
 
@@ -285,6 +353,10 @@ sub AdvanceEarthquake
 	$p1y += $QuakeY;
 	$p2x += $QuakeX;
 	$p2y += $QuakeY;
+	$p3x += $QuakeX;
+	$p3y += $QuakeY;
+	$p4x += $QuakeX;
+	$p4y += $QuakeY;
 	
 	# Do not quake doodads for now.
 }
@@ -297,22 +369,95 @@ GAME BACKEND METHODS
 
 =cut
 
-sub GameStart($$)
+sub GameStart($$$$$)
 {
-	my ( $MaxHP, $debug ) = @_;
+	my ( $MaxHP, $numplayers, $teamsize, $wide, $debug ) = @_;
+	
+	ResetGame( $BgMax >> 1, $wide, $numplayers );
 
-	ResetGame( $BgMax >> 1);
+	$::MaxHP = $MaxHP;
 	
 	$bgx = ( $SCRWIDTH2 - $BGWIDTH2) >> 1;
 	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
 	$BgScrollEnabled = 1;
 	$HitPointScale = 1000 / $MaxHP;			# 1/1
 	$Debug = $debug;
-
-	$Fighter1->{HP} = $MaxHP;
-	$Fighter2->{HP} = $MaxHP;
+	
+	my ($fighter);
+	foreach $fighter (@Fighters)
+	{
+		$fighter->{TEAMSIZE} = $teamsize;
+		$fighter->{HP} = $MaxHP;
+	}
 	
 	$p1h = $p2h = 0;
+}
+
+
+=comment
+NextTeamMember releases the next team member of the given team. This method
+is called by the frontend when a fighter dies in team mode. The new fighter
+will be released someplace "safe". The team size of the given player will
+be decremented.
+
+Input parameters:
+$player			0 or 1, the player who has his current fighter replaced
+$fighterenum	The new fighter who will replace the current figther.
+
+=cut
+
+sub NextTeamMember($$)
+{
+	my ($player, $fighterenum) = @_;
+	
+	my ($fighter) = $Fighters[$player];
+	my ($otherx, $oldx);
+	
+	-- $fighter->{TEAMSIZE};
+	$oldx = $fighter->{X};
+	
+	SetPlayerNumber( $player, $fighterenum );
+	$fighter->{HP} = $::MaxHP;
+	$over = 0;
+	$ko = 0;
+	$OverTimer = 0;
+	
+	if ( $NUMPLAYERS == 2 )
+	{
+		$otherx = $Fighters[1-$fighter->{NUMBER}]->{X};
+		if ( $otherx < $BGWIDTH2 / 2 )
+		{
+			$fighter->{X} = $otherx + $SCRWIDTH2 ;#- $MOVEMARGIN2 * 6;
+			$fighter->{DIR} = -1;
+		}
+		else
+		{
+			$fighter->{X} = $otherx - $SCRWIDTH2 ;#+ $MOVEMARGIN2 * 6;
+			$fighter->{DIR} = +1;
+		}
+	
+		if ( abs( $fighter->{X} - $oldx ) > $SCRWIDTH2 / 2 ) 
+		{
+			$fighter->{DELPENALTY} = 100;
+		}
+	}
+	else
+	{
+		if ($BgPosition < $BgMax2/2)
+		{
+			$fighter->{X} = $BgPosition + $SCRWIDTH2 + $MOVEMARGIN2;
+			$fighter->{DIR} = -1;
+		}
+		else
+		{
+			$fighter->{X} = $BgPosition - $MOVEMARGIN2;
+			$fighter->{DIR} = 1;
+		}
+	}
+	
+	$fighter->{BOUNDSCHECK} = 0;
+	$fighter->{NEXTST} = 'JumpStart';
+	$fighter->Update();
 }
 
 
@@ -323,19 +468,22 @@ Takes a Fighter object, and returns the data relevant for the frontend.
 
 Parameters:
 $fighter	The fighter which is to be converted to frontend data.
+$hp			The displayed hit points
 
 Returns:
 $x			The physical X coordinate of the fighter
 $y			The physical Y coordinate of the fighter
 $fnum		The frame number of the fighter. A negative sign means the
 			fighter is flipped horizontally (facing left)
+$hp			The displayed hit points
+$hpreal		The real HP of the given player
 
 =cut
 
-sub GetFighterData($)
+sub GetFighterData($$)
 {
-	my ($fighter) = @_;
-	my ($x, $y, $fnum, $f, $hp);
+	my ($fighter, $hp) = @_;
+	my ($x, $y, $fnum, $f);
 	
 	$fnum = $fighter->{FR};
 	$f = $fighter->{FRAMES}->[$fnum];
@@ -348,7 +496,13 @@ sub GetFighterData($)
 		$x -= $f->{x}*2 + $f->{w};
 	}
 	
-	return ($x, $y, $fnum);
+	$phTarget = $fighter->{HP}*$HitPointScale;
+	if ( $hp < $phTarget ) { $hp += 5; }
+	if ( $hp > $phTarget ) { $hp -= 3; }
+	$hp = $phTarget if abs($hp - $phTarget) < 3;
+	$hp = 0 if $hp < 0;	
+	
+	return ($x, $y, $fnum, $hp, $fighter->{HP});
 }
 
 
@@ -372,7 +526,7 @@ sub GetNextDoodadData
 	$doodad_text = $doodad->{TEXT};
 	
 	
-	if ($doodad_gfxowner < 2 )
+	if ($doodad_gfxowner >=0 )
 	{
 		$doodad_x += $Fighters[$doodad_gfxowner]->{FRAMES}->[$doodad_f]->{'x'} * $doodad_dir;
 		$doodad_y += $Fighters[$doodad_gfxowner]->{FRAMES}->[$doodad_f]->{'y'};
@@ -428,10 +582,18 @@ sub GetNextSoundData()
 }
 
 
-
-sub DoFighterEvents
+sub DoFighterHitEvent($$$)
 {
-	my ($fighter, $hit) = @_;
+	my ($fighter, $other, $hit) = @_;
+	
+	$fighter->HitEvent( $other, $other->GetCurrentState()->{HIT}, $hit );
+}
+
+
+
+sub DoFighterEvents($)
+{
+	my ($fighter) = @_;
 	
 	if ( $JudgementMode )
 	{
@@ -446,18 +608,11 @@ sub DoFighterEvents
 		return;
 	}
 	
-	if ( $hit )
-	{
-		$fighter->HitEvent( $fighter->{OTHER}->GetCurrentState()->{HIT}, $hit );
-		return;
-	}
-	
-	#if ( ($fighter->{X} - $fighter->{OTHER}->{X}) * ($fighter->{DIR}) > 0 )
-	if ( $fighter->IsBackTurned )
+	if ( $NUMPLAYERS ==2 and $fighter->IsBackTurned )
 	{
 		$fighter->Event("Turn");
 	}
-	if ( $fighter->{OTHER}->{ST} eq 'Dead' )
+	if ( $ActiveTeams <= 1 )
 	{
 		$fighter->Event("Won");
 	}
@@ -474,7 +629,7 @@ sub DoFighterEvents
 
 sub GameAdvance
 {
-	my ($hit1, $hit2);
+	my ( @hits, @playerhit, $i, $j, $fighter, $input);
 	
 	$gametick += 1;
 	
@@ -483,24 +638,39 @@ sub GameAdvance
 	
 	# 1. ADVANCE THE PLAYERS
 	
-	$Input1->Advance();
-	$Input2->Advance();
-	$Fighter1->Advance( $Input1 ) if $Fighter1->{OK};
-	$Fighter2->Advance( $Input2 ) if $Fighter2->{OK};
-	$hit2 = $Fighter1->CheckHit() if $Fighter1->{OK};
-	$hit1 = $Fighter2->CheckHit() if $Fighter2->{OK};
+	for ( $i=0; $i<$NUMPLAYERS; ++$i ) {
+		$input = $Inputs[$i];
+		$fighter = $Fighters[$i];
+		$input->Advance();
+		$fighter->Advance( $input ) if $fighter->{OK};
+		$hit[$i] = 0;
+	}
 	
+	@hits = ();
+	for ( $i=0; $i<$NUMPLAYERS; ++$i ) {
+		push @hits, ( $Fighters[$i]->CheckHit() );
+	}
+		
 	# 2. Events come here
 	
-	DoFighterEvents( $Fighter1, $hit1 ) if $Fighter1->{OK};
-	DoFighterEvents( $Fighter2, $hit2 ) if $Fighter2->{OK};
-	UpdateDoodads();
-	$Fighter1->Update() if $Fighter1->{OK};
-	$Fighter2->Update() if $Fighter2->{OK};
+	foreach $hit (@hits) {
+		print STDERR "hits: $hit->[0] $hit->[1] $hit->[2]\n";
+		DoFighterHitEvent( $hit->[1], $hit->[0], $hit->[2] );
+	}
 	
-	if ( $OverTimer == 0 and
-		($Fighter1->{ST} eq 'Dead' or $Fighter1->{ST} eq 'Won2') and
-		($Fighter2->{ST} eq 'Dead' or $Fighter2->{ST} eq 'Won2') )
+	for ( $i=0; $i<$NUMPLAYERS; ++$i ) {
+		$fighter = $Fighters[$i];
+		DoFighterEvents( $fighter ) if $fighter->{OK};
+	}
+	
+	UpdateDoodads();
+	
+	for ( $i=0; $i<$NUMPLAYERS; ++$i ) {
+		$fighter = $Fighters[$i];
+		$fighter->Update() if $fighter->{OK};
+	}
+	
+	if ( $OverTimer == 0 and $ActiveTeams <= 0 )
 	{
 		$OverTimer = 1;
 	}
@@ -514,9 +684,11 @@ sub GameAdvance
 
 	if ( $BgScrollEnabled )
 	{
-		$BgOpt = ($Fighter1->{X} + $Fighter2->{X}) / 2;		# 1/1 Stupid kdevelop syntax hightlight.
-		if ( ($BgOpt - $BgSpeed*50 - $BgPosition) > (320 << $GAMEBITS)) { $BgSpeed++; }
-		if ( ($BgOpt - $BgSpeed*50 - $BgPosition) < (320 << $GAMEBITS)) { $BgSpeed--; }
+		$BgOpt = 0;
+		for ( $i=0; $i<$NUMPLAYERS; ++$i ) { $BgOpt += $Fighters[$i]->{X}; }
+		$BgOpt /= $NUMPLAYERS;		# 1/1 Stupid kdevelop syntax hightlight.
+		if ( ($BgOpt - $BgSpeed*50 - $BgPosition) > ($SCRWIDTH2 / 2) ) { $BgSpeed++; }
+		if ( ($BgOpt - $BgSpeed*50 - $BgPosition) < ($SCRWIDTH2 / 2) ) { $BgSpeed--; }
 	
 		$BgPosition+=$BgSpeed;
 		if ($BgPosition<0) { $BgPosition = $BgSpeed = 0; }
@@ -527,24 +699,16 @@ sub GameAdvance
 	
 	# 4. SET GLOBAL VARIABLES FOR THE C++ DRAWING TO READ
 	
-	($p1x, $p1y, $p1f) = GetFighterData( $Fighter1 );
-	($p2x, $p2y, $p2f) = GetFighterData( $Fighter2 );
-
-	$phTarget = $Fighter1->{HP}*$HitPointScale;
-	if ( $p1h < $phTarget ) { $p1h += 5; }
-	if ( $p1h > $phTarget ) { $p1h -= 3; }
-	$p1h = $phTarget if abs($p1h - $phTarget) < 3;
-	$p1h = 0 if $p1h < 0;
+	($p1x, $p1y, $p1f, $p1h, $p1hreal) = GetFighterData( $Fighters[0], $p1h );
+	($p2x, $p2y, $p2f, $p2h, $p2hreal) = GetFighterData( $Fighters[1], $p2h ) if ($NUMPLAYERS >= 2);
+	($p3x, $p3y, $p3f, $p3h, $p3hreal) = GetFighterData( $Fighters[2], $p3h ) if ($NUMPLAYERS >= 3);
+	($p4x, $p4y, $p4f, $p3h, $p4hreal) = GetFighterData( $Fighters[3], $p4h ) if ($NUMPLAYERS >= 4);
 	
-	$phTarget = $Fighter2->{HP}*$HitPointScale;
-	if ( $p2h < $phTarget ) { $p2h += 5; }
-	if ( $p2h > $phTarget ) { $p2h -= 3; }
-	$p2h = $phTarget if abs($p2h - $phTarget) < 3;
-	$p2h = 0 if $p2h < 0;
-
 	$bgx = $BgPosition >> $GAMEBITS;
 	$p1x -= $bgx;
 	$p2x -= $bgx;
+	$p3x -= $bgx;
+	$p4x -= $bgx;
 	$bgy = 0;
 	
 	AdvanceEarthquake();

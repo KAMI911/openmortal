@@ -542,6 +542,21 @@ tulelem, csatlakozom azokhoz a hulye Mortalosokhoz!',
 
 
 
+'16'=>
+{	'ID'	=> 16,
+	'CODENAME' => 'Judy',
+	'NAME'	=> 'Judy',
+	'TEAM'	=> 'Evil',
+	'STYLE'	=> '?',
+	'AGE'	=> '?',
+	'WEIGHT'=> '?',
+	'HEIGHT'=> '?',
+	'SHOE'	=> '?',
+	'STORY'	=> '...',
+},
+
+
+
 '14'=>
 {	'ID'	=> 14,
 	'CODENAME' => 'Misi',
@@ -664,9 +679,68 @@ sub GetFighterStats($)
 }
 
 
+sub GetNumberOfAvailableFighters()
+{
+	my ($id, $fighter, $i);
+	
+	$i = 0;
+	while ( ($id, $fighter) = each %::FighterStats )
+	{
+		++$i if defined( $fighter->{DATAFILE} );
+	}
+	$::CppNumberOfAvailableFighters = $i;
+}
 
 
-#GetFighterStats(1);
-#print "$::Name $::Team $::Style $::Age $::Weight $::Height $::Shoe\n$::Story\n";
+
+=comment
+
+Returns the number of .pl files in the fighters directory.
+
+param $CharactersDir	The name of the characters directory. Might be stored and used later on.
+
+=cut
+
+sub GetNumberOfFighterFiles($)
+{
+	($::CharactersDir) = shift;
+	# Loads the list of .pl files in the characters directory.
+
+	my (@files, $file );
+
+	opendir CHARDIR, $::CharactersDir;
+	@files = readdir CHARDIR;
+	closedir CHARDIR;
+
+	foreach $file (@files) {
+		push @::CharacterList, $file if ( $file =~ /.pl$/ );
+	}
+
+	return scalar @::CharacterList;
+}
+
+
+=comment
+Loads a fighter file from the characters directory.
+=cut
+
+sub LoadFighterFile($)
+{
+	my ($index) = @_;
+
+	if ($index < 0 or $index >= scalar @::CharacterList) {
+		print "LoadFighterFile: Couldn't load index $index\n";
+	}
+
+	my ($filename, $return);
+	$filename = $::CharactersDir . '/' . $::CharacterList[$index];
+	
+	unless ( $return = do $filename ) {
+		print "Couldn't parse $filename: $@\n"	if $@;
+		print "Couldn't do $filename: $!\n"		unless defined $return;
+		print "Couldn't run $filename\n"		unless $return;
+	}
+}
+
 
 return 1;

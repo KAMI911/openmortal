@@ -222,8 +222,16 @@ Backend.pl
 
 =cut
 
-$Input1 = new PlayerInput;
-$Input2 = new PlayerInput;
+sub CreatePlayerInputs()
+{
+	my ($i);
+	@::Inputs=();
+	for ( $i=0; $i<$MAXPLAYERS; ++$i )
+	{
+		$::Inputs[$i] = new PlayerInput;
+	}
+}
+
 
 sub KeyDown
 {
@@ -239,8 +247,7 @@ sub KeyDown
 		$key = (5 - $key) if ($dir<0);
 	}
 	
-	if ($player==0) { $Input1->KeyDown( $key ); }
-	else { $Input2->KeyDown( $key ); }
+	$::Inputs[$player]->KeyDown( $key );
 }
 
 
@@ -258,8 +265,7 @@ sub KeyUp
 		$key = (5 - $key) if ($dir<0);
 	}
 	
-	if ($player==0) { $Input1->KeyUp( $key ); }
-	else { $Input2->KeyUp( $key ); }
+	$::Inputs[$player]->KeyUp( $key );
 }
 
 

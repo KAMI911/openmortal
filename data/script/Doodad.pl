@@ -13,13 +13,14 @@ SPEED	(int,int)	The Doodad's logical speed.
 ACCEL	(int,int)	The Doodad's logical acceleration.
 DIR		int			1: heading right; -1: heading left (implies flipped state)
 
-GFXOWNER int		The Doodad's graphics owner (0 for player 1, 1 for player 2, other means global)
+GFXOWNER int		The Doodad's graphics owner (0 for player 1, 1 for player 2, -1 means global)
 FIRSTFRAME int		The first frame of the doodad (only meaningful if GFXOWNER is a player).
 FRAMES	int			The number of frames.
 SA		int			Animation speed
 F		int			The Doodad's frame.
 TEXT	string		The text displayed in a text doodad.
 
+INITCODE sub		This will run then the doodad is created.
 UPDATECODE sub		This will be ran instead of MoveDoodad if defined.
 
 
@@ -30,6 +31,7 @@ Doodad types are:
 2		UPi's shot
 3		UPi's explosion
 4		UPi's familiar
+5		Tooth
 
 =cut
 
@@ -47,8 +49,27 @@ package Doodad;
 	'T'  => 1,					'HOSTILE' => 1,				'LIFETIME' => -1,
 	'SIZE'	=> [ 64, 64 ],		'SPEED'	=> [ 48, -25 ],		'ACCEL'	=> [ 0, 2 ],
 
-	'GFXOWNER' => 2,			'FIRSTFRAME' => 0,			'FRAMES' => 6,
+	'GFXOWNER' => -1,			'FIRSTFRAME' => 0,			'FRAMES' => 6,
 	'SA' => 1/10,
+},
+
+'Tooth' => {
+	'T' => 5,					'HOSTILE' => 0,				'LIFETIME' => -1,
+	'SIZE'	=> [ 24, 24 ],		'SPEED' => [ 20, -20 ],		'ACCEL' => [ 0, 2 ],
+	'GFXOWNER' => -1,			'FIRSTFRAME' => 0,			'FRAMES' => 12,
+	'SA' => 1/4,
+	'INITCODE' => sub {
+		my ($self) = @_;
+		$self->{SA} = $self->{SA} * $self->{DIR};
+	},
+	'UPDATECODE' => sub {
+		my ($self) = @_;
+		if ( $self->{POS}->[1] > (440 * $::GAMEBITS2) ) {
+			$self->{SPEED}->[1] = -abs( $self->{SPEED}->[1] / 2 );
+			$self->{POS}->[1] = 439 * $::GAMEBITS2;
+		}
+		MoveDoodad( $self );
+	},
 },
 
 'UPiShot' => {
@@ -68,7 +89,7 @@ package Doodad;
 },
 
 'UPiFamiliar' => {
-	'T' => 3,					'HOSTILE' => 0,				'LIFETIME' => -1,
+	'T' => 4,					'HOSTILE' => 0,				'LIFETIME' => -1,
 	'SIZE' => [ 20, 20],		'SPEED' => [ 0, 0 ],		'ACCEL' => [ 0, 0 ],
 	
 	'GFXOWNER' => 0,			'FIRSTFRAME' => 360,		'FRAMES' => 3,
@@ -79,7 +100,7 @@ package Doodad;
 		my ($self) = @_;
 		my ($fighter, $frame, $head, $targetposx, $targetposy);
 		
-		$fighter = $self->{OWNER} ? $::Fighter2 : $::Fighter1;
+		$fighter = $::Fighters[$self->{OWNER}];
 		$frame = $fighter->{FRAMES}->[$fighter->{FR}];
 		$head = $frame->{head};
 
@@ -134,7 +155,7 @@ sub CreateDoodad
 	if ( ( not defined $doodaddef ) and $t != 0 )
 	{
 		print "CreateDoodad: Doodad $doodaddef doesn't exist!\n";
-		return
+		return;
 	}
 	
 	if ( defined $doodaddef )
@@ -177,7 +198,13 @@ sub CreateDoodad
 	
 	$doodad->{SPEED}->[0] *= $doodad->{DIR};
 	$doodad->{ACCEL}->[0] *= $doodad->{DIR};
-	$doodad->{GFXOWNER} = $owner if $doodad->{GFXOWNER} < 2;
+	$doodad->{GFXOWNER} = $owner if $doodad->{GFXOWNER} >= 0;
+	
+	if ( exists $doodad->{INITCODE} )
+	{
+		# Call the updatecode.
+		&{$doodad->{INITCODE}}( $doodad );
+	}
 	
 	push @::Doodads, ($doodad);
 	return $doodad;
@@ -191,7 +218,7 @@ sub CreateTextDoodad
 	my ($self);
 	$self = CreateDoodad($x, $y, 0, 0, $owner);
 	$self->{'TEXT'} = $text;
-	$self->{'GFXOWNER'} = 2;
+	$self->{'GFXOWNER'} = -1;
 	return $self;
 }
 
@@ -256,6 +283,7 @@ sub MoveDoodad
 	
 	$doodad->{F} += $doodad->{SA};
 	$doodad->{F} -= $doodad->{FRAMES} if $doodad->{F} > ($doodad->{FRAMES} + $doodad->{FIRSTFRAME});
+	$doodad->{F} += $doodad->{FRAMES} if $doodad->{F} < $doodad->{FIRSTFRAME};
 
 	if ( $doodad->{POS}->[0] > $::BGWIDTH2 ) { return 1; }
 	if ( $doodad->{POS}->[0] < $doodad->{SIZE}->[0] * $::GAMEBITS2 ) { return 1; }
@@ -279,40 +307,29 @@ sub CheckDoodadHit($)
 {
 	my ( $self ) = @_;
 
-	my ( @poly, $x, $y, $w, $h );
+	my ( @poly, $x, $y, $w, $h, $i, $fighter );
 	$x = $self->{POS}->[0] / $::GAMEBITS2;
 	$y = $self->{POS}->[1] / $::GAMEBITS2;
 	$w = $self->{SIZE}->[0];
 	$h = $self->{SIZE}->[1];
 	
-	@poly = (
-		$x, $y,
-		$x+$w, $y,
-		$x+$w, $y+$h,
-		$x, $y+$h );
-
-	if ( $self->{OWNER} != 0 )
+	for ( $i=0; $i<$::NUMPLAYERS; ++$i )
 	{
-		if ( $::Fighter1->IsHitAt( \@poly ) )
+		next if $i == $self->{OWNER};
+		$fighter = $::Fighters[$i];
+		
+		@poly = (
+			$x, $y,
+			$x+$w, $y,
+			$x+$w, $y+$h,
+			$x, $y+$h );
+
+		if ( $fighter->IsHitAt( \@poly ) )
 		{
-			DoHitPlayer($self, $::Fighter1);
+			DoHitPlayer($self, $fighter);
 		}
 	}
 	
-	@poly = (
-		$x, $y,
-		$x+$w, $y,
-		$x+$w, $y+$h,
-		$x, $y+$h );
-
-	if ( $self->{OWNER} != 1 )
-	{
-		if ( $::Fighter2->IsHitAt( \@poly ) )
-		{
-			DoHitPlayer($self, $::Fighter2);
-		}
-	}
-
 }
 
 
@@ -321,7 +338,7 @@ sub DoHitPlayer($$)
 	my ($self,$player) = @_;
 
 	$self->{HOSTILE} = 0;
-	$player->HitEvent( 'Hit', $self->{T} );
+	$player->HitEvent( $::Fighters[$self->{OWNER}], 'Hit', $self->{T} );
 }
 =cut
 

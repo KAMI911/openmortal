@@ -19,6 +19,7 @@ NAME		string	The name of the character, e.g. "Ulmar".
 FRAMES		array	The character's frame description.
 STATES		hash	The character's state description.
 OK			bool	Is the fighter good to go?
+TEAMSIZE	int		The number of fighters left in this figther's team, including this one. 0 when the last one dies.
 
 NUMBER		int		Player number (either 0 or 1)
 X			int		The fighter's current anchor, horizontal coordinate.
@@ -36,10 +37,10 @@ CHECKEHIT	int		1 if the hit needs to be checked soon.
 DELIVERED	int		1 if a hit was delivered in this state.
 COMBO		int		The number of consecutive hits delivered to this fighter.
 COMBOHP		int		The amount of HP delivered in the last combo.
-OTHER		hash	A reference to the other Fighter
+OTHER		Fighter	A reference to the other Fighter
 LANDINGPENALTY int	This is added to DEL when the character lands (used to penaltize blocked jumpkicks). Becomes DELPENALTY upon landing.
 DELPENALTY	int		This is added to DEL in the next state.
-
+BOUNDSCHECK	bool	Should horizontal bounds checking be done for this fighter (for team mode when new fighter enters)	
 
 
 new
@@ -86,7 +87,7 @@ sub RewindData {
 sub Reset {
 	my ($self, $fighterenum) = @_;
 	
-	die "Insufficient parameters." unless defined $self;# and defined $frames and defined $states;
+	die "Insufficient parameters." unless defined $self;
 	$fighterenum = $self->{ID} unless defined $fighterenum;
 	
 	my ($number, $stats);
@@ -110,6 +111,7 @@ sub Reset {
 	$self->{FRAMES}	= $stats->{FRAMES};
 	$self->{STATES}	= $stats->{STATES};
 	$self->{X}		= (( $number ? 540 : 100 ) << $::GAMEBITS) + $::BgPosition;
+	$self->{X}		= (( $number ? 620 : 180 ) << $::GAMEBITS) + $::BgPosition if $::WIDE;
 	$self->{Y}		= $::GROUND2;
 	$self->{ST}		= 'Start';
 	$self->{FR}		= $self->GetCurrentState()->{F};
@@ -125,6 +127,7 @@ sub Reset {
 	$self->{COMBOHP}= 0;
 	$self->{LANDINGPENALTY} = 0;
 	$self->{DELPENALTY} = 0;
+	$self->{BOUNDSCHECK} = 1;
 	$self->{OK}		= 1;
 	
 	&{$self->{STATS}->{STARTCODE}}($self);
@@ -177,6 +180,8 @@ sub Advance {
 	
 	$self->{NEXTST} = '';
 	$stname = $self->{ST};
+	
+	return if ( $stname eq 'Dead' );
 
 	$st = $self->{'STATES'}->{$stname};
 	
@@ -197,7 +202,7 @@ sub Advance {
 	# 2.1. 'MOVE' PLAYER IF NECESSARY
 	
 	if ( defined $st->{'MOVE'} )
-	{	
+	{
 		$move = $st->{'MOVE'}*$self->{'DIR'} * 6;
 		$self->{'X'} += $move;
 	}
@@ -213,28 +218,34 @@ sub Advance {
 	
 	# 2.3. MAKE SURE THE TWO FIGHTERS DON'T "WALK" INTO EACH OTHER
 	
-	if ( $self->{Y} >= $::GROUND2 and
-		$self->{OTHER}->{Y} >= $::GROUND2 )
+	if ( $::BgScrollEnabled and $self->{Y} >= $::GROUND2 )
 	{
-		my ( $centerX, $centerOtherX, $pushDir );
+		my ( $other, $centerX, $centerOtherX, $pushDir );
 		$centerX = $self->GetCenterX;
-		$centerOtherX = $self->{OTHER}->GetCenterX;
-		
-		if ( abs($centerX - $centerOtherX) < 60 )
+		for ($i=0; $i<$::NUMPLAYERS; ++$i)
 		{
-			$pushDir = ($centerX > $centerOtherX) ?  1 : -1;
-			$self->{X} += 10 * $pushDir;
-			$self->{OTHER}->{X} -= 10 * $pushDir;
+			$other = $::Fighters[$i];
+			$centerOtherX = $other->GetCenterX;
+		
+			if ( abs($centerX - $centerOtherX) < 60 )
+			{
+				$pushDir = ($centerX > $centerOtherX) ?  1 : -1;
+				$self->{X} += 10 * $pushDir;
+				$other->{X} -= 10 * $pushDir;
+			}
 		}
 	}
 
 
 	# 2.4. HORIZONTAL BOUNDS CHECKING
 	
-	$self->{X} = $::BgPosition + $::MOVEMARGIN2
-		if $self->{X} < $::BgPosition + $::MOVEMARGIN2;
-	$self->{X} = $::BgPosition + $::SCRWIDTH2 - $::MOVEMARGIN2
-		if $self->{X} > $::BgPosition + $::SCRWIDTH2 - $::MOVEMARGIN2;
+	if ( $self->{BOUNDSCHECK} )
+	{
+		$self->{X} = $::BgPosition + $::MOVEMARGIN2
+			if $self->{X} < $::BgPosition + $::MOVEMARGIN2;
+		$self->{X} = $::BgPosition + $::SCRWIDTH2 - $::MOVEMARGIN2
+			if $self->{X} > $::BgPosition + $::SCRWIDTH2 - $::MOVEMARGIN2;
+	}
 		
 	# 3. FLYING OR FALLING
 	
@@ -249,6 +260,7 @@ sub Advance {
 			
 			$self->{DELPENALTY} = $self->{LANDINGPENALTY};
 			$self->{LANDINGPENALTY} = 0;
+			$self->{BOUNDSCHECK} = 1;
 			
 			if ( $st->{SITU} eq 'Falling')
 			{
@@ -267,8 +279,12 @@ sub Advance {
 					$self->{PUSHY} = 0;
 					$self->{Y} = $::GROUND2;
 					$self->{DEL} = 0;
-					$self->{NEXTST} = 'Getup';
-					$self->{NEXTST} = 'Dead' if $self->{HP} <= 0;
+					if ( $self->{HP} <= 0 ) {
+						$self->{NEXTST} = 'Dead';
+					}
+					else {
+						$self->{NEXTST} = 'Getup';
+					}
 				}
 				return;
 			}
@@ -318,14 +334,14 @@ sub Advance {
 	# 5. CALCULATE THE NEXT STATE
 
 	my ($nextst, $con, $input, $mod, $action, $dist);
-
+	
 	$nextst = $st->{NEXTST};
 	$con = $st->{CON};
-	$dist = ($self->{OTHER}->{X} - $self->{X}) * $self->{DIR};
 	undef $con if $::ko;
 	
 	if ( defined $con )
 	{
+		$dist = ($self->{OTHER}->{X} - $self->{X}) * $self->{DIR};
 		$self->ComboEnds();
 		
 		# 5.1. The current state has connections!
@@ -354,6 +370,9 @@ sub Advance {
 			}
 			$nextst = $con->{$action};
 			$in->ActionAccepted;
+			if ( $nextst eq 'Back' and $::NUMPLAYERS != 2 ) {
+				$nextst = 'Turn';
+			}
 		}
 	}
 
@@ -362,24 +381,31 @@ sub Advance {
 
 
 
+=comment
+Checks for hits on all other fighters.
+Returns a list of ($self,$fighter,$hit) triplets.
+=cut
 
-sub CheckHit
+sub CheckHit($)
 {
 	my ($self) = @_;
 
-	return 0 unless $self->{CHECKHIT};
+	return () unless $self->{CHECKHIT};
 	$self->{CHECKHIT} = 0;
 	
 	my ($st,		# A reference to the next state.
 		$nextst,	# The name of the next state.
 		@hit,		# The hit array
-		$i,
+		@hit2,
+		$i, $j,
+		@retval,
+		$other,
 	);
 	
 	$st = $self->{STATES}->{$self->{ST}};
 	
-	return 0 unless $st->{HIT};
-	return 0 unless defined $self->{FRAMES}->[$st->{F}]->{hit};
+	return @retval unless $st->{HIT};
+	return @retval unless defined $self->{FRAMES}->[$st->{F}]->{hit};
 	
 	@hit = @{$self->{FRAMES}->[$st->{F}]->{hit}};
 	if ( $self->{DIR}<0 )
@@ -389,12 +415,20 @@ sub CheckHit
 	::OffsetPolygon( \@hit,
 		$self->{X} / $::GAMEBITS2,
 		$self->{Y} / $::GAMEBITS2 );
-	
-	$i = $self->{OTHER}->IsHitAt( \@hit );
-	$self->{DELIVERED} = 1 if $i;
-	print "Collision = $i; ";
 
-	if ( $i == 0 )
+	for ( $j=0; $j<$::NUMPLAYERS; ++$j )
+	{
+		$other = $::Fighters[$j];
+		next if $other == $self;
+		@hit2 = @hit;
+		$i = $other->IsHitAt( \@hit2 );
+		if ( $i ) {
+			$self->{DELIVERED} = 1;
+			push @retval, ([$self, $other, $i]);
+		}
+	}
+	
+	if ( scalar(@retval) == 0 )
 	{
 		# Make the 'Woosh' sound - maybe.
 		$nextst = $st->{NEXTST};
@@ -404,7 +438,7 @@ sub CheckHit
 		push @::Sounds, ('woosh.wav') unless $nextst->{HIT} and defined $self->{FRAMES}->[$nextst->{F}]->{hit};
 	}
 	
-	return $i;
+	return @retval;
 }
 
 
@@ -474,12 +508,17 @@ sub Event($$$)
 =comment
 Event($self, $event, $eventpar): Handles the following events:
 'Highhit', 'Uppercut', 'Hit', 'Groinhit', 'Leghit', 'Fall'
+
+Parameters:
+$other		Fighter		The fighter who hit me.
+$event		string		The name of the event (any of the above events)
+$eventpar	int/string	1: head hit; 2: body hit; 3: leg hit; Maxcombo: I did a max combo (=fall with 0 damage)
 =cut
 
 
-sub HitEvent($$$)
+sub HitEvent($$$$)
 {
-	my ($self, $event, $eventpar) = @_;
+	my ($self, $other, $event, $eventpar) = @_;
 	
 	my ($st, $blocked, $damage);
 
@@ -489,9 +528,9 @@ sub HitEvent($$$)
 
 	$eventpar = '' unless defined $eventpar;		# Supress useless warning
 	if ( $eventpar eq 'Maxcombo' ) { $damage = 0; }
-	else { $damage = ::GetDamage( $self->{OTHER}->{NAME}, $self->{OTHER}->{ST} ); }
+	else { $damage = ::GetDamage( $other->{NAME}, $other->{ST} ); }
 	$blocked = $st->{BLOCK};
-	$blocked = 0 if ( $self->IsBackTurned() );
+	$blocked = 0 if ( $self->IsBackTurnedTo($other) );
 	
 	print "Event '$event', '$eventpar'\n";
 	print "Blocked.\n" if ( $blocked );
@@ -502,7 +541,7 @@ sub HitEvent($$$)
 	
 	# Turn if we must.
 
-	$self->{DIR} = ( $self->{X} > $self->{OTHER}->{X} ) ? -1 : 1;
+	$self->{DIR} = ( $self->{X} > $other->{X} ) ? -1 : 1;
 	
 	# Handle the unfortunate event of the player "dying".
 
@@ -516,7 +555,7 @@ sub HitEvent($$$)
 		$self->{COMBO} +=  1;
 		$self->{COMBOHP} += $damage;
 		$self->ComboEnds();
-		$::ko = 1;
+		$::ko = 1 if $self->{TEAMSIZE} <= 1 and $::ActiveTeams <= 2;
 		return;
 	}
 
@@ -525,14 +564,14 @@ sub HitEvent($$$)
 	if ( $blocked )
 	{
 		push @::Sounds, ('thump.wav');
-		$self->HitPush( - $damage * 20 * $self->{DIR} );
-		$self->{OTHER}->{DEL} += 20 * $::DELMULTIPLIER;
+		$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
+		$other->{DEL} += 20 * $::DELMULTIPLIER;
 
-		if ( $self->{OTHER}->{Y} < $::GROUND2 )
+		if ( $other->{Y} < $::GROUND2 )
 		{
-			$self->{OTHER}->{PUSHY} = -20 if $self->{OTHER}->{PUSHY} > 0;
-			$self->{OTHER}->{PUSHX} *= 0.2;
-			$self->{OTHER}->{LANDINGPENALTY} = 30 * $::DELMULTIPLIER;
+			$other->{PUSHY} = -20 if $other->{PUSHY} > 0;
+			$other->{PUSHX} *= 0.2;
+			$other->{LANDINGPENALTY} = 30 * $::DELMULTIPLIER;
 		}
 		# $self->{PUSHX} = - $damage * 5 * $self->{DIR};
 		return;
@@ -545,8 +584,14 @@ sub HitEvent($$$)
 		push @::Sounds, ('evil_laughter.voc');
 		::AddEarthquake( 20 );
 	}
-	elsif ($event eq 'Groinhit') { push @::Sounds, ('woman_screams.voc'); }
-	 { push @::Sounds, ('thump3.voc'); }
+	elsif ($event eq 'Groinhit') 
+	{ 
+		push @::Sounds, ('woman_screams.voc'); 
+	}
+	else
+	{ 
+		push @::Sounds, ('thump3.voc'); 
+	}
 	
 	$self->{COMBO} +=  1;
 	$self->{COMBOHP} += $damage;
@@ -556,7 +601,7 @@ sub HitEvent($$$)
 	{
 		$self->ComboEnds();
 		$event = 'Uppercut';
-		$self->{OTHER}->HitEvent( 'Fall', 'Maxcombo' );
+		$other->HitEvent( 'Fall', 'Maxcombo' );
 	}
 	
 	if ( $st->{SITU} eq 'Crouch' )
@@ -575,7 +620,7 @@ sub HitEvent($$$)
 			} else {
 				$self->{NEXTST} = 'KneelingKicked';
 			}
-			$self->HitPush( - $damage * 20 * $self->{DIR} );
+			$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
 			# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 		 }
 		 return;
@@ -599,8 +644,17 @@ sub HitEvent($$$)
 	
 	if ( $event eq 'Highhit' )
 	{
+		my ( $doodadx, $doodady );
+		($doodadx, $doodady) = ::GetPolygonCenter( $self->{FRAMES}->[$self->{FR}]->{head} );
+#		my ( $doodadx, $doodady ) = @{$self->{FRAMES}->[$self->{FR}]->{head}};
+		Doodad::CreateDoodad( $self->{X} + $doodadx * $::GAMEBITS2 * $self->{DIR},
+				$self->{Y} + $doodady * $::GAMEBITS2,
+				'Tooth',
+				- $self->{DIR},
+				$self->{NUMBER} );
+		
 		$self->{NEXTST} = 'HighPunched';
-		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
 		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Hit' )
@@ -612,19 +666,19 @@ sub HitEvent($$$)
 		} else {
 			$self->{NEXTST} = 'Swept';
 		}
-		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
 		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Groinhit' )
 	{
 		$self->{NEXTST} = 'GroinKicked';
-		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
 		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Leghit' )
 	{
 		$self->{NEXTST} = 'Swept';
-		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
 		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Uppercut' or $event eq 'Fall' )
@@ -716,7 +770,16 @@ sub Update
 	$nextst = $self->{'NEXTST'};
 	# If there isn't, no updating is necessary.
 	return unless $nextst;
-
+	
+	# ADMINISTER END OF THE STATE MACHINE (WON2 OR DEAD2)
+	
+	if ( $nextst eq 'Won2' or $nextst eq 'Dead' ) {
+		$self->{DELPENALTY} = 1000000;		# Something awfully large
+		$self->{HP} = -10000 if $nextst eq 'Dead';
+		--$::ActiveFighters;
+		--$::ActiveTeams if $self->{TEAMSIZE}<=1 or $nextst eq 'Won2';
+	}
+	
 	# ADMINISTER THE MOVING TO THE NEXT STATE
 	
 	$st = $self->GetCurrentState( $nextst );
@@ -796,12 +859,12 @@ Pushes the fighter back due to being hit. If the fighter is cornered,
 the other fighter will be pushed back instead.
 =cut
 
-sub HitPush
+sub HitPush($$$)
 {
-	my ($self, $pushforce) = @_;
+	my ($self, $other, $pushforce) = @_;
 	if ( $self->IsCornered )
 	{
-		$self->{OTHER}->{PUSHX} -= $pushforce;
+		$other->{PUSHX} -= $pushforce;
 	}
 	else
 	{
@@ -834,6 +897,18 @@ sub IsBackTurned
 	my ($self) = @_;
 	
 	return ( ($self->{X} - $self->{OTHER}->{X}) * ($self->{DIR}) > 0 );
+}
+
+
+=comment
+Is my back turned to my opponent? Returns true if it is.
+=cut
+
+sub IsBackTurnedTo($)
+{
+	my ($self, $other) = @_;
+	
+	return ( ($self->{X} - $other->{X}) * ($self->{DIR}) > 0 );
 }
 
 

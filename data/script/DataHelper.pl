@@ -148,6 +148,7 @@ sub CreateFrameLookup
 		for ( $j = 1; $j<=$NumFrames; ++$j )
 		{
 			# print "Frame ", (scalar keys %FrameLookup) + 1, " is now called $FrameName$j\n";
+			print "Name redefinition: $FrameName!\n" if defined $FrameLookup{ "$FrameName$j" };
 			$FrameLookup{ "$FrameName$j" } = (scalar keys %FrameLookup) + 1;
 		}
 	}
@@ -205,6 +206,24 @@ sub MirrorPolygon($)
 	{
 		$poly->[$i] = - $poly->[$i];
 	}
+}
+
+
+sub GetPolygonCenter($)
+{
+	my ($poly) = @_;
+	
+	my ($i, $n, $x, $y);
+	
+	$n = scalar @{$poly};
+	$x = $y = 0;
+	for ( $i=0; $i < $n; $i+=2 )
+	{
+		$x += $poly->[$i];
+		$y += $poly->[$i+1];
+	}
+	
+	return ( $x*2/$n, $y*2/$n );
 }
 
 
@@ -410,21 +429,21 @@ sub JumpStates($$)
 			FindLastFrame( $frames, 'onknees' ),
 			FindLastFrame( $frames, 'kneelingkick' ),
 			FindLastFrame( $frames, 'kneelingpunch' ) );
-	my ( $jump ) = 120;
+	my ( $jumpheight ) = 120;
 
 	my ( $i, $j, $statestotal, $statesdown, $statesknees, $deldown,
-		$jumpfw, $jumpbw, $flying, $flyingsequence, $jumpkick, $jumppunch );
+		$jump, $jumpfw, $jumpbw, $flying, $flyingsequence, $flyingstart, $jumpkick, $jumppunch );
 
 	# The jump's first part is going down on knees, second part is
 	# on knees, third part is getting up.
 
 	if ( $::DELMULTIPLIER )
 	{
-		$statestotal = $jump * 2 / 3 / $::DELMULTIPLIER; 				# 1/1
+		$statestotal = $jumpheight * 2 / 3 / $::DELMULTIPLIER; 				# 1/1
 	}
 	else
 	{
-		$statestotal = $jump * 2 / 3;
+		$statestotal = $jumpheight * 2 / 3;
 	}
 	$statesdown  = $statestotal / 4;
 	
@@ -433,7 +452,7 @@ sub JumpStates($$)
 	$statesknees = $statestotal - $statesdown * 2;
 
 	$jump = { 'N'=>'Jump', 'DEL'=> $deldown, 'S'=>'kneeling 1-2, kneeling 1',
-		'JUMPN'=>$jump, NEXTSTN=>'JumpFly', 'SOUND1'=>'slip4.voc', };
+		'JUMPN'=>$jumpheight, NEXTSTN=>'JumpFly', 'SOUND1'=>'slip4.voc', };
 	$jumpfw = { %{$jump}, 'N'=>'JumpFW', 'PUSHX3'=>18*16 };
 	$jumpbw = { %{$jump}, 'N'=>'JumpBW', 'PUSHX3'=>-9*16 };
 	
@@ -450,6 +469,8 @@ sub JumpStates($$)
 	
 	$flying = { %{$flying}, 'N'=>'JumpFly', 'DEL'=> $deldown, 'S'=>$flyingsequence,
 		'DELN'=>100 };
+	$flyingstart = { 'N'=>'JumpStart', 'JUMP2'=>$jumpheight, 'PUSHX2'=>9*16, 'DEL1'=>1, 
+		'DEL'=> $deldown, 'S'=>"stand 1,$flyingsequence", 'DELN'=>100 };
 	
 	print join( ',', %{$flying}), "\n";
 	
@@ -463,7 +484,7 @@ sub JumpStates($$)
 		'S'=> '+kneelingpunch,kneelingpunch n, kneelingpunch n, kneelingpunch n,-kneelingpunch,-kneeling',
 		'HIT'=>'Fall', 'DELN'=>100 };
 
-	return ($jump, $jumpfw, $jumpbw, $flying, $jumpkick, $jumppunch);
+	return ($jump, $jumpfw, $jumpbw, $flying, $flyingstart, $jumpkick, $jumppunch);
 }
 
 
@@ -531,7 +552,7 @@ sub WalkingFrames($$$$$)
 sub TravelingStates( $$$$$$ )
 {
 	my ( $frameLookup, $frameArray, $states, $frameName, $from, $to ) = @_;
-
+	
 	$from = 1 unless $from;
 	unless ( $to )
 	{
