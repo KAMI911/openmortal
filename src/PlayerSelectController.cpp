@@ -74,7 +74,7 @@ bool CPlayerSelectController::HandleChatKey( SDL_Event& a_roEvent )
 		return true;
 	}
 
-	if ( !m_bChatActive && (SDLK_ESCAPE == enKey || SDLK_TAB == enKey 
+	if ( !m_bChatActive && ( SDLK_TAB == enKey 
 			|| SDLK_RETURN == enKey || SDLK_KP_ENTER == enKey ) )
 	{
 		// Activate chat.
@@ -117,8 +117,9 @@ bool CPlayerSelectController::HandleChatKey( SDL_Event& a_roEvent )
 			std::string sMsg = std::string("<") + g_oState.m_acNick + "> " + m_acChatMsg;
 			m_poView->GetTextArea()->AddString( sMsg.c_str(), C_LIGHTCYAN );
 			m_poView->GetTextArea()->Redraw();
-			m_poView->GetTextArea()->Clear();
+			
 			m_acChatMsg[0] = 0;
+			m_poView->GetReadline()->Clear();
 			m_poView->GetReadline()->Restart( m_acChatMsg, strlen(m_acChatMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
 		}
 		else
@@ -138,10 +139,20 @@ void CPlayerSelectController::HandleEvents()
 	SDL_Event oSdlEvent;
 	while (SDL_PollEvent(&oSdlEvent))
 	{
-		if ( m_bChatActive
+		if ( m_bNetworkGame
 			&& SDL_KEYDOWN == oSdlEvent.type )
 		{
-			HandleChatKey( oSdlEvent );
+			if (HandleChatKey( oSdlEvent ))
+			{
+				continue;
+			}
+		}
+		
+		if ( m_bNetworkGame 
+			&& SDL_KEYDOWN == oSdlEvent.type
+			&& (oSdlEvent.key.keysym.sym == SDLK_RETURN || oSdlEvent.key.keysym.sym==SDLK_KP_ENTER) )
+		{
+			m_bChatActive = true;
 			continue;
 		}
 		
@@ -178,6 +189,11 @@ void CPlayerSelectController::HandleEvents()
 
 void CPlayerSelectController::HandleKey( int a_iPlayer, int a_iKey )
 {
+	if ( m_bNetworkGame )
+	{
+		a_iPlayer = g_poNetwork->IsMaster() ? 0 : 1;
+	}
+	
 	if ( !m_abPlayerActive[a_iPlayer] )
 	{
 		return;
@@ -197,7 +213,7 @@ void CPlayerSelectController::HandleKey( int a_iPlayer, int a_iKey )
 		FighterEnum enNewFighter = g_oChooser.GetCurrentFighter( a_iPlayer );
 		if ( enNewFighter != g_oPlayerSelect.GetPlayerInfo( iSetPlayer ).m_enFighter )
 		{
-			Audio->PlaySample("strange_quack.voc");
+			Audio->PlaySample("PLAYER_SELECTION_CHANGES");
 			if ( IsFighterSelectable(enNewFighter) )
 			{
 				if ( m_bNetworkGame )
@@ -220,7 +236,7 @@ void CPlayerSelectController::HandleKey( int a_iPlayer, int a_iKey )
 		return;
 	}
 	
-	Audio->PlaySample("magic.voc");
+	Audio->PlaySample("PLAYER_SELECTED");
 	g_oBackend.PerlEvalF( "PlayerSelected(%d);", iSetPlayer );
 	if ( m_bNetworkGame )
 	{
@@ -278,7 +294,7 @@ void CPlayerSelectController::HandleNetwork()
 	}
 	if ( bUpdateText )
 	{
-		Audio->PlaySample("pop.wav");
+		Audio->PlaySample("NETWORK_MESSAGE");
 		m_poView->GetTextArea()->Redraw();
 	}
 
@@ -298,7 +314,7 @@ void CPlayerSelectController::HandleNetwork()
 	if ( enOldFighter != enRemoteFighter
 		&& enRemoteFighter != UNKNOWN )
 	{
-		Audio->PlaySample("strange_quack.voc");
+		Audio->PlaySample("PLAYER_SELECTION_CHANGES");
 		g_oPlayerSelect.SetPlayer( iPlayer, enRemoteFighter );
 		g_oChooser.SetRectangle( iPlayer, enRemoteFighter );
 	}
@@ -307,7 +323,7 @@ void CPlayerSelectController::HandleNetwork()
 	if ( bDone )
 	{
 		m_abPlayerActive[iPlayer] = false;
-		Audio->PlaySample("magic.voc");
+		Audio->PlaySample("PLAYER_SELECTED");
 		g_oBackend.PerlEvalF( "PlayerSelected(%d);", iPlayer );
 
 		PlayerInfo& roInfo = g_oPlayerSelect.EditPlayerInfo( iPlayer );
@@ -331,6 +347,10 @@ void CPlayerSelectController::MarkFighters()
 		if ( !g_oPlayerSelect.IsLocalFighterAvailable( enFighter ) )
 		{
 			g_oChooser.MarkFighter( enFighter, C_LIGHTRED );
+		}
+		else if ( !g_oPlayerSelect.IsFighterAvailable( enFighter ) )
+		{
+			g_oChooser.MarkFighter( enFighter, C_LIGHTBLUE );
 		}
 	}
 }
