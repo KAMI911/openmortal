@@ -84,7 +84,13 @@ sub Reset {
 	$stats = ::GetFighterStats($fighterenum);
 	
 	die "Couldn't load stats of fighter $fighterenum\n" unless defined $stats;
-	die "The fighter $fighterenum is not yet usable.\n" unless defined $stats->{STATES};
+	
+	unless (defined $stats->{STATES})
+	{
+		print "ERROR: The fighter $fighterenum is not yet usable.\n";
+		$self->{OK} = 0;
+		return;
+	}
 
 	print STDERR "Resetting fighter $number to character $fighterenum\n";
   
@@ -107,6 +113,7 @@ sub Reset {
 	$self->{DELIVERED} = 0;
 	$self->{COMBO} 	= 0;
 	$self->{COMBOHP}= 0;
+	$self->{OK}		= 1;
 	
 	&{$self->{STATS}->{STARTCODE}}($self);
 }
@@ -378,10 +385,10 @@ sub IsHitAt
 		::MirrorPolygon( $poly );
 	}
 
-#	print "IsHitAt (", join(',',@{$poly}),")\n        (",
-#		join(',',@{$frame->{head}}),")\n        (",
-#		join(',',@{$frame->{body}}),")\n        (",
-#		join(',',@{$frame->{legs}}),")\n";
+	#print "IsHitAt (", join(',',@{$poly}),")\n        (",
+	#	join(',',@{$frame->{head}}),")\n        (",
+	#	join(',',@{$frame->{body}}),")\n        (",
+	#	join(',',@{$frame->{legs}}),")\n";
 	
 	return 1 if ::Collisions( $poly, $frame->{head} );
 	return 2 if ::Collisions( $poly, $frame->{body} );
@@ -413,6 +420,7 @@ sub Event($$$)
 	
 	if ( $st->{SITU} eq 'Ready' and $self->{NEXTST} eq '' )
 	{
+		$self->{IDLE} = 0;
 		if ( $event =~ /Hurt|Threat|Fun|Turn/ )
 		{
 			if ( $event eq 'Fun' and defined $self->{STATES}->{'Funb'} and rand() < 0.5 )

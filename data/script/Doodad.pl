@@ -48,7 +48,7 @@ package Doodad;
 	'SIZE'	=> [ 64, 64 ],		'SPEED'	=> [ 48, -25 ],		'ACCEL'	=> [ 0, 2 ],
 
 	'GFXOWNER' => 2,			'FIRSTFRAME' => 0,			'FRAMES' => 6,
-	'SA' => 1/25
+	'SA' => 1/10,
 },
 
 'UPiShot' => {
@@ -253,9 +253,9 @@ sub MoveDoodad
 		CheckDoodadHit($doodad);
 	}
 	
-	print "Doodad: POS=", join(',', @{$doodad->{POS}}), 
-		  "; SPEED=", join(',', @{$doodad->{SPEED}}), 
-		  "; ACCEL=", join(',', @{$doodad->{ACCEL}}), "\n";
+#	print "Doodad: POS=", join(',', @{$doodad->{POS}}), 
+#		  "; SPEED=", join(',', @{$doodad->{SPEED}}), 
+#		  "; ACCEL=", join(',', @{$doodad->{ACCEL}}), "\n";
 	
 	return 0;
 }
@@ -285,6 +285,12 @@ sub CheckDoodadHit($)
 		}
 	}
 	
+	@poly = (
+		$x, $y,
+		$x+$w, $y,
+		$x+$w, $y+$h,
+		$x, $y+$h );
+
 	if ( $self->{OWNER} != 1 )
 	{
 		if ( $::Fighter2->IsHitAt( \@poly ) )

@@ -44,7 +44,7 @@ $SCRWIDTH	= 640;							# The physical horizontal screen resolution
 $SCRHEIGHT	= 480;							# The physical vertical screen resolution
 $SCRWIDTH2	= ($SCRWIDTH << $GAMEBITS);		# The logical horizontal screen resolution
 $SCRHEIGHT2	= ($SCRHEIGHT << $GAMEBITS);	# The logical vertical screen resolution
-$MOVEMARGIN2= 50 << $GAMEBITS;				# The logical border for figthers.
+$MOVEMARGIN2= 50 << $GAMEBITS;				# The logical border for fighters.
 
 $BGWIDTH2	= 1920 << $GAMEBITS;			# The logical background width
 $BGHEIGHT2	= 480 << $GAMEBITS;				# The logical background height
@@ -68,6 +68,7 @@ require 'FighterStats.pl';
 require 'Doodad.pl';
 require 'Keys.pl';
 require 'State.pl';
+require 'Translate.pl';
 
 
 
@@ -184,16 +185,21 @@ sub SelectStart
 	
 	$time = 0;
 	$over = 0;
-	
-	$Fighter1->Reset();
-	$Fighter1->{X} = 80 * $GAMEBITS2;
-	$Fighter1->{NEXTST} = 'Stand';
-	$Fighter1->Update();
-	
-	$Fighter2->Reset();
-	$Fighter2->{X} = 560 * $GAMEBITS2;
-	$Fighter2->{NEXTST} = 'Stand';
-	$Fighter2->Update();
+
+	if ( $Fighter1->{OK} )
+	{
+		$Fighter1->Reset();
+		$Fighter1->{X} = 80 * $GAMEBITS2;
+		$Fighter1->{NEXTST} = 'Stand';
+		$Fighter1->Update();
+	}
+	if ( $Fighter2->{OK} )
+	{
+		$Fighter2->Reset();
+		$Fighter2->{X} = 560 * $GAMEBITS2;
+		$Fighter2->{NEXTST} = 'Stand';
+		$Fighter2->Update();
+	}
 	
 	$Input1->Reset();
 	$Input2->Reset();
@@ -209,21 +215,6 @@ sub SetPlayerNumber
 	
 	$f = $player ? $Fighter2 : $Fighter1;
 	
-=comment
-	if    ( $fighterenum eq 1 ) { $f->Reset('Ulmar', \@UlmarFrames,\%UlmarStates); }
-	elsif ( $fighterenum eq 2 ) { $f->Reset('UPi', \@UPiFrames,\%UPiStates); }
-	elsif ( $fighterenum eq 3 ) { $f->Reset('Zoli', \@ZoliFrames,\%ZoliStates); }
-	elsif ( $fighterenum eq 4 ) { $f->Reset('Cumi', \@CumiFrames,\%CumiStates); }
-	elsif ( $fighterenum eq 5 ) { $f->Reset('Sirpi', \@SirpiFrames,\%SirpiStates); }
-	elsif ( $fighterenum eq 6 ) { $f->Reset('Maci', \@MaciFrames,\%MaciStates); }
-	elsif ( $fighterenum eq 7 ) { $f->Reset('Bence', \@BenceFrames,\%BenceStates); }
-	elsif ( $fighterenum eq 9 ) { $f->Reset('Descant', \@DescantFrames,\%DescantStates); }
-	elsif ( $fighterenum eq 8 ) { $f->Reset('Grizli', \@GrizliFrames,\%GrizliStates); }
-	else {
-		# Fallback
-		$f->Reset('Zoli', \@ZoliFrames,\%ZoliStates);
-	}
-=cut
 	$f->Reset($fighterenum);
 	
 	$f->{NEXTST} = 'Stand';
@@ -286,7 +277,7 @@ sub AdvanceEarthquake
 	$QuakeAmplitude -= $QuakeAmplitude / 30 + 0.1;
 	$QuakeOffset = ( $QuakeOffset + 1 ) % 16;
 	$QuakeX = $QUAKEOFFSET[$QuakeOffset] * $QuakeAmplitude / 16;
-	$QuakeY = $QUAKEOFFSET[$QuakeOffset + 1] * $QuakeAmplitude / 16;
+	$QuakeY = $QUAKEOFFSET[$QuakeOffset + 1] * $QuakeAmplitude / 16;	# 1/1
 	
 	$bgx -= $QuakeX;
 	$bgy -= $QuakeY;
@@ -317,7 +308,7 @@ sub GameStart
 	$BgSpeed = 0;
 	$BgPosition = $BgMax >> 1;
 	$BgScrollEnabled = 1;
-	$HitPointScale = 1000 / $MaxHP;
+	$HitPointScale = 1000 / $MaxHP;			# 1/1
 	$Debug = $debug;
 	ResetEarthquake();
 	
@@ -494,18 +485,18 @@ sub GameAdvance
 	
 	$Input1->Advance();
 	$Input2->Advance();
-	$Fighter1->Advance( $Input1 );
-	$Fighter2->Advance( $Input2 );
-	$hit2 = $Fighter1->CheckHit();
-	$hit1 = $Fighter2->CheckHit();
+	$Fighter1->Advance( $Input1 ) if $Fighter1->{OK};
+	$Fighter2->Advance( $Input2 ) if $Fighter2->{OK};
+	$hit2 = $Fighter1->CheckHit() if $Fighter1->{OK};
+	$hit1 = $Fighter2->CheckHit() if $Fighter2->{OK};
 	
 	# 2. Events come here
 	
-	DoFighterEvents( $Fighter1, $hit1 );
-	DoFighterEvents( $Fighter2, $hit2 );
+	DoFighterEvents( $Fighter1, $hit1 ) if $Fighter1->{OK};
+	DoFighterEvents( $Fighter2, $hit2 ) if $Fighter2->{OK};
 	UpdateDoodads();
-	$Fighter1->Update();
-	$Fighter2->Update();
+	$Fighter1->Update() if $Fighter1->{OK};
+	$Fighter2->Update() if $Fighter2->{OK};
 	
 	if ( $OverTimer == 0 and
 		($Fighter1->{ST} eq 'Dead' or $Fighter1->{ST} eq 'Won2') and

@@ -521,7 +521,11 @@ sub TravelingStates( $$$$$$ )
 	my ( $frameLookup, $frameArray, $states, $frameName, $from, $to ) = @_;
 
 	$from = 1 unless $from;
-	$to = FindLastFrame( $frameLookup, $frameName ) unless $to;
+	unless ( $to )
+	{
+		$to = FindLastFrame( $frameLookup, $frameName );
+		$to += 1 if $frameName eq 'falling';
+	}
 
 	my ( $fromIndex, $toIndex, $fromFrame, $toFrame, $fromOffset, $toOffset,
 		$deltax, $i, $state, $nextst );
@@ -616,6 +620,26 @@ sub FindShorthands($)
 	}
 	
 	return %Shorthands;
+}
+
+
+sub CheckStates($$)
+{
+	my ( $fightername, $states ) = @_;
+	my ( $key,$state, $con );
+	my ( $seq,$nextst );
+	
+	while (($key, $state) = each %{$states})
+	{
+		die "Bad connection in fighter $fightername to '$state->{NEXTST} from $key!'" unless exists $states->{ $state->{NEXTST} };
+		next unless $state->{CON};
+		$con = $state->{CON};
+
+		while (($seq, $nextst) = each %{$con})
+		{
+			die "Bad connection in fighter $fightername to '$nextst' from $key!" unless exists $states->{$nextst};
+		}
+	}
 }
 
 

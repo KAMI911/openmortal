@@ -54,7 +54,26 @@ Saturday! (Read: He has absolutely no idea where he is, or what he is doing...)'
 'Back HPunch - Spinning headbutt
 Down Back LPunch - WrISt shot
 Forward Back Forward LPunch - WrISt mash',
+
+	'TEAM-hu'	=>'Gonosz',
+	'STYLE-hu'	=>'BohÛc-fu',
+	'WEIGHT-hu'	=>'50kg + vas·gy',
+	'HEIGHT-hu'	=>'168cm',
+	'SHOE-hu'	=>'51',
+	'STORY-hu'	=>
+'Miut·n Wasaiwa baka janaijo elszajrÈzta a kora legfejletebb tudom·nyos cuccos·t
+(vÈletlen¸l ˙gy beh˙ztak neki, hogy berep¸lt a laboratoriumba Ès r·tekeredett a CsUKlo(tm)),
+
+azut·n minden tud·s·t latba vetve vissza utazott a m˙ltba (elkezdte nyomkodni a gombokat a
+CsUKlo(tm)-en Ès ez lett belıle).
+
+Ezekut·n m·r rˆgtˆn tudta, hogy itt el kell pusztitania a Szombatot! (ı sem tudja, hogy hol
+is van Èppen illetve mit is csin·l...)',
 	},
+
+
+
+
 
 {	'ID'	=> 2,
 	'NAME'	=>'Dark Black Evil Mage',
@@ -74,7 +93,22 @@ Forward Forward HKick - Crane kick
 Down Back LPunch - Fireball
 (also works while crouching)
 Back Up HPunch - Burning Hands',
+
+	'NAME-hu'	=>'SˆtÈt Fekete Gonosz M·gus',
+	'TEAM-hu'	=>'Gonosz vezÈr',
+	'STYLE-hu'	=>'Piro-fu',
+	'AGE-hu'	=>'30',
+	'WEIGHT-hu'	=>'70kg',
+	'HEIGHT-hu'	=>'180cm',
+	'SHOE-hu'	=>'42',
+	'STORY-hu'	=>
+'A Gonosz Gyilkos Fekete Ellenszenves SˆtÈt (elmÈj¸) t¸zvar·zslÛk lig·j·nak
+tagja, kit azzal bÌztak meg, hogy elpusztÌtsa a szombatot egyszer, s
+mindˆrˆkre. Tal·n van valami h·tsÛ sz·ndÈka, amirıl senki sem tud? Nincs!',
 },
+
+
+
 
 {	'ID'	=> 3,
 	'NAME'	=>'Boxer',
@@ -92,7 +126,22 @@ whatsoever, but at least this keeps him entertained for the time being.',
 'Back HPunch - Spinning punch
 Down Back LPunch - Weight toss
 Forward Forward HPunch - Leaping punch',
+
+	'NAME-hu'	=>'Boxer',
+	'TEAM-hu'	=>'Gonosz',
+	'STYLE-hu'	=>'Kickbox-fu',
+	'AGE-hu'	=>'16',
+	'WEIGHT-hu'	=>'80kg',
+	'HEIGHT-hu'	=>'180cm',
+	'SHOE-hu'	=>'43',
+	'STORY-hu'	=>
+'Boxer azÈrt csatlakozott a Mort·l Szombat csapathoz, hogy minÈl tˆbb
+embernek besomhasson, minÈl tˆbbszˆr, Ès minÈl nagyobbat. M·s cÈlja ezen
+kÌv¸l nincs, de ez is remek¸l elszÛrakoztatja kˆzÈpt·von',
 },
+
+
+
 
 {	'ID'	=> 4,
 	'NAME'	=>'Cumi',
@@ -112,7 +161,22 @@ of but this.',
 'Down Back LPunch - Finger Shot
 Forward Forward HPunch - Spit
 Back Down Forward - Baseball',
+
+	'NAME-hu'  =>'Cumi',
+	'TEAM-hu'  =>'J√≥ vez√©r',
+	'STYLE-hu' =>'N/A',
+	'AGE-hu'   =>'15',
+	'WEIGHT-hu'=>'55',
+	'HEIGHT-hu'=>'170',
+	'SHOE-hu'  =>'41.5',
+	'STORY-hu' =>
+'Elete fo ambicioja volt, hogy autot vezessen. Most hogy ezt teljesitette, masodik fo
+amibicioja fele fordult: hogy nagy harcmuvessze valjon. Kezdetben ehhez megnezte
+a Kung fu sorozatot elejetol vegeig egyulteben. Kepzettsege jelenleg ebbol all.',
 },
+
+
+
 
 {	'ID'	=> 5,
 	'NAME'	=>'Sirpi',
@@ -131,7 +195,21 @@ join the good team... also he is frightened alone.',
 	'KEYS'	=>
 'Down Forward LPunch - Surprise
 Forward Forward HPunch - Applause',
+
+
+	'STYLE-hu'	=> 'Neb·nts-FU',
+	'STORY-hu'	=>
+'Sok Èvnyi hardcore gamerkedÈs ut·n, mikˆzben el is hÌzott jÛl,
+kikapcsolt·k n·la a villanyt.
+
+Erre nagyon h¸lye pof·t v·gott, Ès ez igy is
+marad mindaddig, amÌg le nem sz·mol ısellensÈgÈvel (vagy mÈg ut·na is).
+EzÈrt csatlakozott a jÛk kicsiny csapat·hoz... Meg am˙gy is fÈl egyed¸l.',
 },
+
+
+
+
 
 {	'ID'	=> 6,
 	'NAME'	=>'Macy',
@@ -150,7 +228,19 @@ it won\'t be until the next fight agains Evil...',
 	'KEYS'	=>
 'Down Back LPunch - Toss
 Forward Forward HKick - Scissor Kick',
+
+	'STORY-hu'	=>
+'kb. nÈh·ny Èvvel ezelıtt, (vagy tal·n egy kicsit kor·bban, esetleg
+kÈsıbb) a felhık kˆzˆtt egy pÛly·ban tal·ltak r· (zuhan·s kˆzben).
+
+A b·tor
+SongokutÛl elleste a harcm˚vÈszet mesteri fortÈlyait, igy talpra esett Ès
+nem halt meg. AzÛta is halhatatlan. Ki tudja, mÈg meddig? Tal·n a
+kˆvetkezı harcig a gonosz ellen...',
 	},
+
+
+
 
 {	'ID'	=> 7,
 	'NAME'	=>'Jan Ito',
@@ -171,7 +261,23 @@ boots.',
 'Down Back LPunch - Soap Throw
 Back Fw Back Fw LPunch - Stick Spin
 Back Forward HPunc - Pierce',
+
+	'NAME-hu'	=>'Taka Ito',
+	'TEAM-hu'	=>'Gonosz',
+	'STYLE-hu'	=>'Kururin-do',
+	'AGE-hu'	=>'20',
+	'WEIGHT-hu' =>'85',
+	'HEIGHT-hu' =>'172',
+	'SHOE-hu'	=>'39',
+	'STORY-hu'	=>
+'A jap·n Ûri·s Descant esk¸dt ellensÈge, miÛta ˆsszej·rta az ·ltala frissen felmosott
+verand·t a 16 gener·ciÛ Ûta csal·dja ·ltal birtokolt foga-do-ban. Tud·s·t a sˆtÈt
+oldal szolg·lat·ba ·llÌtotta. Tud·s·t a "gondnok ˙tj·n" csak mÈlysÈges megvetÈse a
+vasaltorr˙ bakancsok ir·nt sz·rnyalja t˙l.',
 	},
+
+
+
 
 {	'ID'	=> 8,
 	'NAME'	=>'Grizzly',
@@ -194,7 +300,30 @@ to protect the Saturday.',
 Forward Forward HPunch - Poke
 Down Down LKick - Earthquake
 Back Forward Back HPunch - Nunchaku',
+
+	'NAME-hu'	=>'Grizli',
+	'TEAM-hu'	=>'JÛ',
+	'STYLE-hu'	=>'Gyak·s ala Medve',
+	'AGE-hu'	=>'21',
+	'WEIGHT-hu'	=>'50000000',
+	'HEIGHT-hu'	=>'170',
+	'SHOE-hu'	=>'49',
+	'STORY-hu'	=>
+'Grili a lustas·g·rÛl volt hires mindig. Olyannyira, hogy amilyen szinten
+azt csin·lja, az m·r m˚vÈszet. Az utÛbbi 5 Èvben m·r a TV
+nÈzÈshez is lusta lett.
+
+Minden Szobaton tart edzÈst a K¸lˆnbenmegintd¸hbejˆv¸nk do
+stilusbÛl, amit mÈg kezdı kor·ban a TV-bıl saj·tÌtott el. A stilus
+tiszteletbeli nagymestere maga B·d Szpencer, de sajnos miut·n B·d-rÛl
+kider¸lt, hogy szombatonkÈnt dolgozik, Grizli elvette tıle a cimet, s
+azÛta mag·nak tartogatja.
+
+Grizli a szombat ellenesek ·d·z gy˚lˆlıje, a jÛ csapat oszlopos tagja.',
 	},
+
+
+
 
 {	'ID'	=> 9,
 	'NAME'	=>'Descant',
@@ -215,7 +344,24 @@ trouble. He joined the side with the more CASH...',
 Back Back LPunch - Hip Shot
 Forward Down HPunch - Knife Throw
 Forward Forward HPunch - Gun Hit',
+
+	'NAME-hu'	=>'Descant',
+	'TEAM-hu'	=>'JÛ',
+	'STYLE-hu'	=>'+halol',
+	'AGE-hu'	=>'58',
+	'WEIGHT-hu'=>'89',
+	'HEIGHT-hu'=>'180',
+	'SHOE-hu'	=>'44',
+	'STORY-hu'	=>
+'A Vietn·mi h·bor˙ sor·n kÈpeztÈk ki minden ismert fegyverre Ès harcm~uvÈszetre. M·r ott
+is az Oroszok Ès az Amerikaik oldal·n harcolt, m·r aki Èppen tˆbbet fizetett. Ezut·n a pÈnzb"ol
+hibern·ltatta mag·t Ès csak h·bor˙k esetÈn olvasztatja fˆl mag·t, vagy most mikor a szombat
+bajba ker¸l most is azon az oldalon van, ahol vastagabb a BUKSZA, most Èpp a...',
 },
+
+
+
+
 
 {	'ID'	=> 10,
 	'NAME'	=>'Rising-san',
@@ -229,7 +375,24 @@ Forward Forward HPunch - Gun Hit',
 'Mistically disappeared Aeons ago.. on a Saturday! Now he is back, and
 brought back his destructive techique, unmatched on Earth. Noone knows
 why he joined the Dark Evil Mage...',
+
+	'NAME-hu'	=>'Rising-san',
+	'TEAM-hu'	=>'Gonosz',
+	'STYLE-hu'	=>'Pˆcc-fu',
+	'AGE-hu'	=>'500',
+	'WEIGHT-hu'	=>'N/A',
+	'HEIGHT-hu'	=>'50',
+	'SHOE-hu'	=>'Nem visel',
+	'STORY-hu'	=>
+'Sok-sok Èvvel ezel"ott elt˚nt misztikus kˆr¸lmÈnyek kˆzˆtt... egy szombati napon!
+…s most visszatÈrt. Senki sem tudja honnan jˆtt, de mag·val hozta pusztÌtÛ technik·j·t
+melynek nincs p·rja a fˆldˆn. Senki sem Èrti miÈrt fogadta el a gonosz var·zsl
+megbÌz·s·t...',
 },
+
+
+
+
 
 {	'ID'	=> 11,
 	'NAME'	=>'Mad Sawman',
@@ -244,7 +407,26 @@ why he joined the Dark Evil Mage...',
 took him and fed them to the bears. He has been roaming the Canadian
 forests, chopping trees and heads alike. On hot summer nights his
 maniac laughter echoes far.',
+	'KEYS' =>
+'Down Back LPunch - Axe Toss
+Back Forward HKick - Chop Chop
+Forward Forward LKick - Bonesaw',
+
+	'NAME-hu'	=>'F˚rÈszes ’r¸lt',
+	'TEAM-hu'	=>'Gonosz',
+	'STYLE-hu'	=>'Fany˚vı',
+	'AGE-hu'	=>'35',
+	'WEIGHT-hu'	=>'110',
+	'HEIGHT-hu'	=>'120',
+	'SHOE-hu'	=>'49',
+	'STORY-hu'	=>
+'BˆlcsıjÈt egy f·n tal·lt·k meg. KÈsıbb felaprÌtotta az egÈsz befogadÛ csal·dj·t, Ès
+megetette a medvÈkkel. AzÛta a kanadai erdıkben bolyongva v·gja a f·kat Ès az
+emberfejeket. ForrÛ ny·ri Èjszak·kon mindig hallatszik ır¸lt kacaja.',
 },
+
+
+
 
 {	'ID'	=> 12,
 	'NAME'	=>'Imperfect Soldier',
@@ -260,7 +442,31 @@ caused him to join the army. For the last 30 years he is corporal
 without the slightest hope for advancement. He annoys his
 subordinates with a constant flow of stories of pub fights, until
 they ask for relocation.',
+	'KEYS' =>
+'Down Back LPunch - Hat
+Forward Forward HPunch - Ramming Attack
+Back Down Back LPunch - Stab
+Back Forward LKick - Poke',
+
+	'NAME-hu'	=>'TˆkÈletlen Katona',
+	'TEAM-hu'	=>'JÛ',
+	'STYLE-hu'	=>'KocsmabunyÛ',
+	'AGE-hu'	=>'50',
+	'WEIGHT-hu'	=>'100',
+	'HEIGHT-hu'	=>'180',
+	'SHOE-hu'	=>'44',
+	'STORY-hu'	=>
+'Gyermekkor·t meghat·rozta Drezda lebomb·z·sa. E trauma hat·s·ra katonai
+p·ly·ra ·llt. Imm·ron 30 Ève a Bundeswehr kˆtelÈkÈben tizedes az
+elılÈptetÈs b·rminem~u esÈlye nÈlk¸l.
+
+Alantasait folytonosan kocsmai bunyÛinak tˆrtÈneteivel trakt·lja, amÌg azok
+·thelyezÈs¸ket nem kÈrik.',
 },
+
+
+
+
 
 {	'ID'	=> 13,
 	'NAME'	=>'Aisha',
@@ -278,26 +484,56 @@ natural disasters and terrorist attacks, and got frankly fed up.
 So one time she said:
 
 "If I survive this, I swear, I\'ll join those stupid Mortal guys!"',
-	'STORYHU'=>
+
+	'STORY-hu'=>
 'A megprobaltatasok akkor kezdodtek, amikor anyukaja a szive alatt hordta.
 Egyetlen koldokzsinoron fuggott az elete! De megszuletett vegul, ezert
 kapta az Aisha ("mindent tulelo") nevet. Aztan gyermekkoratol fogva sok
 termeszeti katasztrofat, terrortamadast atveszelt, es mar kezdett elege
-le\
-nni az egeszbol, igy hat az egyik alkalommal kijelentette, hogy ha ezt
+lenni az egeszbol, igy hat az egyik alkalommal kijelentette, hogy ha ezt
 tulelem, csatlakozom azokhoz a hulye Mortalosokhoz!',
-},
+},	#'
+
+
+
+
 
 {	'ID'	=> 14,
-	'NAME'	=>'Misi (?)',
+	'NAME'	=>'Papatsuka Mamatsuba',
 	'TEAM'	=>'Evil',
-	'STYLE'	=>'',
-	'AGE'	=>'',
-	'WEIGHT'=>'',
-	'HEIGHT'=>'',
-	'SHOE'	=>'',
-	'STORY'	=>'...',
+	'STYLE'	=>'Gloom',
+	'AGE'	=>'Feudal Middle',
+	'WEIGHT'=>'Dead',
+	'HEIGHT'=>'178 cm',
+	'SHOE'	=>'43,12748252',
+	'STORY'	=>
+'Papastuka has been raised strictly in the way of the samurai since age 4.
+His father was the most famous warrior of the past 20 years. After he
+learned all the jutsu from dad, he skalped him, and put the skalp on his head
+to scare his enemies.
+
+On weekdays he is seen chasing women, saturdays he
+drinks a lot. Then he decided, that enjoying saturday should belong to him
+alone...',
+
+	'NAME-hu'	=>'Apatsuka Anyatsuba',
+	'TEAM-hu'	=>'Gonosz',
+	'STYLE-hu'	=>'Komor',
+	'AGE-hu'	=>'Feud·lis kˆzÈp...',
+	'WEIGHT-hu'	=>'Nagyon s˙lyos!',
+	'STORY-hu'	=>
+'Apatsuk·t 4 Èves kora Ûta neveltÈk sz¸lei a szamur·j ÈletmÛdra, szigor
+keretek kˆzˆtt. Apja az elm˙lt 20 Èv leghÌresebb harcosa volt. Amint
+minden harci fog·st elsaj·tÌtott apj·tÛl, megskalpolta Ès a skalpj·t
+fejÈre illesztette, ezzel megfÈlemlÌtve ellensÈgeit.
+
+HÈtkˆzben nıket
+hajszolt, szombaton szÌvott Ès berugott. Azt·n ˙gy dˆntˆtt, hogy ezen a
+szombaton csak ı Èrezheti jÛl mag·t...',
+
+
 },
+
 
 );
 
@@ -312,16 +548,44 @@ sub RegisterFighter($)
 	{
 		die "RegisterFighter: Attribute $attr not found" unless defined $reginfo->{$attr};
 	}
+	# CheckStates( $reginfo->{ID}, $reginfo->{STATES} );
 	
 	my ($fighterenum, $fighterstats);
 	$fighterenum = $reginfo->{ID};
-	$fighterstats = GetFighterStats($fighterenum);
-	die "RegisterFighter: Unable to locate fighter $fighterenum\n" unless defined $fighterstats;
+	
+	$fighterstats = $::FighterStats[$fighterenum];
+	if ( not defined $fighterstats )
+	{
+		print "RegisterFighter: Fighter $fighterenum not found, non-syndicated?\n";
+		$fighterstats = {
+			'ID'	=> $fighterenum,
+			'NAME'	=>'Unknown (non-syndicated)',
+			'TEAM'	=>'Unknown',
+			'STYLE'	=>'Unknown',
+			'AGE'	=>'Unknown',
+			'WEIGHT'=>'Unknown',
+		  	'HEIGHT'=>'Unknown',
+			'SHOE'	=>'Unknown',
+			'STORY'	=>'...',
+			'DATAFILE'=>'ZOLIDATA.DAT',
+			%{$reginfo}
+  		};
+		$::FighterStats[$fighterenum] = $fighterstats;
+		return;
+	}
 	
 	# Add the reginfo to the fighter stats:
 	%{$fighterstats} = ( %{$fighterstats}, %{$reginfo} );
 	
-#	$::FighterStat
+}
+
+
+
+sub GetStatsTranslated($$)
+{
+	my ($source, $stat) = @_;
+	return $source->{"${stat}-$::LanguageCode"} if defined $source->{"${stat}-$::LanguageCode"};
+	return $source->{$stat};
 }
 
 
@@ -332,21 +596,22 @@ sub GetFighterStats($)
 	
 	my ($source) = $::FighterStats[$fighterenum];
 	
-	$::Name		= $source->{NAME};
-	$::Team		= $source->{TEAM};
-	$::Style	= $source->{STYLE};
-	$::Age		= $source->{AGE};
-	$::Weight	= $source->{WEIGHT};
-	$::Height	= $source->{HEIGHT};
-	$::Shoe		= $source->{SHOE};
-	$::Story	= $source->{STORY};
-	$::Keys		= $source->{KEYS};
-	$::Datafile	= $source->{DATAFILE};
+	$::Name		= GetStatsTranslated( $source, 'NAME' );
+	$::Team		= GetStatsTranslated( $source, 'TEAM' );
+	$::Style	= GetStatsTranslated( $source, 'STYLE' );
+	$::Age		= GetStatsTranslated( $source, 'AGE' );
+	$::Weight	= GetStatsTranslated( $source, 'WEIGHT' );
+	$::Height	= GetStatsTranslated( $source, 'HEIGHT' );
+	$::Shoe		= GetStatsTranslated( $source, 'SHOE' );
+	$::Story	= GetStatsTranslated( $source, 'STORY' );
+	$::Keys		= GetStatsTranslated( $source, 'KEYS' );
+	$::Datafile	= GetStatsTranslated( $source, 'DATAFILE' );
 	
 	$::Story =~ s/([^\n])\n([^\n])/$1 $2/gms;
 	
 	@::StatTags = ( 'Name: ', 'Team: ', 'Style: ', 'Age: ', 'Weight: ', 'Height: ', 'Shoe size: ' );
-	#@::StatTags	= ( "N√©v: ", "Csapat: ", "St√≠lus: ", "Kor: ", "S√∫ly: ", "Magass√°g: ", "Cip√µm√©ret: " );
+	
+	#print "The data file of $fighterenum is '$::Datafile'\n";
 	
 	return $source;
 }

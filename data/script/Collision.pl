@@ -112,7 +112,6 @@ sub inside
 
 	
 
-
 sub Collisions
 {
 	my ($polyref1, $polyref2) = @_;
@@ -141,6 +140,17 @@ sub Collisions
 
 	return 0;
 }
+
+=comment
+require DynaLoader;
+use MszCollision;
+
+sub Collisions
+{
+	my ($polyref1, $polyref2) = @_;
+	return MszCollision::CheckCollision($polyref1, $polyref2);
+}
+=cut
 
 
 return 1;
