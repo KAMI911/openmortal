@@ -22,36 +22,44 @@
 
 inline void ChangeEndian32( Uint32& a_riArg )
 {
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
 	char* pcArg = (char*)&a_riArg;
 	char cTemp;
 	cTemp = pcArg[0]; pcArg[0] = pcArg[3]; pcArg[3] = cTemp;
 	cTemp = pcArg[1]; pcArg[1] = pcArg[2]; pcArg[2] = cTemp;
+#endif
 }
 
 
 inline void ChangeEndian16( Uint16& a_riArg )
 {
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
 	char* pcArg = (char*)&a_riArg;
 	char cTemp;
 	cTemp = pcArg[0]; pcArg[0] = pcArg[1]; pcArg[1] = cTemp;
+#endif
 }
 
 
 inline Uint32 ConvertEndian32( Uint32 a_iArg )
 {
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
 	char* pcArg = (char*)&a_iArg;
 	char cTemp;
 	cTemp = pcArg[0]; pcArg[0] = pcArg[3]; pcArg[3] = cTemp;
 	cTemp = pcArg[1]; pcArg[1] = pcArg[2]; pcArg[2] = cTemp;
+#endif
 	return a_iArg;
 }
 
 
 inline Uint16 ConvertEndian16( Uint16 a_iArg )
 {
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
 	char* pcArg = (char*)&a_iArg;
 	char cTemp;
 	cTemp = pcArg[0]; pcArg[0] = pcArg[1]; pcArg[1] = cTemp;
+#endif
 	return a_iArg;
 }
 
