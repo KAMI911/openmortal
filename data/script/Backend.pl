@@ -51,6 +51,7 @@ $BGHEIGHT2	= 480 << $GAMEBITS;				# The logical background height
 
 $GROUND2	= 160 << $GAMEBITS;				# The logical ground level.
 $DELMULTIPLIER = 1;							# DEL values in states are multiplied by this.
+$MAXCOMBO	= 5;							# Maximum combo count.
 
 $BgMax		= $BGWIDTH2 - $SCRWIDTH2;		# The logical maximum camera position
 $BgSpeed	= 0;							# The current speed of the background movement

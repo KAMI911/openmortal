@@ -265,6 +265,7 @@ sub Advance {
 	$nextst = $st->{NEXTST};
 	$con = $st->{CON};
 	$dist = ($self->{OTHER}->{X} - $self->{X}) * $self->{DIR};
+	undef $con if $::ko;
 	
 	if ( defined $con )
 	{
@@ -429,7 +430,8 @@ sub HitEvent($$$)
 	# Do events: Highhit, Uppercut, Hit, Groinhit, Leghit, Fall
 
 	$eventpar = '' unless defined $eventpar;		# Supress useless warning
-	$damage = ::GetDamage( $self->{OTHER}->{NAME}, $self->{OTHER}->{ST} );
+	if ( $eventpar eq 'Maxcombo' ) { $damage = 0; }
+	else { $damage = ::GetDamage( $self->{OTHER}->{NAME}, $self->{OTHER}->{ST} ); }
 	$blocked = $st->{BLOCK};
 	$blocked = 0 if ( $self->IsBackTurned() );
 	
@@ -465,7 +467,8 @@ sub HitEvent($$$)
 	if ( $blocked )
 	{
 		push @::Sounds, ('thump.wav');
-		$self->{PUSHX} = - $damage * 5 * $self->{DIR};
+		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		# $self->{PUSHX} = - $damage * 5 * $self->{DIR};
 		return;
 	}
 
@@ -483,6 +486,13 @@ sub HitEvent($$$)
 	$self->{COMBOHP} += $damage;
 	$damage *= $self->{COMBO};		# Only for the purpose of pushing
 	
+	if ( $self->{COMBO} >= $::MAXCOMBO )
+	{
+		$self->ComboEnds();
+		$event = 'Uppercut';
+		$self->{OTHER}->HitEvent( 'Fall', 'Maxcombo' );
+	}
+	
 	if ( $st->{SITU} eq 'Crouch' )
 	{
 		 if ( $event eq 'Uppercut' or $event eq 'Fall' )
@@ -499,7 +509,8 @@ sub HitEvent($$$)
 			} else {
 				$self->{NEXTST} = 'KneelingKicked';
 			}
-			$self->{PUSHX} = - $damage * 20 * $self->{DIR};
+			$self->HitPush( - $damage * 20 * $self->{DIR} );
+			# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 		 }
 		 return;
 	}
@@ -523,7 +534,8 @@ sub HitEvent($$$)
 	if ( $event eq 'Highhit' )
 	{
 		$self->{NEXTST} = 'HighPunched';
-		$self->{PUSHX} = - $damage * 20 * $self->{DIR};
+		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Hit' )
 	{
@@ -534,17 +546,20 @@ sub HitEvent($$$)
 		} else {
 			$self->{NEXTST} = 'Swept';
 		}
-		$self->{PUSHX} = - $damage * 20 * $self->{DIR};
+		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Groinhit' )
 	{
 		$self->{NEXTST} = 'GroinKicked';
-		$self->{PUSHX} = - $damage * 20 * $self->{DIR};
+		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Leghit' )
 	{
 		$self->{NEXTST} = 'Swept';
-		$self->{PUSHX} = - $damage * 20 * $self->{DIR};
+		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		# $self->{PUSHX} = - $damage * 20 * $self->{DIR};
 	}
 	elsif ( $event eq 'Uppercut' or $event eq 'Fall' )
 	{
@@ -578,37 +593,41 @@ sub GetCurrentState
 sub ComboEnds
 {
 	my ($self) = @_;
+	my ($combo, $ismaxcombo);
+	$combo = $self->{COMBO};
+	$ismaxcombo = $combo >= $::MAXCOMBO;
 	
-	if ($self->{COMBO})
-	{
-		if ( $self->{COMBO} > 1 )
-		{
-			my ( $head, $doodad, $x, $y );
-			$head = $self->{FRAMES}->[$self->{FR}]->{head};
-			$x = $self->{X} + $head->[0] * $::GAMEBITS2 * $self->{DIR};
-			$y = $self->{Y} + $head->[1] * $::GAMEBITS2;
-			$doodad = ::CreateTextDoodad( $x, $y - 30 * $::GAMEBITS2,
-				$self->{NUMBER},
-				$self->{COMBO} . "-hit combo!" );
-			$doodad->{LIFETIME} = 80;
-			$doodad->{SY} = -3;
-			$doodad->{SX} = -3;
-			
-			$doodad = ::CreateTextDoodad( $x, $y - 10 * $::GAMEBITS2,
-				$self->{NUMBER},
-				int($self->{COMBOHP}*$::HitPointScale/10) . "% damage" );
-			$doodad->{LIFETIME} = 80;
-			$doodad->{SY} = -3;
-			$doodad->{SX} = +3;
-			
-			print $self->{COMBO}, "-hit combo for ", $self->{COMBOHP}, " damage.\n";
+	return unless $combo;
 
-			push @::Sounds, ('ba_gooock.voc');
-		}
+	if ( $self->{COMBO} > 1 )
+	{
+		my ( $head, $doodad, $x, $y, $combotext );
 		
-		$self->{COMBO} = 0;
-		$self->{COMBOHP} = 0;
+		$combotext = $ismaxcombo ? "MAX COMBO!!!" : ($self->{COMBO} . "-hit combo!");
+		
+		$head = $self->{FRAMES}->[$self->{FR}]->{head};
+		$x = $self->{X} + $head->[0] * $::GAMEBITS2 * $self->{DIR};
+		$y = $self->{Y} + $head->[1] * $::GAMEBITS2;
+		$doodad = ::CreateTextDoodad( $x, $y - 30 * $::GAMEBITS2,
+			$self->{NUMBER},
+			$combotext );
+		$doodad->{LIFETIME} = $ismaxcombo ? 120 : 80;
+		$doodad->{SY} = -3;
+		$doodad->{SX} = -3;
+		
+		$doodad = ::CreateTextDoodad( $x, $y - 10 * $::GAMEBITS2,
+			$self->{NUMBER},
+			int($self->{COMBOHP}*$::HitPointScale/10) . "% damage" );
+		$doodad->{LIFETIME} = 80;
+		$doodad->{SY} = -3;
+		$doodad->{SX} = +3;
+		
+		print $self->{COMBO}, "-hit combo for ", $self->{COMBOHP}, " damage.\n";
+		push @::Sounds, ( $ismaxcombo ? 'crashhh.voc' : 'ba_gooock.voc');
 	}
+		
+	$self->{COMBO} = 0;
+	$self->{COMBOHP} = 0;
 }
 
 
@@ -709,6 +728,26 @@ die "ERROR IN STATE $nextst" unless defined $st->{DEL};
 }
 
 
+
+=comment
+Pushes the fighter back due to being hit. If the fighter is cornered,
+the other fighter will be pushed back instead.
+=cut
+
+sub HitPush
+{
+	my ($self, $pushforce) = @_;
+	if ( $self->IsCornered )
+	{
+		$self->{OTHER}->{PUSHX} -= $pushforce;
+	}
+	else
+	{
+		$self->{PUSHX} += $pushforce;
+	}
+}
+
+
 =comment
 Returns the characters 'centerline' in physical coordinates.
 =cut
@@ -733,6 +772,19 @@ sub IsBackTurned
 	my ($self) = @_;
 	
 	return ( ($self->{X} - $self->{OTHER}->{X}) * ($self->{DIR}) > 0 );
+}
+
+
+=comment
+Returns true if the character is at either end of the arena.
+=cut
+
+sub IsCornered
+{
+	my ($self) = @_;
+	
+	return (($self->{X} <= $::MOVEMARGIN2 + 16)
+		or ($self->{X} >= $::BGWIDTH2 - $::MOVEMARGIN2 - 16));
 }
 
 
