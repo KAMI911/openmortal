@@ -133,6 +133,7 @@ GRAPHICS - UPi
 German translation - ??
 French translation - Vampyre
 Spanish translation - EdsipeR
+Portuguese translation - Vinicius Fortuna
 
 -- CAST --
 
@@ -504,6 +505,7 @@ Graphiques - UPi
 German translation - ??
 French translation - Vampyre
 Spanish translation - EdsipeR
+Portuguese translation - Vinicius Fortuna
 
 -- Acteurs --
 
@@ -692,6 +694,7 @@ GRAPHICS - UPi
 German translation - ??
 French translation - Vampyre
 Spanish translation - EdsipeR
+Portuguese translation - Vinicius Fortuna
 
 -- CAST --
 
@@ -924,7 +927,7 @@ Apocalypse Production
 e da Degec Entertainment\n\n",
 
 	'Story1Text'		=>
-"Nós, os Deuses dos Evil Killer Black Antipathic Dim (witted) Fire Mages não mais toleramos a falta de maldade no mundo.
+"Nós, os Deuses dos Magos de Fogo Malignos Assassinos Sombrios Antipáticos Estúpidos não mais toleramos a falta de maldade no mundo.
 
 Nós os mandamos em uma missão tão diabólica, tão maligna, que o mundo nunca mais será o mesmo!
 
@@ -933,7 +936,7 @@ DESTUÍSSEM O SÁBADO,
 condenando a humanidade a uma era sombria, com 5 dias úteis e apenas 1 dia de folga por semana... PARA SEMPRE!\n\n\n\n\n\n\n\n\n",
 
 	'Story2Text',		=>
-"Sempre que o Mal surge no horizonte, os heróis estão lá para salvar o dia. Son Goku, o protetor da Terra e da Humanidade veio para nos salvar...
+"Sempre que o Mal surge no horizonte, os heróis estão lá para salvar o dia. Son Goku, o protetor da Terra e da Humanidade veio então para nos salvar...
 
 Apenas para ser MORTO ATROPELADO em seu caminho para o torneio de Mortal Szombat! Bem, afinal era o primeiro dia de direção de Cumi...\n\n\n\n\n\n\n\n\n",
 };
