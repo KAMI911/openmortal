@@ -391,7 +391,7 @@ void Game::Advance( int a_iNumFrames )
 Relevant key events are fed to the backend.
 Esc brings up the menu.
 
-Returns 1 on quit event, 0 otherwise.
+Returns 1 on quit event (e.g. if the current game or replay should be aborted), 0 otherwise.
 */
 
 int Game::ProcessEvents()
@@ -404,13 +404,25 @@ int Game::ProcessEvents()
 			case SDL_QUIT:
 				g_oState.m_bQuitFlag = true;
 				return 1;
-			
+				
 			case SDL_KEYDOWN:
 			{
 				if ( event.key.keysym.sym == SDLK_ESCAPE )
+				{
+					SState::TGameMode enMode = g_oState.m_enGameMode;
+					::DoMenu( true );
+					return g_oState.m_enGameMode == enMode ? 0 : 1;
+				}
+				if ( event.key.keysym.sym == SDLK_F1 )
+				{
+					// shortcut: abort the current round. This shall is here
+					// to ease testing, and will be removed from the final
+					// version.
 					return 1;
+				}
 				
-				if ( Ph_NORMAL != m_enGamePhase )
+				if ( Ph_NORMAL != m_enGamePhase &&
+					Ph_REPLAY != m_enGamePhase )
 					break;
 				
 				for (int i=0; i<2; i++)
@@ -419,10 +431,18 @@ int Game::ProcessEvents()
 					{
 						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
+							if (g_oState.m_enGameMode == SState::IN_DEMO)
+							{
+								g_oState.m_enGameMode = SState::IN_MULTI;
+								return 1;
+							}
+						
 							g_oBackend.PerlEvalF( "KeyDown(%d,%d);", i, j );
+							return 0;
 						}
 					}
 				}
+				
 				break;
 			}
 			
@@ -438,6 +458,7 @@ int Game::ProcessEvents()
 						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
 							g_oBackend.PerlEvalF( "KeyUp(%d,%d);", i, j );
+							return 0;
 						}
 					}
 				}
@@ -526,7 +547,8 @@ void Game::InstantReplay( int a_iKoAt )
 		
 		Draw();
 
-		if ( g_oState.m_bQuitFlag )
+		if ( g_oState.m_bQuitFlag 
+			|| SState::IN_DEMO == g_oState.m_enGameMode )
 		{
 			break;
 		}
@@ -545,6 +567,7 @@ void Game::DoOneRound()
 	double dGameTime = 2 * 1000;
 	int iThisTick, iLastTick, iGameSpeed;
 	bool bHurryUp = false;
+	bool bReplayAfter = true;
 	
 	iGameSpeed = 12;
 	iThisTick = SDL_GetTicks() / iGameSpeed;
@@ -605,8 +628,9 @@ void Game::DoOneRound()
 		g_oBackend.m_iGameTime = (int) ((dGameTime + 500.0) / 1000.0);
 		iLastTick = iThisTick;
 		
-		if ( ProcessEvents() )
+		if ( ProcessEvents() || g_oState.m_bQuitFlag )
 		{
+			bReplayAfter = false;
 			break;
 		}
 		
@@ -616,7 +640,7 @@ void Game::DoOneRound()
 		
 		Draw();
 
-		if ( g_oBackend.m_iGameOver || g_oState.m_bQuitFlag )
+		if ( g_oBackend.m_iGameOver )
 		{
 			break;
 		}
@@ -624,7 +648,7 @@ void Game::DoOneRound()
 	
 	// 3. DO THE REPLAY (IF THERE WAS A KO)
 	
-	if ( iKoFrame>0 )
+	if ( iKoFrame>0 && bReplayAfter )
 	{
 		InstantReplay( iKoFrame );
 	}

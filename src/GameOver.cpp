@@ -142,13 +142,6 @@ void GameOver( int a_iPlayerWon )
 			}	// switch statement
 		}	// Polling events
 		
-		/*
-		int p1x = SvIV(get_sv("p1x", FALSE));
-		int p1y = SvIV(get_sv("p1y", FALSE)) - 15;
-		int p1f = SvIV(get_sv("p1f", FALSE));
-		int p2x = SvIV(get_sv("p2x", FALSE));
-		int p2y = SvIV(get_sv("p2y", FALSE)) - 15;
-		int p2f = SvIV(get_sv("p2f", FALSE));*/
 		g_oBackend.ReadFromPerl();
 		
 		SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
@@ -190,11 +183,21 @@ void GameOver( int a_iPlayerWon )
 		
 		SDL_Flip( gamescreen );
 		
-		if ( g_oState.m_bQuitFlag || bKeyPressed )
+		if ( g_oState.m_bQuitFlag || 
+			SState::IN_DEMO == g_oState.m_enGameMode || 
+			bKeyPressed )
 		{
 			break;
 		}
 	}
+	
+	if ( g_oState.m_bQuitFlag || 
+		SState::IN_DEMO == g_oState.m_enGameMode )
+	{
+		SDL_FreeSurface( poBackground );
+		return;
+	}
+	
 	
 	SDL_FillRect( gamescreen, NULL, C_BLACK );
 	if ( bTimeUp )

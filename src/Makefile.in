@@ -82,7 +82,7 @@ bin_PROGRAMS = openmortal
 openmortal_SOURCES = Audio.cpp Backend.cpp common.cpp 	Demo.cpp FighterStats.cpp FlyingChars.cpp Game.cpp gfx.cpp main.cpp 	menu.cpp PlayerSelect.cpp RlePack.cpp sge_bm_text.cpp 	sge_primitives.cpp sge_surface.cpp sge_tt_text.cpp State.cpp 	GameOver.cpp
 
 
-EXTRA_DIST = Audio.h Backend.h common.h Demo.h FlyingChars.h gfx.h 	menu.h RlePack.h sge_bm_text.h sge_config.h sge_internal.h 	sge_primitives.h sge_surface.h sge_tt_text.h State.h 	Game.h 	Audio.cpp Backend.cpp common.cpp 	Demo.cpp FighterStats.cpp FlyingChars.cpp Game.cpp gfx.cpp main.cpp 	menu.cpp PlayerSelect.cpp RlePack.cpp sge_bm_text.cpp 	sge_primitives.cpp sge_surface.cpp sge_tt_text.cpp State.cpp 	GameOver.cpp
+EXTRA_DIST = Audio.h Backend.h common.h Demo.h FlyingChars.h gfx.h 	menu.h RlePack.h sge_bm_text.h sge_config.h sge_internal.h 	sge_primitives.h sge_surface.h sge_tt_text.h State.h 	Game.h FighterEnum.h PlayerSelect.h 	Audio.cpp Backend.cpp common.cpp 	Demo.cpp FighterStats.cpp FlyingChars.cpp Game.cpp gfx.cpp main.cpp 	menu.cpp PlayerSelect.cpp RlePack.cpp sge_bm_text.cpp 	sge_primitives.cpp sge_surface.cpp sge_tt_text.cpp State.cpp 	GameOver.cpp
 
 
 CXXFLAGS = @CXXFLAGS@ -DDATADIR=\"${pkgdatadir}\" -Wall
@@ -221,39 +221,6 @@ distdir: $(DISTFILES)
 	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
-Audio.o: Audio.cpp Audio.h State.h common.h
-Backend.o: Backend.cpp common.h Backend.h Audio.h
-common.o: common.cpp common.h
-Demo.o: Demo.cpp FlyingChars.h sge_bm_text.h sge_internal.h sge_config.h \
-	State.h gfx.h common.h Backend.h Demo.h
-FighterStats.o: FighterStats.cpp FlyingChars.h sge_bm_text.h \
-	sge_internal.h sge_config.h sge_tt_text.h common.h gfx.h \
-	RlePack.h Backend.h Demo.h
-FlyingChars.o: FlyingChars.cpp FlyingChars.h sge_bm_text.h \
-	sge_internal.h sge_config.h sge_surface.h common.h
-Game.o: Game.cpp sge_surface.h sge_internal.h sge_config.h \
-	sge_primitives.h sge_bm_text.h common.h gfx.h Backend.h \
-	RlePack.h State.h Game.h Audio.h
-GameOver.o: GameOver.cpp gfx.h Backend.h common.h State.h RlePack.h \
-	Audio.h
-gfx.o: gfx.cpp sge_tt_text.h sge_internal.h sge_config.h sge_surface.h \
-	common.h gfx.h State.h
-main.o: main.cpp ../config.h FlyingChars.h sge_bm_text.h sge_internal.h \
-	sge_config.h sge_tt_text.h sge_surface.h common.h gfx.h Audio.h \
-	RlePack.h Backend.h State.h
-menu.o: menu.cpp menu.h gfx.h State.h common.h Audio.h Backend.h
-PlayerSelect.o: PlayerSelect.cpp sge_primitives.h sge_internal.h \
-	sge_config.h common.h Audio.h gfx.h RlePack.h Backend.h State.h
-RlePack.o: RlePack.cpp common.h RlePack.h
-sge_bm_text.o: sge_bm_text.cpp sge_surface.h sge_internal.h sge_config.h \
-	sge_bm_text.h sge_tt_text.h
-sge_primitives.o: sge_primitives.cpp sge_primitives.h sge_internal.h \
-	sge_config.h sge_surface.h
-sge_surface.o: sge_surface.cpp sge_surface.h sge_internal.h sge_config.h
-sge_tt_text.o: sge_tt_text.cpp sge_surface.h sge_internal.h sge_config.h \
-	sge_primitives.h sge_tt_text.h
-State.o: State.cpp ../config.h common.h State.h Backend.h
-
 info-am:
 info: info-am
 dvi-am:
