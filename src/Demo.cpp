@@ -236,6 +236,30 @@ protected:
 
 
 
+class EuDemo: public Demo
+{
+public:
+	EuDemo()
+	{
+		m_poBackground = LoadBackground( "eu.jpg", 240 );
+		SDL_UnlockSurface( m_poBackground );
+		
+		SDL_Rect oRect;
+		oRect.x = 50; oRect.w = gamescreen->w - 100;
+		oRect.y = 50; oRect.h = gamescreen->h - 100;
+		
+		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
+		m_sText1 = "This version of OpenMortal was released on 2004-05-01, the day that Hungary "
+		"along with 9 other countries joined the European Union.\n\n\n\n\n\n\n\n\n";
+		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignJustify, true );
+	}
+protected:
+	std::string m_sText1;
+};
+
+
+
+
 class Story1Demo: public Demo
 {
 public:
@@ -417,6 +441,11 @@ void DoDemos()
 	
 	while (1)
 	{
+		DoDemos_BREAKONEND;
+		{
+			EuDemo oDemo;
+			oDemo.Run();
+		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
 		DoDemos_BREAKONEND;
