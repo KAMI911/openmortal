@@ -21,6 +21,8 @@
 
 class RlePack;
 struct SDL_Surface;
+class CTextArea;
+class CReadline;
 
 /** PlayerInfo structure stores information about a PLAYER.
 
@@ -69,13 +71,23 @@ protected:
 	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol );
 	static RlePack* LoadFighter( FighterEnum m_enFighter );
 	bool IsNetworkGame();
+	FighterEnum GetFighterCell( int a_iIndex );
 
 protected:
 	PlayerInfo	m_aoPlayers[2];
 	int			m_iP1, m_iP2;			// Chooser cells for player 1 and 2
 	bool		m_bDone1, m_bDone2;		// Has player n chosen a player?
 	int			m_aiFighterNameWidth[2];
-	
+
+	int			m_iChooserLeft;
+	int			m_iChooserTop;
+	int			m_iChooserWidth;
+	int			m_iChooserHeight;
+	int			m_iChooserRows;
+	int			m_iChooserCols;
+
+	CTextArea*	m_poTextArea;
+	CReadline*	m_poReadline;
 };
 
 

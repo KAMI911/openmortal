@@ -74,6 +74,7 @@ DECLSPEC void sge_ClearSurface(SDL_Surface *Surface, Uint32 color);
 DECLSPEC int sge_BlitTransparent(SDL_Surface *Src, SDL_Surface *Dest, Sint16 SrcX, Sint16 SrcY, Sint16 DestX, Sint16 DestY, Sint16 W, Sint16 H, Uint32 Clear, Uint8 Alpha);
 DECLSPEC int sge_Blit(SDL_Surface *Src, SDL_Surface *Dest, Sint16 SrcX, Sint16 SrcY, Sint16 DestX, Sint16 DestY, Sint16 W, Sint16 H);
 DECLSPEC SDL_Surface *sge_copy_surface(SDL_Surface *src);
+DECLSPEC SDL_Surface *sge_copy_surface(SDL_Surface *src, Sint16 SrcX, Sint16 SrcY, Sint16 W, Sint16 H);
 
 DECLSPEC SDL_Color sge_GetRGB(SDL_Surface *Surface, Uint32 Color);
 DECLSPEC SDL_Color sge_FillPaletteEntry (Uint8 R, Uint8 G, Uint8 B);

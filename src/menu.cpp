@@ -184,10 +184,10 @@ public:
 		m_bServer = g_oState.m_bServer;
 		m_sHostname = g_oState.m_acLatestServer;
 		
+		AddMenuItem( "START NETWORK GAME!", SDLK_UNKNOWN, MENU_CONNECT );
 		AddEnumMenuItem( "Network mode: ", m_bServer ? 1 : 0, g_ppcServer, g_piServer, MENU_SERVER );
 		m_poServerMenuItem = AddTextMenuItem( "Connect to: ", m_sHostname.c_str(), MENU_HOSTNAME );
 		m_poServerMenuItem->SetEnabled(!m_bServer);
-		AddMenuItem( "START NETWORK GAME!", SDLK_UNKNOWN, MENU_CONNECT );
 
 		MenuItem* poItem = AddMenuItem( "Cancel", SDLK_UNKNOWN, MENU_CANCEL );
 		SDL_Rect oRect;
@@ -237,7 +237,21 @@ public:
 				DrawTextMSZ( "Couldn't connect", inkFont, 320, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
 				DrawTextMSZ( acError, impactFont, 320, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
 			}
-			
+
+			if ( !g_oState.m_bQuitFlag )
+			{
+				if ( m_bOK )
+				{
+					for ( int i=0; i<10; ++i ) if ( MortalNetworkCheckKey() ) break;
+				}
+				else
+				{
+					GetKey();
+				}
+				Clear();
+				Draw();
+			}
+
 			if ( g_oState.m_bQuitFlag )
 			{
 				m_bDone = true;
@@ -261,10 +275,15 @@ public:
 			acBuffer[255] = 0;
 			
 			int x = DrawTextMSZ( "Server name: ", impactFont, 20, 270, 0, C_WHITE, gamescreen );
+
+			int iRetval;
+			{
+				SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+				CReadline oReadline( gamescreen, impactFont, acBuffer, strlen(acBuffer), 255,
+					20+x, 270 + sge_TTF_FontAscent(impactFont), 600, C_LIGHTCYAN, C_BLACK, 255 );
+				iRetval = oReadline.Execute();
+			}
 			
-			int iRetval = sge_tt_input( gamescreen, impactFont, acBuffer, SGE_IBG, strlen(acBuffer), 255,
-				20+x, 270 + sge_TTF_FontAscent(impactFont), C_LIGHTCYAN, C_BLACK, 255 );
-			//DECLSPEC int sge_tt_input(SDL_Surface *screen,sge_TTFont *font,char *string,Uint8 flags, int pos,int len,Sint16 x,Sint16 y, Uint32 fcol, Uint32 bcol, int Alpha);
 			if ( iRetval == -1 )
 			{
 				m_bDone = true;
@@ -376,8 +395,7 @@ void MenuItem::Clear()
 		SDL_FillRect( gamescreen, &m_oPosition, C_WHITE );
 
 	}
-
-
+	
 	SDL_UpdateRect( gamescreen, m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );	
 }
 
@@ -500,6 +518,7 @@ void EnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValu
 	int i;
 	bool bFoundValue = false;
 	
+
 	for ( i=0; NULL != a_ppcNames[i]; ++i )
 	{
 		if ( !bFoundValue &&
@@ -584,6 +603,7 @@ Menu::Menu( const char* a_pcTitle )
 Menu::~Menu()
 {
 	ItemIterator it;
+
 	for ( it = m_oItems.begin(); it != m_oItems.end(); ++it )
 	{
 		delete *it;
@@ -842,6 +862,7 @@ int Menu::Run()
 		
 		if ( g_oState.m_bQuitFlag ||
 			SDLK_ESCAPE == enKey )
+
 		{
 			m_bDone = true;
 			m_iReturnCode = -1;
@@ -876,6 +897,7 @@ int Menu::Run()
 				poItem->Increment();
 				break;
 			}
+
 			
 			case SDLK_RETURN:
 			{
@@ -941,6 +963,7 @@ void Menu::FocusNext()
 void Menu::FocusPrev()
 {
 	MenuItem* poItem = NULL;
+
 	int iPrevItem;
 	
 	for ( iPrevItem = m_iCurrentItem-1; iPrevItem >= 0; --iPrevItem )
@@ -1035,6 +1058,7 @@ void DoMenu( bool a_bDrawBackground )
 	oMenu.AddMenuItem( "~INFO", SDLK_i, MENU_INFO )->SetEnabled(false);
 	oMenu.AddMenuItem( "QUIT", SDLK_UNKNOWN, MENU_QUIT );
 	
+
 	oMenu.Run();
 
 	if ( !g_oState.m_bQuitFlag )

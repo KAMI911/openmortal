@@ -757,6 +757,23 @@ SDL_Surface *sge_copy_surface(SDL_Surface *src)
 
 
 
+SDL_Surface *sge_copy_surface(SDL_Surface *a_poSource, Sint16 x, Sint16 y, Sint16 w, Sint16 h)
+{
+	SDL_Surface* poDest;
+	poDest = SDL_CreateRGBSurface( SDL_SWSURFACE, w, h, a_poSource->format->BitsPerPixel,
+		a_poSource->format->Rmask, a_poSource->format->Gmask, a_poSource->format->Bmask, a_poSource->format->Amask );
+	if ( a_poSource->format->BitsPerPixel <= 8 )
+	{
+		SDL_SetColors( poDest, a_poSource->format->palette->colors, 0, a_poSource->format->palette->ncolors );
+	}
+
+	sge_Blit( a_poSource, poDest, x, y, 0, 0, w, h );
+	return poDest;
+}
+
+
+
+
 
 /**********************************************************************************/
 /**                            Palette functions                                 **/

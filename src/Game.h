@@ -37,11 +37,14 @@ protected:
 	
 	void Advance( int a_iNumFrames );
 	int ProcessEvents();
+	void HandleKey( int a_iPlayer, int a_iKey, bool a_bDown );
+	
 	void HurryUp();
 	void TimeUp();
 	void InstantReplay( int a_iKoAt );
 
 	bool IsNetworkGame();
+	bool IsMaster();
 	
 protected:
 	
@@ -55,11 +58,12 @@ protected:
 	int					m_aiRoundsWonByPlayer[2];
 	int					m_iNumberOfRounds;
 	int					m_iFrame;
+	int					m_iGameTime;
 	
 	std::string			m_sReplayString;
 	std::vector<int>	m_aReplayOffsets;
 	
-	enum					// This enum assumes its values during DoOneRound
+	enum TGamePhaseEnum		// This enum assumes its values during DoOneRound
 	{
 		Ph_START,			// "Round X" displayed, fighters getting ready
 		Ph_NORMAL,			// During the fight
@@ -70,6 +74,8 @@ protected:
 		
 		Ph_REPLAY,			// Replay mode
 	}					m_enGamePhase;
+
+	SState::TGameMode	m_enInitialGameMode;	// must make sure it's still the same.
 };
 
 #endif

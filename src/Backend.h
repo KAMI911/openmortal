@@ -35,6 +35,11 @@ public:
 	const char* PerlEvalF( const char* a_pcFormat, ... );
 	const char* GetPerlString( const char* a_pcScalarName );
 	int GetPerlInt( const char* a_pcScalarName );
+
+	// Fighter enumeration
+	
+	int GetNumberOfFighters();
+	FighterEnum GetFighterID( int a_iIndex );
 	
 	// Game data
 	
@@ -43,10 +48,10 @@ public:
 	void PlaySounds();
 	void WriteToString( std::string& a_rsOutString );
 	void ReadFromString( const std::string& a_rsString );
+	void ReadFromString( const char* a_pcBuffer );
 	
 	
 public:
-	int				m_iGameTime;
 	int				m_iGameOver;
 	bool			m_bKO;
 	int				m_iBgX, m_iBgY;

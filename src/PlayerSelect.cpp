@@ -14,6 +14,7 @@
 #include "SDL_video.h"
 #include "SDL_image.h"
 #include "sge_primitives.h"
+#include "sge_surface.h"
  
 #include "common.h"
 #include "Audio.h"
@@ -23,14 +24,10 @@
 #include "Backend.h"
 #include "State.h"
 #include "MortalNetwork.h"
+#include "Chooser.h"
+#include "sge_tt_text.h"
+#include "TextArea.h"
 
-
-#define CHOOSERLEFT		158
-#define CHOOSERTOP		74
-#define CHOOSERHEIGHT	80
-#define CHOOSERWIDTH	80
-#define CHOOSERROWS		5
-#define CHOOSERCOLS		4
 
 #ifndef NULL
 #define NULL 0
@@ -49,29 +46,20 @@ PlayerSelect g_oPlayerSelect;
                      PRIVATE VARIABLES (perl variable space)
 ***************************************************************************/
 
-/*
-int		p1		= 0;
-int		p2		= 3;
-bool	done1	= false;
-bool	done2	= false;
-*/
 
-
-/*
-FighterEnum ChooserCells[CHOOSERROWS][CHOOSERCOLS] = {
-	{ ZOLI, UPI, CUMI, SIRPI },
-	{ ULMAR, MACI, BENCE, GRIZLI },
-	{ AMBRUS, DESCANT, SURBA, DANI },
-	{ UNKNOWN, KINGA, MISI, UNKNOWN },
-};
-*/
-
-FighterEnum ChooserCells[CHOOSERROWS][CHOOSERCOLS] = {
+FighterEnum ChooserCells[5][4] = {
 	{ ZOLI, UPI, CUMI, SIRPI },
 	{ ULMAR, MACI, GRIZLI, DESCANT },
 	{ DANI, AMBRUS, BENCE, SURBA },
 	{ (FighterEnum)100, (FighterEnum)101, (FighterEnum)102, (FighterEnum)103 },
 	{ (FighterEnum)104, (FighterEnum)105, KINGA, MISI }
+};
+
+FighterEnum ChooserCellsChat[4][5] = {
+	{ ZOLI, UPI, CUMI, SIRPI, ULMAR },
+	{ MACI, BENCE, GRIZLI, DESCANT, SURBA },
+	{ DANI, AMBRUS, (FighterEnum)100, (FighterEnum)102, KINGA },
+	{ (FighterEnum)104, (FighterEnum)105, (FighterEnum)103, (FighterEnum)101, MISI },
 };
 
 
@@ -84,9 +72,9 @@ PlayerSelect::PlayerSelect()
 		m_aoPlayers[i].m_enTint = NO_TINT;
 		m_aoPlayers[i].m_poPack = NULL;
 	}
-	
+
 	m_iP1 = 0;
-	m_iP2 = CHOOSERCOLS-1;
+	m_iP2 = 3;
 }
 
 
@@ -114,7 +102,7 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 	{
 		return false;
 	}
-	
+
 	g_oBackend.PerlEvalF("GetFighterStats(%d);", a_enFighter);
 	const char* pcDatafile = g_oBackend.GetPerlString("Datafile");
 	return ( pcDatafile && *pcDatafile );
@@ -123,7 +111,7 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 
 
 /** LoadFighter simply looks up the filename associated with the given
-fighter, loads it, and returns the RlePack. 
+fighter, loads it, and returns the RlePack.
 
 \return The freshly loaded RlePack, or NULL if it could not be loaded.
 */
@@ -132,7 +120,7 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 {
 	char a_pcFilename[FILENAME_MAX+1];
 	const char* s;
-	
+
 	g_oBackend.PerlEvalF( "GetFighterStats(%d);", m_enFighter );
 	s = g_oBackend.GetPerlString( "Datafile" );
 
@@ -147,7 +135,7 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 		delete pack;
 		return NULL;
 	}
-	
+
 	return pack;
 }
 
@@ -161,7 +149,7 @@ set too. The tint and palette of both players are set. */
 void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 {
 	if ( a_iPlayer ) a_iPlayer = 1;		// It's 0 or 1.
-	
+
 	if ( m_aoPlayers[a_iPlayer].m_enFighter == a_enFighter )
 	{
 		return;
@@ -170,27 +158,27 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 	{
 		return;
 	}
-	
+
 	int iOffset = a_iPlayer ? COLOROFFSETPLAYER2 : COLOROFFSETPLAYER1;
 	RlePack* poPack = LoadFighter( a_enFighter );
 	poPack->OffsetSprites( iOffset );
-	
+
 	if ( NULL == poPack )
 	{
 		debug( "SetPlayer(%d,%d): Couldn't load RlePack\n", a_iPlayer, a_enFighter );
 		return;
-	} 
-	
+	}
+
 	delete m_aoPlayers[a_iPlayer].m_poPack;
 	m_aoPlayers[a_iPlayer].m_poPack = poPack;
 	m_aoPlayers[a_iPlayer].m_enFighter = a_enFighter;
-	
+
 	g_oBackend.PerlEvalF( "SetPlayerNumber(%d,%d);", a_iPlayer, a_enFighter );
 	m_aoPlayers[a_iPlayer].m_sFighterName = g_oBackend.GetPerlString( "PlayerName" );
 	m_aiFighterNameWidth[a_iPlayer] = sge_BF_TextSize( fastFont, GetFighterName(a_iPlayer) ).w;
-	
+
 	TintEnum enTint = NO_TINT;
-	
+
 	if ( m_aoPlayers[0].m_enFighter == m_aoPlayers[1].m_enFighter )
 	{
 		enTint = TintEnum( (rand() % 4) + 1 );
@@ -219,6 +207,21 @@ bool PlayerSelect::IsNetworkGame()
 }
 
 
+
+FighterEnum PlayerSelect::GetFighterCell( int a_iIndex )
+{
+	if ( IsNetworkGame() )
+	{
+		return ChooserCellsChat[a_iIndex/m_iChooserCols][a_iIndex%m_iChooserCols];
+	}
+	else
+	{
+		return ChooserCells[a_iIndex/m_iChooserCols][a_iIndex%m_iChooserCols];
+	}
+}
+
+
+
 void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 {
 	// If we are in network mode, all keys count as the local player's...
@@ -226,40 +229,40 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 	{
 		a_iPlayer = g_poNetwork->IsMaster() ? 0 : 1;
 	}
-	
+
 	int& riP = a_iPlayer ? m_iP2 : m_iP1;
 	int iOldP = riP;
-	
+
 	bool& rbDone = a_iPlayer ? m_bDone2 : m_bDone1;
 	if ( rbDone )
 	{
 		return;
 	}
-	
+
 	switch ( a_iKey )
 	{
 		case 0:		// up
-			if ( riP >= CHOOSERCOLS ) riP -= CHOOSERCOLS;
+			if ( riP >= m_iChooserCols ) riP -= m_iChooserCols;
 			break;
 		case 1:		// down
-			if ( (riP/CHOOSERCOLS) < (CHOOSERROWS-1) ) riP += CHOOSERCOLS;
+			if ( (riP/m_iChooserCols) < (m_iChooserRows-1) ) riP += m_iChooserCols;
 			break;
 		case 2:		// left
-			if ( (riP % CHOOSERCOLS) > 0 ) riP--;
+			if ( (riP % m_iChooserCols) > 0 ) riP--;
 			break;
 		case 3:		// right
-			if ( (riP % CHOOSERCOLS) < (CHOOSERCOLS-1) ) riP++;
+			if ( (riP % m_iChooserCols) < (m_iChooserCols-1) ) riP++;
 			break;
 		default:
-			if ( IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
+			if ( IsFighterAvailable( GetFighterCell(riP) ) )
 			{
 				Audio->PlaySample("magic.voc");
-				
+
 				rbDone = true;
 				g_oBackend.PerlEvalF( "PlayerSelected(%d);", a_iPlayer );
 				if ( IsNetworkGame() )
 				{
-					g_poNetwork->SendFighter( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+					g_poNetwork->SendFighter( GetFighterCell(riP) );
 					g_poNetwork->SendReady();
 				}
 				return;
@@ -269,13 +272,13 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 	if ( iOldP != riP )
 	{
 		Audio->PlaySample("strange_quack.voc");
-		if ( IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
+		if ( IsFighterAvailable( GetFighterCell(riP) ) )
 		{
 			if ( IsNetworkGame() )
 			{
-				g_poNetwork->SendFighter( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+				g_poNetwork->SendFighter( GetFighterCell(riP) );
 			}
-			SetPlayer( a_iPlayer, ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+			SetPlayer( a_iPlayer, GetFighterCell(riP) );
 		}
 	}
 }
@@ -284,7 +287,18 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 void PlayerSelect::HandleNetwork()
 {
 	g_poNetwork->Update();
-	
+
+	bool bUpdateText = false;
+	while ( g_poNetwork->IsMsgAvailable() )
+	{
+		m_poTextArea->AddString( g_poNetwork->GetMsg(), C_YELLOW );
+		bUpdateText = true;
+	}
+	if ( bUpdateText )
+	{
+		m_poTextArea->Redraw();
+	}
+
 	bool bMaster = g_poNetwork->IsMaster();
 	int iPlayer = bMaster ? 1 : 0;
 	int& riP = bMaster ? m_iP2 : m_iP1;
@@ -296,21 +310,22 @@ void PlayerSelect::HandleNetwork()
 	}
 
 	int iOldP = riP;
-	FighterEnum enOldFighter = ChooserCells[iOldP/CHOOSERCOLS][iOldP%CHOOSERCOLS];
+	FighterEnum enOldFighter = GetFighterCell(iOldP);
 	FighterEnum enRemoteFighter = g_poNetwork->GetRemoteFighter();
 
 	if ( enOldFighter != enRemoteFighter
 		&& enRemoteFighter != UNKNOWN )
 	{
+		Audio->PlaySample("strange_quack.voc");
 		SetPlayer( iPlayer, enRemoteFighter );
 		int i, j;
-		for ( i=0; i<CHOOSERROWS; ++i )
+		for ( i=0; i<m_iChooserRows; ++i )
 		{
-			for ( int j=0; j<CHOOSERCOLS; ++j )
+			for ( int j=0; j<m_iChooserCols; ++j )
 			{
-				if ( ChooserCells[i][j] == enRemoteFighter )
+				if ( ChooserCellsChat[i][j] == enRemoteFighter )
 				{
-					riP = i * CHOOSERCOLS + j;
+					riP = i * m_iChooserCols + j;
 					break;
 				}
 			}
@@ -329,28 +344,28 @@ void PlayerSelect::HandleNetwork()
 
 void PlayerSelect::DrawRect( int a_iPos, int a_iColor )
 {
-	int iRow = a_iPos / CHOOSERCOLS;
-	int iCol = a_iPos % CHOOSERCOLS;
+	int iRow = a_iPos / m_iChooserCols;
+	int iCol = a_iPos % m_iChooserCols;
 	SDL_Rect r, r1;
-	
-	r.x = CHOOSERLEFT + iCol * CHOOSERWIDTH;
-	r.y = CHOOSERTOP  + iRow * CHOOSERHEIGHT;
-	r.w = CHOOSERWIDTH + 5;
+
+	r.x = m_iChooserLeft + iCol * m_iChooserWidth;
+	r.y = m_iChooserTop  + iRow * m_iChooserHeight;
+	r.w = m_iChooserWidth + 5;
 	r.h = 5;
 	r1 = r;
 	SDL_FillRect( gamescreen, &r1, a_iColor );
-	
-	r.y += CHOOSERHEIGHT;
-	r1 = r;
-	SDL_FillRect( gamescreen, &r1, a_iColor );
-	
-	r.y -= CHOOSERHEIGHT;
-	r.w = 5;
-	r.h = CHOOSERHEIGHT + 5;
+
+	r.y += m_iChooserHeight;
 	r1 = r;
 	SDL_FillRect( gamescreen, &r1, a_iColor );
 
-	r.x += CHOOSERWIDTH;
+	r.y -= m_iChooserHeight;
+	r.w = 5;
+	r.h = m_iChooserHeight + 5;
+	r1 = r;
+	SDL_FillRect( gamescreen, &r1, a_iColor );
+
+	r.x += m_iChooserWidth;
 	r1 = r;
 	SDL_FillRect( gamescreen, &r1, a_iColor );
 }
@@ -360,20 +375,20 @@ void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_i
 {
 	int x1, y1;
 
-	x1 = CHOOSERLEFT + a_iCol * CHOOSERWIDTH +5;
-	y1 = CHOOSERTOP  + a_iRow * CHOOSERHEIGHT +5;
-	
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	x1 = m_iChooserLeft + a_iCol * m_iChooserWidth +5;
+	y1 = m_iChooserTop  + a_iRow * m_iChooserHeight +5;
+
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
 	x1++;
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
 	y1++;
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
 	x1--;
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + CHOOSERWIDTH-10, y1 + CHOOSERHEIGHT-10, 252);
-	sge_Line(a_poBackground, x1 + CHOOSERWIDTH-10, y1+5, x1+5, y1 + CHOOSERHEIGHT-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
 }
 
 
@@ -381,22 +396,55 @@ void PlayerSelect::DoPlayerSelect()
 {
 	// 1. Set up: Load background, mark unavailable fighters
 
+	bool bNetworkMode = IsNetworkGame();
+
+	if ( IsNetworkGame() )
+	{
+		m_iChooserLeft = 158;
+		m_iChooserTop = 74;
+		m_iChooserHeight = 64;
+		m_iChooserWidth = 64;
+		m_iChooserRows = 4;
+		m_iChooserCols = 5;
+	}
+	else
+	{
+		m_iChooserLeft = 158;
+		m_iChooserTop = 74;
+		m_iChooserHeight = 80;
+		m_iChooserWidth = 80;
+		m_iChooserRows = 5;
+		m_iChooserCols = 4;
+	}
+
 	SDL_FillRect( gamescreen, NULL, C_BLACK );
 	SDL_Flip( gamescreen );
 
-	SDL_Surface* poBackground = LoadBackground( "PlayerSelect.png", 111 );
-	
-	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, poBackground );
+	SDL_Surface* poBackground = LoadBackground( IsNetworkGame() ? "PlayerSelect_chat.png" : "PlayerSelect.png", 111 );
 
-	int i, j;	
-	for ( i=0; i<CHOOSERROWS; ++i )
+	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, poBackground );
+	//g_oChooser.Draw( poBackground );
+
+	int i, j;
+	for ( i=0; i<m_iChooserRows; ++i )
 	{
-		for ( int j=0; j<CHOOSERCOLS; ++j )
+		for ( int j=0; j<m_iChooserCols; ++j )
 		{
-			if ( !IsFighterAvailable(ChooserCells[i][j]) &&
-				UNKNOWN != ChooserCells[i][j] )
+			if ( IsNetworkGame() )
 			{
-				CheckPlayer( poBackground, i, j );
+				if ( !IsFighterAvailable(ChooserCellsChat[i][j]) &&
+					UNKNOWN != ChooserCellsChat[i][j] )
+				{
+					CheckPlayer( poBackground, i, j );
+				}
+			}
+			else
+			{
+				if ( !IsFighterAvailable(ChooserCells[i][j]) &&
+					UNKNOWN != ChooserCells[i][j] )
+				{
+					CheckPlayer( poBackground, i, j );
+				}
 			}
 		}
 	}
@@ -404,31 +452,48 @@ void PlayerSelect::DoPlayerSelect()
 	for ( i=0; i<2; ++i )
 	{
 		if ( m_aoPlayers[i].m_poPack ) m_aoPlayers[i].m_poPack->ApplyPalette();
-	}	
-	
-	SetPlayer( 0, ChooserCells[m_iP1/CHOOSERCOLS][m_iP1%CHOOSERCOLS] );
-	SetPlayer( 1, ChooserCells[m_iP2/CHOOSERCOLS][m_iP2%CHOOSERCOLS] );
-	
+	}
+
+	SetPlayer( 0, GetFighterCell(m_iP1) );
+	SetPlayer( 1, GetFighterCell(m_iP2) );
+
 	// 2. Run selection screen
-	
+
 	g_oBackend.PerlEvalF( "SelectStart();" );
 
 	m_bDone1 = m_bDone2 = false;
-	
+
 	int thisTick, lastTick, gameSpeed;
 
 	gameSpeed = 12 ;
 	thisTick = SDL_GetTicks() / gameSpeed;
 	lastTick = thisTick - 1;
-	
+
 			i		= 0;
 	int		over	= 0;
-	
+
 	int		iCourtain = 0;
 	int		iCourtainSpeed = 0;
 	int		iCourtainTime = 80;
-	
+
 	SDL_Event event;
+
+	// Chat is 165:350 - 470:470
+	char acMsg[256];
+	sprintf( acMsg, "Press Enter to chat..." );
+	bool bDoingChat = false;
+
+	if ( IsNetworkGame() )
+	{
+		m_poReadline = new CReadline( IsNetworkGame() ? poBackground : NULL, impactFont,
+			acMsg, strlen(acMsg), 256, 15, 465, 610, C_LIGHTCYAN, C_BLACK, 255 );
+		m_poTextArea = new CTextArea( poBackground, impactFont, 15, 350, 610, 32*3 );
+	}
+	else
+	{
+		m_poReadline = NULL;
+		m_poTextArea = NULL;
+	}
 
 	while (1)
 	{
@@ -447,20 +512,20 @@ void PlayerSelect::DoPlayerSelect()
 		}
 
 		// 2. Advance as many ticks as necessary..
-		
+
 		if ( iCourtainTime > 0 )
 		{
 			int iAdvance = thisTick - lastTick;
 			if ( iAdvance > 5 ) iAdvance = 5;
-			
+
 			if ( iCourtain + iCourtainSpeed * iCourtainTime /2 < 320 * 4 )
 				iCourtainSpeed += iAdvance;
 			else
 				iCourtainSpeed -= iAdvance;
-				
+
 			iCourtain += iCourtainSpeed * iAdvance;
 			iCourtainTime -= iAdvance;
-			
+
 			if ( iCourtainTime > 0 )
 			{
 				SDL_Rect oRect;
@@ -475,7 +540,7 @@ void PlayerSelect::DoPlayerSelect()
 				SDL_SetClipRect( gamescreen, NULL );
 			}
 		}
-		
+
 		int iNumFrames = thisTick - lastTick;
 		if ( iNumFrames>5 ) iNumFrames = 5;
 		for ( i=0; i<iNumFrames; ++i )
@@ -483,14 +548,48 @@ void PlayerSelect::DoPlayerSelect()
 			g_oBackend.AdvancePerl();
 		}
 		lastTick = thisTick;
-		
+
 		while (SDL_PollEvent(&event))
 		{
+			if ( SDL_QUIT == event.type )
+			{
+				g_oState.m_bQuitFlag = true;
+				break;
+			}
+			
+			if ( bDoingChat )
+			{
+				// The chat thingy will handle this event.
+				m_poReadline->HandleKeyEvent( event );
+				int iResult = m_poReadline->GetResult();
+				if ( iResult < 0 )
+				{
+					// Escape was pressed?
+					m_poReadline->Clear();
+					bDoingChat = false;
+				}
+				if ( iResult > 0 )
+				{
+					if ( strlen( acMsg ) )
+					{
+						g_poNetwork->SendMsg( acMsg );
+						m_poTextArea->AddString( acMsg, C_WHITE );
+						m_poTextArea->Redraw();
+						m_poReadline->Clear();
+						acMsg[0] = 0;
+						m_poReadline->Restart( acMsg, strlen(acMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
+					}
+					else
+					{
+						m_poReadline->Clear();
+						bDoingChat = false;
+					}
+				}
+				continue;
+			}
+			
 			switch (event.type)
 			{
-				case SDL_QUIT:
-					g_oState.m_bQuitFlag = true;
-					break;
 				case SDL_KEYDOWN:
 				{
 					if ( event.key.keysym.sym == SDLK_ESCAPE )
@@ -498,7 +597,16 @@ void PlayerSelect::DoPlayerSelect()
 						DoMenu( false );
 						break;
 					}
-
+					if ( IsNetworkGame() && bDoingChat == false &&
+						(event.key.keysym.sym == SDLK_RETURN
+						|| event.key.keysym.sym==SDLK_KP_ENTER) )
+					{
+						bDoingChat = true;
+						acMsg[0] = 0;
+						m_poReadline->Clear();
+						m_poReadline->Restart( acMsg, strlen(acMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
+						break;
+					}
 					for ( i=0; i<2; i++ )
 					{
 						for ( j=0; j<9; j++ )
@@ -515,42 +623,44 @@ void PlayerSelect::DoPlayerSelect()
 				break;
 			}	// switch statement
 		}	// Polling events
-		
+
 		if ( IsNetworkGame() )
 		{
 			HandleNetwork();
 		}
-		
+
 		g_oBackend.ReadFromPerl();
-		
 		over = g_oBackend.m_iGameOver;
-		
+
 		SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 		if ( !m_bDone1) DrawRect( m_iP1, 250 );
 		if ( !m_bDone2) DrawRect( m_iP2, 253 );
-		
+
 		for ( i=0; i<2; ++i )
 		{
+			int iYOffset = bNetworkMode ? -120 : 0;
 			if ( g_oBackend.m_aoPlayers[i].m_iFrame )
 			{
-				m_aoPlayers[i].m_poPack->Draw( 
+				m_aoPlayers[i].m_poPack->Draw(
 					ABS(g_oBackend.m_aoPlayers[i].m_iFrame)-1,
-					g_oBackend.m_aoPlayers[i].m_iX, g_oBackend.m_aoPlayers[i].m_iY,
+					g_oBackend.m_aoPlayers[i].m_iX, g_oBackend.m_aoPlayers[i].m_iY + iYOffset,
 					g_oBackend.m_aoPlayers[i].m_iFrame < 0 );
 			}
-			int x = ( CHOOSERLEFT - m_aiFighterNameWidth[i] ) / 2;
+			int x = ( m_iChooserLeft - m_aiFighterNameWidth[i] ) / 2;
 			if ( x<10 ) x = 10;
 			if ( i ) x = gamescreen->w - x - m_aiFighterNameWidth[i];
 			
 			sge_BF_textout( gamescreen, fastFont, GetFighterName(i),
-				x, gamescreen->h - 30 );
+				x, IsNetworkGame() ? 10 : gamescreen->h - 30 + iYOffset );
 		}
-		
+
 		SDL_Flip( gamescreen );
 
 		if (over || g_oState.m_bQuitFlag || SState::IN_DEMO == g_oState.m_enGameMode) break;
 	}
 
+	delete m_poReadline;
+	delete m_poTextArea;
 	SDL_FreeSurface( poBackground );
 	SDL_SetClipRect( gamescreen, NULL );
 	return;

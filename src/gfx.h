@@ -42,4 +42,9 @@ extern sge_bmpFont* creditsFont;
 extern sge_bmpFont* storyFont;
 #endif
 
+
+
+
+
+
 #endif

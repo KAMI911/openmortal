@@ -95,6 +95,7 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 {
 	m_bIsReplay = a_bIsReplay;
 	m_bDebug = a_bDebug;
+	m_enInitialGameMode = g_oState.m_enGameMode;
 	
 	m_poBackground = new Background();
 	m_poBackground->Load(mg_iBackgroundNumber++);
@@ -120,6 +121,12 @@ Game::~Game()
 }
 
 
+/** Runs a whole game, with two or three rounds.
+
+\retval 0 if player 1 has won.
+\retval 1 if player 2 has won.
+\retval -1 if the game was a draw.
+*/
 int Game::Run()
 {
 	do
@@ -129,7 +136,7 @@ int Game::Run()
 		DoOneRound();
 		
 		if ( g_oState.m_bQuitFlag 
-			|| SState::IN_DEMO == g_oState.m_enGameMode )
+			|| m_enInitialGameMode != g_oState.m_enGameMode )
 		{
 			return -1;
 		}
@@ -143,6 +150,8 @@ int Game::Run()
 }
 
 
+/** Returns the replay string of the last round.
+*/
 std::string& Game::GetReplay()
 {
 	return m_sReplayString;
@@ -154,6 +163,13 @@ std::string& Game::GetReplay()
 ***************************************************************************/
 
 
+/** Draws the hitpoint bars that are displayed on the top of the screen.
+Also draws the fighter names below the bars.
+
+Input variables:
+\li g_oBackend.m_aoPlayers[x].m_iHitPoints
+\li g_oPlayerSelect.GetFighterName
+*/
 void Game::DrawHitPointDisplay()
 {
 	int hp1 = g_oBackend.m_aoPlayers[0].m_iHitPoints;// * 100 / g_oState.m_iHitPoints;
@@ -209,30 +225,31 @@ void Game::DrawHitPointDisplay()
 
 
 
+/** Draws the background, using the m_poBackground object.
+*/
 void Game::DrawBackground()
 {
 	m_poBackground->Draw( g_oBackend.m_iBgX, g_oBackend.m_iBgY );
-	/*
-	sge_Blit( m_poBackground, gamescreen, 
-		g_oBackend.m_iBgX, g_oBackend.m_iBgY,
-		0, 0, SCREENWIDTH, SCREENHEIGHT );
-	*/
 }
 
 
+/** In debug mode, this method is used to draw the frame of the fighters.
 
-void Game::DrawPoly( const char* sName, int color )
+\param a_sName The name of the polygon (in the perl namespace)
+\param a_iColor The game color to draw the polygon with.
+*/
+void Game::DrawPoly( const char* a_pcName, int a_iColor )
 {
-	AV *iList;
+	AV *poList;
 	int n;
 
-	iList = get_av( sName, FALSE );
-	if ( iList == NULL )
+	poList = get_av( a_pcName, FALSE );
+	if ( poList == NULL )
 	{
 		return;
 	}
 
-	n = av_len( iList ) + 1;
+	n = av_len( poList ) + 1;
 
 	if ( n< 2 )
 	{
@@ -243,18 +260,20 @@ void Game::DrawPoly( const char* sName, int color )
 	{
 		int j = (i+2) % n;
 
-		int x1 = SvIV( *av_fetch( iList, i, false) );
-		int y1 = SvIV( *av_fetch( iList, i+1, false) );
-		int x2 = SvIV( *av_fetch( iList, j, false) );
-		int y2 = SvIV( *av_fetch( iList, j+1, false) );
+		int x1 = SvIV( *av_fetch( poList, i, false) );
+		int y1 = SvIV( *av_fetch( poList, i+1, false) );
+		int x2 = SvIV( *av_fetch( poList, j, false) );
+		int y2 = SvIV( *av_fetch( poList, j+1, false) );
 
-		sge_Line( gamescreen, x1, y1, x2, y2, color ) ;
+		sge_Line( gamescreen, x1, y1, x2, y2, a_iColor ) ;
 	}
 }
 
 
 
 
+/** Draws every doodad that is currently defined in the backend.
+*/
 void Game::DrawDoodads()
 {
 	for ( int i=0; i<g_oBackend.m_iNumDoodads; ++i )
@@ -296,6 +315,23 @@ void Game::DrawDoodads()
 }
 
 
+/** Draws the entire game screen:
+
+\li First, the background.
+\li The players.
+\li The debug wireframes (if debugging is turned on)
+\li The doodads.
+\li The hitpoint display.
+\li The gametime display.
+\li The FPS display.
+\li The "Round x" text during Ph_Start
+
+Input:
+\li m_enGamePhase
+\li g_oBackend.m_iGameTime
+\li m_iNumberOfRounds
+\li oFpsCounter
+*/
 void Game::Draw()
 {
 	DrawBackground();
@@ -331,13 +367,13 @@ void Game::Draw()
 	if ( Ph_NORMAL == m_enGamePhase )
 	{
 		char s[100];
-		sprintf( s, "%d", g_oBackend.m_iGameTime );
+		sprintf( s, "%d", m_iGameTime );	// m_iGameTime is maintained by DoGame
 		DrawTextMSZ( s, inkFont, 320, 10, AlignHCenter, C_LIGHTCYAN, gamescreen, false );
 	}
 	else if ( Ph_START == m_enGamePhase )
 	{
 		char s[100];
-		const char* format = TranslateUTF8( "Round %d" );
+		const char* format = Translate( "Round %d" );
 		sprintf( s, format, m_iNumberOfRounds+1 );
 		DrawTextMSZ( s, inkFont, 320, 200, AlignHCenter, C_WHITE, gamescreen, false );
 	}
@@ -378,12 +414,24 @@ bool Game::IsNetworkGame()
 }
 
 
+/** Returns true if we control our own data, or false if the network supplies
+us with game data. */
+bool Game::IsMaster()
+{
+	return !IsNetworkGame() || g_poNetwork->IsMaster();
+}
+
+
 /**
 This method reads and updates the game's variables. In replay mode,
 this is done by parsing the replay string. Otherwise the perl
 backend is advanced the given number of steps.
 
 Whichever the case, the variables will be available in g_oBackend.
+
+Only the backend-driven variables are modified, the GamePhase and
+GameTime remain unchanged; these are up for DoOneRound and friends
+to modify.
 */
 
 void Game::Advance( int a_iNumFrames )
@@ -406,13 +454,21 @@ void Game::Advance( int a_iNumFrames )
 	if ( IsNetworkGame() )
 	{
 		bool bMaster = g_poNetwork->IsMaster();
-		
+		g_poNetwork->Update();
+		if (!bMaster)
+		{
+			// We don't run our own backend, just pull the data from the network.
+			const char* pcRemoteBackend = g_poNetwork->GetLatestGameData();
+			g_oBackend.ReadFromString( pcRemoteBackend );
+			return;
+		}
 	}
+	
+	static std::string sFrameDesc;
 	
 	while ( a_iNumFrames > 0 )
 	{
 		-- a_iNumFrames;
-		std::string sFrameDesc;
 		g_oBackend.AdvancePerl();
 		g_oBackend.ReadFromPerl();
 		g_oBackend.PlaySounds();
@@ -422,8 +478,36 @@ void Game::Advance( int a_iNumFrames )
 		m_sReplayString += '\n';
 		m_aReplayOffsets.push_back( m_sReplayString.size() );
 	}
+
+	if ( IsNetworkGame() && sFrameDesc.size() )
+	{
+		g_poNetwork->SendGameData( sFrameDesc.c_str() );
+		g_oBackend.PlaySounds();
+	}
+
 }
 
+
+
+/** A helper method of ProcessEvents; it manages keypresses and releases of
+players.
+*/
+
+void Game::HandleKey( int a_iPlayer, int a_iKey, bool a_bDown )
+{
+	if ( IsMaster() )
+	{
+		if ( IsNetworkGame() )
+		{
+			a_iPlayer = 0;
+		}
+		g_oBackend.PerlEvalF( a_bDown ? "KeyDown(%d,%d);" : "KeyUp(%d,%d);", a_iPlayer, a_iKey );
+	}
+	else
+	{
+		g_poNetwork->SendKeystroke( a_iKey, a_bDown );
+	}
+}
 
 
 /** ProcessEvents reads events from the SDL event system. 
@@ -447,13 +531,13 @@ int Game::ProcessEvents()
 				
 			case SDL_KEYDOWN:
 			{
-				if ( event.key.keysym.sym == SDLK_ESCAPE )
+				if ( event.key.keysym.sym == SDLK_ESCAPE /*&& !IsNetworkGame()*/ )
 				{
 					SState::TGameMode enMode = g_oState.m_enGameMode;
 					::DoMenu( true );
 					return g_oState.m_enGameMode == enMode ? 0 : 1;
 				}
-				if ( event.key.keysym.sym == SDLK_F1 )
+				if ( event.key.keysym.sym == SDLK_F1  /*&& !IsNetworkGame()*/ )
 				{
 					// shortcut: abort the current round. This shall is here
 					// to ease testing, and will be removed from the final
@@ -476,8 +560,8 @@ int Game::ProcessEvents()
 								g_oState.m_enGameMode = SState::IN_MULTI;
 								return 1;
 							}
-						
-							g_oBackend.PerlEvalF( "KeyDown(%d,%d);", i, j );
+							HandleKey( i, j, true );
+							//g_oBackend.PerlEvalF( "KeyDown(%d,%d);", i, j );
 							return 0;
 						}
 					}
@@ -497,6 +581,7 @@ int Game::ProcessEvents()
 					{
 						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
+							HandleKey( i, j, false );
 							g_oBackend.PerlEvalF( "KeyUp(%d,%d);", i, j );
 							return 0;
 						}
@@ -528,6 +613,11 @@ void Game::TimeUp()
 }
 
 
+/** This methods starts and runs the "instant replay" mode that is done
+at the end of a game round. This means doing phases Ph_REWIND and Ph_SLOWFORWARD.
+
+Rewind will go back in time 200 ticks before the parameter a_iKoAt.
+*/
 void Game::InstantReplay( int a_iKoAt )
 {
 	int iCurrentFrame = m_aReplayOffsets.size() - 200;
@@ -597,12 +687,24 @@ void Game::InstantReplay( int a_iKoAt )
 }
 
 
+/** This methods executes one round of gameplay.
+
+The game progresses through phases Ph_START, Ph_NORMAL, and
+Ph_KO. If a KO happened, it will invoke InstantReplay. At the end of
+the round m_aiRoundsWonByPlayer[x] will be incremented depending on the
+outcome. m_iNumberOfRounds will also increase by 1.
+*/
 void Game::DoOneRound()
 {
 	m_enGamePhase = Ph_START;
 	
 	g_oBackend.PerlEvalF( "GameStart(%d,%d);", g_oState.m_iHitPoints, m_bDebug );
-	
+
+	if ( IsNetworkGame() )
+	{
+		g_poNetwork->SynchStartRound();
+	}
+
 	int iKoFrame = -1;
 	double dGameTime = 2 * 1000;	// Only for the "greeting phase", the real gametime will be set after.
 	int iThisTick, iLastTick, iGameSpeed;
@@ -614,11 +716,15 @@ void Game::DoOneRound()
 	iLastTick = iThisTick - 1;
 	
 	oFpsCounter.Reset();
-
-	// 1. DO THE NORMAL GAME ROUND and HURRYUP
+	
+	// 1. DO THE NORMAL GAME ROUND (START, NORMAL, KO, TIMEUP)
 	
 	while ( dGameTime >= 0 )
 	{
+		if ( m_enInitialGameMode != g_oState.m_enGameMode )
+		{
+			return;
+		}
 		
 		// 1. Wait for the next tick (on extremely fast machines..)
 		while (iThisTick == iLastTick)
@@ -633,45 +739,79 @@ void Game::DoOneRound()
 		if ( iNumTicks > MAXFRAMESKIP ) iNumTicks = MAXFRAMESKIP;		
 		Advance( iNumTicks );
 		dGameTime -= iNumTicks * iGameSpeed;
-		
-		if ( Ph_START == m_enGamePhase )
+
+		// 3. Check for state transitions and game time.
+		// START -> NORMAL
+		// NORMAL -> KO
+		// NORMAL -> TIMEUP
+		// bHurryUp flag can be set during NORMAL phase
+
+		if ( !IsNetworkGame()
+			|| (IsNetworkGame() && g_poNetwork->IsMaster()) )
 		{
-			if ( dGameTime <= 0 )
+			if ( Ph_START == m_enGamePhase )		// Check for the end of the START phase
 			{
-				m_enGamePhase = Ph_NORMAL;
-				dGameTime = g_oState.m_iGameTime * 1000;
+				if ( dGameTime <= 0 )
+				{
+					m_enGamePhase = Ph_NORMAL;
+					dGameTime = g_oState.m_iGameTime * 1000;
+				}
+			}
+			else if ( Ph_NORMAL == m_enGamePhase )	// Check for the end of the NORMAL phase
+			{
+				if ( dGameTime < 10 * 1000 
+					&& !bHurryUp )
+				{
+					bHurryUp = true;
+					HurryUp();
+					iGameSpeed = iGameSpeed * 3 / 4;
+				}
+				if ( g_oBackend.m_bKO )
+				{
+					m_enGamePhase = Ph_KO;
+					dGameTime = 10 * 1000;
+					iKoFrame = m_aReplayOffsets.size();
+				}
+				else if ( dGameTime <= 0 )
+				{
+					m_enGamePhase = Ph_TIMEUP;
+					TimeUp();
+					break;
+				}
+			}
+			
+			m_iGameTime = (int) ((dGameTime + 500.0) / 1000.0);
+			
+			if ( IsNetworkGame() )
+			{
+				g_poNetwork->SendGameTime( m_iGameTime, m_enGamePhase );
 			}
 		}
-		else if ( Ph_NORMAL == m_enGamePhase )
+		else
 		{
-			if ( dGameTime < 10 * 1000 
-				&& !bHurryUp )
-			{
-				bHurryUp = true;
-				HurryUp();
-				iGameSpeed = iGameSpeed * 3 / 4;
-			}
-			if ( g_oBackend.m_bKO )
-			{
-				m_enGamePhase = Ph_KO;
-				dGameTime = 10 * 1000;
-				iKoFrame = m_aReplayOffsets.size();
-			}
-			else if ( dGameTime <= 0 )
-			{
-				m_enGamePhase = Ph_TIMEUP;
-				TimeUp();
-				break;
-			}
+			m_iGameTime = g_poNetwork->GetGameTime();
+			TGamePhaseEnum enOldPhase = m_enGamePhase;
+			m_enGamePhase = (TGamePhaseEnum) g_poNetwork->GetGamePhase();
+			dGameTime = 1000.0;	// ignored.
 		}
 		
-		g_oBackend.m_iGameTime = (int) ((dGameTime + 500.0) / 1000.0);
 		iLastTick = iThisTick;
 		
 		if ( ProcessEvents() || g_oState.m_bQuitFlag )
 		{
 			bReplayAfter = false;
 			break;
+		}
+
+		if ( IsNetworkGame() && IsMaster() )
+		{
+			int iKey;
+			bool bPressed;
+			while ( g_poNetwork->GetKeystroke( iKey, bPressed ) )
+			{
+				debug( "Got GetKeystroke: %d, %d\n", iKey, bPressed );
+				g_oBackend.PerlEvalF( bPressed ? "KeyDown(%d,%d);" : "KeyUp(%d,%d);", 1, iKey );
+			}
 		}
 		
 		oFpsCounter.Tick();
@@ -680,28 +820,55 @@ void Game::DoOneRound()
 		
 		Draw();
 
-		if ( g_oBackend.m_iGameOver )
+		// 4. Check 'end of round' condition.
+
+		if ( !IsMaster() )
+		{
+			if ( g_poNetwork->IsRoundOver() )
+			{
+				break;
+			}
+		}
+		else if ( g_oBackend.m_iGameOver )
 		{
 			break;
 		}
 	}
 	
+	int p1h = g_oBackend.m_aoPlayers[0].m_iHitPoints;
+	int p2h = g_oBackend.m_aoPlayers[1].m_iHitPoints;
+	
 	// 3. DO THE REPLAY (IF THERE WAS A KO)
 	
-	if ( iKoFrame>0 && bReplayAfter )
+	if ( iKoFrame>0 && bReplayAfter && !IsNetworkGame() )
 	{
 		InstantReplay( iKoFrame );
 	}
 	
 	// 4. END OF ROUND
 	
-	
-	int p1h = g_oBackend.m_aoPlayers[0].m_iHitPoints;
-	int p2h = g_oBackend.m_aoPlayers[1].m_iHitPoints;
 	debug( "Game over; p1h = %d; p2h = %d\n", p1h, p2h );
 	
-	if ( p1h > p2h ) ++m_aiRoundsWonByPlayer[0];
-	if ( p2h > p1h ) ++m_aiRoundsWonByPlayer[1];
+	if ( IsMaster() )
+	{
+		int iWhoWon = -1;
+		if ( p1h > p2h ) { ++m_aiRoundsWonByPlayer[0]; iWhoWon = 0; }
+		if ( p2h > p1h ) { ++m_aiRoundsWonByPlayer[1]; iWhoWon = 1; }
+		
+		if ( IsNetworkGame() )
+		{
+			g_poNetwork->SendRoundOver( iWhoWon, m_iNumberOfRounds > 0 );
+		}
+	}
+	else
+	{
+		int iWhoWon = g_poNetwork->GetWhoWon();
+		if ( iWhoWon>=0 )
+		{
+			++m_aiRoundsWonByPlayer[iWhoWon];
+		}
+	}
+	
 	++m_iNumberOfRounds;
 }
 
@@ -770,6 +937,19 @@ void Game::DoReplay( const char* a_pcReplayFile )
 }
 
 
+
+
+
+
+/** Public static function.
+
+Other parts of OpenMortal need not include "Game.h" so long as they have
+the definition of this method (defined in "common.h"). The method runs
+a cycle of the game (either a normal game, or replay).
+
+In replay mode, DoReplay() is called, and the replay file is required.
+In normal mode, Run() is called. The replay file is recorded, if it is not NULL.
+*/
 
 int DoGame( char* a_pcReplayFile, bool a_bIsReplay, bool a_bDebug )
 {

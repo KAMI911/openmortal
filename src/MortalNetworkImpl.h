@@ -53,22 +53,30 @@ public:
 	void		SendGameData( const char* a_pcGameData );
 	const char*	GetLatestGameData();
 	void		SendKeystroke( int a_iKey, bool a_bPressed );
-	bool		GetKeystroke( int& a_riOutKey, bool a_rbPressed );
+	bool		GetKeystroke( int& a_riOutKey, bool& a_rbPressed );
+
+	void		SendGameTime( int a_iGameTime, int a_iGamePhase );
+	int			GetGameTime();
+	int			GetGamePhase();
 
 	void		SendRoundOver( int a_iWhoWon, bool a_bGameOver );
-	bool		IsRoundOver( int& a_riOutWhoWon );
+	int			GetWhoWon();
+	bool		IsRoundOver();
 	bool		IsGameOver();
 
 protected:
-	void		InternalSendString( const char* a_pcText, char a_cID );
-	char*		InternalReceiveString( void* a_pData, int a_iLength, int& a_riOutLength );
+	void		SendRawData( char a_cID, const void* a_pData, int a_iLength );
 	
-	int			ReceiveMsg( void* a_pData, int a_iLength );
-	int			ReceiveGameData( void* a_pData, int a_iLength );
-	int			ReceiveKeystroke( void* a_pData, int a_iLength );
-	int			ReceiveFighter( void* a_pData, int a_iLength );
-	int			ReceiveReady( void* a_pData, int a_iLength );
-	int			ReceiveRoundOver( void* a_pData, int a_iLength );
+	//void		InternalSendString( const char* a_pcText, char a_cID );
+	//char*		InternalReceiveString( void* a_pData, int a_iLength, int& a_riOutLength );
+	
+	void		ReceiveMsg( void* a_pData, int a_iLength );
+	void		ReceiveGameData( void* a_pData, int a_iLength );
+	void		ReceiveKeystroke( void* a_pData, int a_iLength );
+	void		ReceiveFighter( void* a_pData, int a_iLength );
+	void		ReceiveReady( void* a_pData, int a_iLength );
+	void		ReceiveRoundOver( void* a_pData, int a_iLength );
+	void		ReceiveGameTime( void* a_pData, int a_iLength );
 
 protected:
 	bool		m_bNetworkAvailable;
@@ -85,6 +93,9 @@ protected:
 	bool					m_bMaster;
 	TCPsocket				m_poSocket;
 	SDLNet_SocketSet		m_poSocketSet;
+
+	char					m_acIncomingBuffer[2048];
+	int						m_iIncomingBufferSize;
 	
 	std::string				m_sLastError;
 	
@@ -102,6 +113,8 @@ protected:
 	bool					m_bRoundOver;
 	int						m_iWhoWon;
 	bool					m_bGameOver;
+	int						m_iGameTime;
+	int						m_iGamePhase;
 	
 	// REMOTE QUERY RESPONSES
 	

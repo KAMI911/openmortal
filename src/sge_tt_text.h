@@ -98,4 +98,48 @@ DECLSPEC int sge_tt_input(SDL_Surface *screen,sge_TTFont *font,char *string,Uint
 #endif /* _SGE_NOTTF */
 #endif /* sge_C_ONLY */
 
+
+class CReadline
+{
+public:
+	CReadline( SDL_Surface *a_poScreen, _sge_TTFont *a_poFont,
+		char *a_pcString, int a_iPos, int a_iLen,
+		int a_x, int a_y, int a_w, Uint32 a_iFCol, Uint32 a_iBCol, int a_iAlpha );
+	~CReadline();
+
+	void Restart( char *a_pcString, int a_iPos, int a_iLen,
+		Uint32 a_iFCol, Uint32 a_iBCol, int a_iAlpha );
+	int GetResult();
+	void HandleKeyEvent( SDL_Event& a_roEvent );
+	void Clear();
+
+	int Execute();
+
+protected:
+	void Update( int a_iCode );
+	void NiceUpdate( int a_iCode );
+
+protected:
+	SDL_Surface*	m_poScreen;
+	SDL_Surface*	m_poBackground;
+	SDL_Rect		m_oWorkArea;
+	
+	_sge_TTFont*	m_poFont;
+	char*			m_pcLatin1String;
+	Uint16*			m_piString;
+	int				m_iPos;
+	int				m_iLen;
+	int				x, y, w;
+	Uint32			m_iFCol;
+	Uint32			m_iBCol;
+	int				m_iAlpha;
+
+	SDL_Rect		m_oUpdateRect;
+	char			m_iCursor;
+	int				m_iMax;
+	int				m_iResult;
+};
+
+
+
 #endif /* sge_tt_text_H */

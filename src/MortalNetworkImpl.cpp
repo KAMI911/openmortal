@@ -48,6 +48,8 @@ CMortalNetworkImpl::CMortalNetworkImpl()
 	m_bRoundOver = false;
 	m_iWhoWon = -1;
 	m_bGameOver = false;
+	m_iGameTime = 0;
+	m_iGamePhase = 0;
 	
 	if(SDLNet_Init()==-1)
 	{
@@ -215,11 +217,12 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	m_sLatestGameData = "";
 	m_aiKeystrokes.clear();
 	m_abKeystrokes.clear();
+	m_iGameTime = 0;
+	m_iGamePhase = 0;
+	m_iIncomingBufferSize = 0;
 	
 	m_poSocketSet = SDLNet_AllocSocketSet( 1 );
 	SDLNet_TCP_AddSocket( m_poSocketSet, m_poSocket );	// Check for errors?
-	
-	while (!MortalNetworkCheckKey()) SDL_Delay( 100 );
 	
 	return true;
 }
@@ -261,51 +264,74 @@ bool CMortalNetworkImpl::IsConnectionAlive()
 void CMortalNetworkImpl::Update()
 {
 	CHECKCONNECTION;
+
+	// 1. CHECK FOR STUFF TO READ
 	
 	int iRetval = SDLNet_CheckSockets( m_poSocketSet, 0 );
 	if ( iRetval <= 0 )
 	{
 		return;
 	}
+
+	// 2. APPEND AT MOST 1024 bytes TO THE END OF THE INCOMING BUFFER
 	
-	char acBuffer[1024];
-	iRetval = SDLNet_TCP_Recv( m_poSocket, acBuffer, 1024 );
+	iRetval = SDLNet_TCP_Recv( m_poSocket, m_acIncomingBuffer + m_iIncomingBufferSize, 1024 );
 	if ( iRetval <= 0 )
 	{
 		m_sLastError = SDLNet_GetError();
 		Stop();
 		return;
 	}
+	m_iIncomingBufferSize += iRetval;
 
-	// OK, we've read it. Now let's see what it is.
+	// 3. CONSUME THE INCOMING BUFFER.
+	// We always make sure the incoming buffer starts with a package header.
 
 	int iOffset = 0;
 
-	while ( iOffset < iRetval )
+	while ( iOffset < m_iIncomingBufferSize )
 	{
-		debug( "Received stuff.. %c type, %d length, %d offset\n", acBuffer[iOffset], iRetval, iOffset );
-	
-		if ( NS_CHARACTER_SELECTION == m_enState )
+		// 3.1. Check if we have enough data to receive the package.
+		
+		if ( m_iIncomingBufferSize - iOffset < 4 )
 		{
-			switch ( acBuffer[iOffset] )
-			{
-			case 'M': iOffset += ReceiveMsg( acBuffer+iOffset, iRetval ); break;
-			case 'F': iOffset += ReceiveFighter( acBuffer+iOffset, iRetval ); break;
-			case 'R': iOffset += ReceiveReady( acBuffer+iOffset, iRetval ); break;
-			case 'S': ++iOffset; break;
-			default: DISCONNECTONCOMMUNICATIONERROR;
-			}
+			// Not enough space left for a full header.
+			debug( "Not enough space left for a full header (%d).\n", m_iIncomingBufferSize-iOffset );
+			break;
 		}
-		else
+		
+		unsigned int iLengthOfPackage = SDL_SwapBE16(*((Uint16*)(m_acIncomingBuffer + iOffset + 1)));
+		if ( iLengthOfPackage > 1000 )
 		{
-			switch ( acBuffer[iOffset] )
+			debug( "Maximum package size exceeded.\n" );
+			DISCONNECTONCOMMUNICATIONERROR;
+		}
+		debug( "Receiving stuff.. %c type, %d package length, offset %d in buffer, %d bytes in buffer\n",
+			m_acIncomingBuffer[iOffset], iLengthOfPackage, iOffset, m_iIncomingBufferSize );
+		
+		if ( iOffset + 4 + (int)iLengthOfPackage > m_iIncomingBufferSize )
+		{
+			// Not enough space left for the actual package.
+			debug( "Not enough space left for the actual package.\n" );
+			break;
+		}
+
+		// 3.2. Receive the data.
+		
+		switch ( m_acIncomingBuffer[iOffset] )
+		{
+			case 'M': ReceiveMsg( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'F': ReceiveFighter( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'R': ReceiveReady( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'S': m_bSynchQueryResponse=true; break;
+			case 'G': ReceiveGameData( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'K': ReceiveKeystroke( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'O': ReceiveRoundOver( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'T': ReceiveGameTime( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			default:
 			{
-			case 'M': iOffset += ReceiveMsg( acBuffer+iOffset, iRetval ); break;
-			case 'G': iOffset += ReceiveGameData( acBuffer+iOffset, iRetval ); break;
-			case 'K': iOffset += ReceiveKeystroke( acBuffer+iOffset, iRetval ); break;
-			case 'O': iOffset += ReceiveRoundOver( acBuffer+iOffset, iRetval ); break;
-			case 'S': ++iOffset; break;
-			default: DISCONNECTONCOMMUNICATIONERROR;
+				debug( "Bad ID: %c (%d)\n", m_acIncomingBuffer[iOffset], m_acIncomingBuffer[iOffset] );
+				DISCONNECTONCOMMUNICATIONERROR;
 			}
 		}
 
@@ -313,7 +339,15 @@ void CMortalNetworkImpl::Update()
 		{
 			return;
 		}
+
+		iOffset += iLengthOfPackage + 4;
 	}
+
+	// 4. MOVE LEFTOVER DATA TO THE BEGINNING OF THE INCOMING BUFFER
+	// The leftover data starts at iOffset, and is (m_iIncomingBufferSize-iOffset) long.
+	
+	memmove( m_acIncomingBuffer, m_acIncomingBuffer + iOffset, m_iIncomingBufferSize-iOffset );
+	m_iIncomingBufferSize -= iOffset;
 }
 
 
@@ -329,36 +363,6 @@ bool CMortalNetworkImpl::IsMaster()
 }
 
 
-/*
-	enum TNetworkState
-	{
-		NS_DISCONNECTED,
-		NS_CHARACTER_SELECTION,
-		NS_IN_GAME,
-	};
-
-	TNetworkState			m_enState;
-	bool					m_bServer;
-	bool					m_bMaster;
-	TCPsocket				m_poSocket;
-
-	std::list<std::string>	m_asMsgs;
-
-	// GAME DATA
-
-	FighterEnum				m_enRemoteFighter;
-	bool					m_bRemoteReady;
-
-	std::string				m_sLatestGameData;
-	std::list<int>			m_iKeystrokes;
-	std::list<int>			m_bKeystrokes;
-
-	bool					m_bRoundOver;
-	int						m_iWhoWon;
-	bool					m_bGameOver;
-*/
-
-
 const char* CMortalNetworkImpl::GetRemoteUsername()
 {
 	return "upi";
@@ -371,61 +375,34 @@ const char* CMortalNetworkImpl::GetRemoteUsername()
 *************************************************************************/
 
 
+
+/** All sent data must go through this method. It ensures the well-formed
+header for the data.
+The header itself looks like this:
+ID			char
+Length		Uint16
+Reserved	char
+This is followed by as many bytes as the Length is.
+*/
+void CMortalNetworkImpl::SendRawData( char a_cID, const void* a_pData, int a_iLength )
+{
+	char acBuffer[4];
+	acBuffer[0] = a_cID;
+	*((Uint16*)(acBuffer+1)) = SDL_SwapBE16( a_iLength );
+	acBuffer[3] = 0;
+
+	int iRetval = SDLNet_TCP_Send( m_poSocket, &acBuffer, 4 );
+	if ( iRetval != 4 ) DISCONNECTONCOMMUNICATIONERROR;
+
+	if ( a_iLength )
+	{
+		iRetval = SDLNet_TCP_Send( m_poSocket, (void*) a_pData, a_iLength );
+		if (iRetval != a_iLength ) DISCONNECTONCOMMUNICATIONERROR;
+	}
+}
+
+
 #define MAXSTRINGLENGTH 900
-struct SMsgPackage
-{
-	char	cID;
-	Uint16	iLength;
-	char	acData[1024];
-};
-
-void CMortalNetworkImpl::InternalSendString( const char* a_pcText, char a_cID )
-{
-	CHECKCONNECTION;
-
-	if ( NULL == a_pcText
-		|| 0 == *a_pcText )
-	{
-		return;
-	}
-
-	int iLength = strlen( a_pcText );
-	if ( iLength > MAXSTRINGLENGTH ) iLength = MAXSTRINGLENGTH;
-
-	SMsgPackage oPackage;
-	oPackage.cID = a_cID;
-	oPackage.iLength = iLength;
-	strncpy( oPackage.acData, a_pcText, iLength );
-	oPackage.acData[iLength] = 0;
-
-	int iPackageLength = iLength + sizeof(char) + sizeof(Uint16);
-
-	int iRetval = SDLNet_TCP_Send( m_poSocket, &oPackage, iPackageLength );
-	if ( iRetval < iPackageLength ) DISCONNECTONCOMMUNICATIONERROR;
-}
-
-char* CMortalNetworkImpl::InternalReceiveString( void* a_pData, int a_iLength, int& a_riOutLength )
-{
-	a_riOutLength = -1;
-	
-	// Verify data length vs package length
-	
-	SMsgPackage* pcPackage = (SMsgPackage*) a_pData;
-	if ( a_iLength < (int) sizeof(char) + (int) sizeof(Uint16) + 1 )
-	{
-		DISCONNECTWITH(NULL);
-	}
-	
-	a_riOutLength = sizeof(char) + sizeof(Uint16) + pcPackage->iLength;
-	if ( pcPackage->iLength > MAXSTRINGLENGTH
-		|| a_iLength < a_riOutLength )
-	{
-		DISCONNECTWITH(NULL);
-	}
-	
-	pcPackage->acData[ pcPackage->iLength ] = 0;
-	return pcPackage->acData;
-}
 
 
 
@@ -433,20 +410,25 @@ char* CMortalNetworkImpl::InternalReceiveString( void* a_pData, int a_iLength, i
 
 void CMortalNetworkImpl::SendMsg( const char* a_pcMsg )
 {
-	InternalSendString( a_pcMsg, 'M' );
+	CHECKCONNECTION;
+	
+	int iMsgLen = strlen( a_pcMsg ) + 1;
+	if ( iMsgLen > MAXSTRINGLENGTH )
+	{
+		// Will not be 0 terminated if exceeds length!
+		iMsgLen = MAXSTRINGLENGTH;
+	}
+	SendRawData( 'M', a_pcMsg, iMsgLen );
 }
 
-int CMortalNetworkImpl::ReceiveMsg( void* a_pData, int a_iLength )
+void CMortalNetworkImpl::ReceiveMsg( void* a_pData, int a_iLength )
 {
-	int iRetval;
-	char* pcMsg = InternalReceiveString( a_pData, a_iLength, iRetval );
+	if ( a_iLength < 1 || a_iLength > MAXSTRINGLENGTH ) DISCONNECTONCOMMUNICATIONERROR;
+	
+	char* acData = (char*) a_pData;
+	acData[ a_iLength-1 ] = 0;	// Last char should be 0, just making sure..
 
-	if ( iRetval > 0 )
-	{
-		m_asMsgs.push_back( pcMsg );
-	}
-
-	return iRetval;
+	m_asMsgs.push_back( acData );
 }
 
 
@@ -485,31 +467,22 @@ bool CMortalNetworkImpl::IsRemoteFighterAvailable( FighterEnum a_enFighter )
 
 
 
-struct SFighterPackage
-{
-	char	cID;
-	Uint32	iFighter;
-};
-
 void CMortalNetworkImpl::SendFighter( FighterEnum a_enFighter )
 {
 	CHECKCONNECTION;
-	
-	SFighterPackage oPackage;
-	oPackage.cID = 'F';
-	oPackage.iFighter = SDL_SwapBE32( a_enFighter );
-	int iRetval = SDLNet_TCP_Send( m_poSocket, &oPackage, sizeof(oPackage) );
-	if ( iRetval < (int) sizeof(oPackage) ) DISCONNECTONCOMMUNICATIONERROR;
+
+	Uint32 iFighter = SDL_SwapBE32( a_enFighter );
+	SendRawData( 'F', &iFighter, sizeof (iFighter) );
 }
 
-int CMortalNetworkImpl::ReceiveFighter( void* a_pcData, int a_iLength )
+void CMortalNetworkImpl::ReceiveFighter( void* a_pcData, int a_iLength )
 {
-	SFighterPackage *poPackage = (SFighterPackage*) a_pcData;
-	if ( a_iLength < (int) sizeof(SFighterPackage) ) DISCONNECTWITH(-1);
+	Uint32 iFighter;
+	if ( a_iLength != sizeof(iFighter) ) DISCONNECTONCOMMUNICATIONERROR;
+	iFighter = *((Uint32*)a_pcData);
 	
-	m_enRemoteFighter = (FighterEnum) SDL_SwapBE32( poPackage->iFighter );
+	m_enRemoteFighter = (FighterEnum) SDL_SwapBE32( iFighter );
 	debug( "ReceiveFighter: %d\n", m_enRemoteFighter );
-	return sizeof( SFighterPackage );
 }
 
 FighterEnum CMortalNetworkImpl::GetRemoteFighter()
@@ -523,17 +496,14 @@ FighterEnum CMortalNetworkImpl::GetRemoteFighter()
 void CMortalNetworkImpl::SendReady()
 {
 	CHECKCONNECTION;
-	
-	char cReady = 'R';
-	int iRetval = SDLNet_TCP_Send( m_poSocket, &cReady, sizeof(cReady) );
-	if ( iRetval != sizeof(cReady) ) DISCONNECTONCOMMUNICATIONERROR;
+
+	SendRawData( 'R', NULL, 0 );
 }
 
-int CMortalNetworkImpl::ReceiveReady( void* a_pData, int a_iLength )
+void CMortalNetworkImpl::ReceiveReady( void* a_pData, int a_iLength )
 {
-	if ( a_iLength < (int) sizeof(char) ) DISCONNECTWITH(-1);
+	if ( a_iLength != 0 ) DISCONNECTONCOMMUNICATIONERROR;
 	m_bRemoteReady = true;
-	return sizeof(char);
 }
 
 bool CMortalNetworkImpl::IsRemoteSideReady()
@@ -554,22 +524,38 @@ bool CMortalNetworkImpl::IsRemoteSideReady()
 
 void CMortalNetworkImpl::SynchStartRound()
 {
+	debug( "SynchStartRound STARTED.\n" );
+	
 	m_bSynchQueryResponse = false;
 	
 	// run until both sides manage to get a SYNCH
 
-	char cID = 'S';
-	
 	while ( !m_bSynchQueryResponse )
 	{
 		CHECKCONNECTION;
-		int iRetval = SDLNet_TCP_Send( m_poSocket, &cID, 1 );
-		if ( iRetval < 1 ) DISCONNECTONCOMMUNICATIONERROR;
+		SendRawData('S', NULL, 0);
+		if ( !IsConnectionAlive() ) break;
 		Update();
 		SDL_Delay(200);
 		if ( !IsConnectionAlive() ) break;
 	}
+
+	if ( IsConnectionAlive() )
+	{
+		m_enState = NS_IN_GAME;
+		m_bRoundOver = false;
+		m_bGameOver = false;
+		m_bRemoteReady = false;
+		m_bSynchQueryResponse = false;
+	}
+
+	debug( "SynchStartRound FINISHED.\n" );
 }
+
+
+
+
+
 
 
 
@@ -577,20 +563,26 @@ void CMortalNetworkImpl::SynchStartRound()
 
 void CMortalNetworkImpl::SendGameData( const char* a_pcGameData )
 {
-	InternalSendString( a_pcGameData, 'G' );
+	int iMsgLen = strlen( a_pcGameData ) + 1;
+	if ( iMsgLen > MAXSTRINGLENGTH )
+	{
+		// Will not be 0 terminated if exceeds length!
+		iMsgLen = MAXSTRINGLENGTH;
+	}
+	SendRawData( 'G', a_pcGameData, iMsgLen );
 }
 
-int CMortalNetworkImpl::ReceiveGameData( void* a_pData, int a_iLength )
+void CMortalNetworkImpl::ReceiveGameData( void* a_pData, int a_iLength )
 {
-	int iRetval;
-	char* pcData = InternalReceiveString( a_pData, a_iLength, iRetval );
+	if ( a_iLength < 1 || a_iLength > MAXSTRINGLENGTH ) DISCONNECTONCOMMUNICATIONERROR;
 
-	if ( iRetval > 0 )
+	char* pcData = (char*) a_pData;
+	pcData[ a_iLength-1 ] = 0;	// Last char should be 0, just making sure..
+
+	if ( pcData[0] )
 	{
 		m_sLatestGameData = pcData;
 	}
-
-	return iRetval;
 }
 
 const char* CMortalNetworkImpl::GetLatestGameData()
@@ -603,7 +595,6 @@ const char* CMortalNetworkImpl::GetLatestGameData()
 
 struct SKeystrokePackage
 {
-	char	cID;
 	char	cKey;
 	bool	bPressed;
 };
@@ -611,25 +602,22 @@ struct SKeystrokePackage
 void CMortalNetworkImpl::SendKeystroke( int a_iKey, bool a_bPressed )
 {
 	SKeystrokePackage oPackage;
-	oPackage.cID = 'K';
 	oPackage.cKey = a_iKey;
 	oPackage.bPressed = a_bPressed;
 	
-	int iRetval = SDLNet_TCP_Send( m_poSocket, &oPackage, sizeof(oPackage) );
-	if ( iRetval < (int)sizeof(oPackage) ) DISCONNECTONCOMMUNICATIONERROR;
+	SendRawData( 'K', &oPackage, sizeof( oPackage) );
 }
 
-int CMortalNetworkImpl::ReceiveKeystroke( void* a_pData, int a_iLength )
+void CMortalNetworkImpl::ReceiveKeystroke( void* a_pData, int a_iLength )
 {
-	if ( a_iLength < (int)sizeof(SKeystrokePackage) ) DISCONNECTWITH(-1);
+	if ( a_iLength != (int)sizeof(SKeystrokePackage) ) DISCONNECTONCOMMUNICATIONERROR;
 	SKeystrokePackage* poPackage = (SKeystrokePackage*) a_pData;
 	
 	m_aiKeystrokes.push_back( poPackage->cKey );
 	m_abKeystrokes.push_back( poPackage->bPressed );
-	return sizeof(SKeystrokePackage);
 }
 
-bool CMortalNetworkImpl::GetKeystroke( int& a_riOutKey, bool a_rbOutPressed )
+bool CMortalNetworkImpl::GetKeystroke( int& a_riOutKey, bool& a_rbOutPressed )
 {
 	if ( m_aiKeystrokes.size() == 0 )
 	{
@@ -639,30 +627,100 @@ bool CMortalNetworkImpl::GetKeystroke( int& a_riOutKey, bool a_rbOutPressed )
 	a_rbOutPressed = m_abKeystrokes.front();
 	m_aiKeystrokes.pop_front();
 	m_abKeystrokes.pop_front();
+	
+	debug( "GetKeystroke: %d, %d\n", a_riOutKey, a_rbOutPressed );
 	return true;
 }
 
 
 
+struct SGameTimePackage
+{
+	int iGameTime;
+	int iGamePhase;
+};
+
+void CMortalNetworkImpl::SendGameTime( int a_iGameTime, int a_iGamePhase )
+{
+	if ( a_iGameTime == m_iGameTime
+		&& a_iGamePhase == m_iGamePhase )
+	{
+		return;		// Nothing to update, the other side already knows.
+	}
+	
+	SGameTimePackage oPackage;
+	m_iGameTime  = a_iGameTime;
+	m_iGamePhase = a_iGamePhase;
+	oPackage.iGameTime  = SDL_SwapBE32( a_iGameTime );
+	oPackage.iGamePhase = SDL_SwapBE32( a_iGamePhase );
+	
+	SendRawData( 'T', &oPackage, sizeof(SGameTimePackage) );
+}
+
+void CMortalNetworkImpl::ReceiveGameTime( void* a_pData, int a_iLength )
+{
+	if ( a_iLength != sizeof(SGameTimePackage) ) DISCONNECTONCOMMUNICATIONERROR;
+	SGameTimePackage* poPackage = (SGameTimePackage*) a_pData;
+
+	m_iGameTime  = SDL_SwapBE32( poPackage->iGameTime );
+	m_iGamePhase = SDL_SwapBE32( poPackage->iGamePhase );
+}
+
+int CMortalNetworkImpl::GetGameTime()
+{
+	return m_iGameTime;
+}
+
+int CMortalNetworkImpl::GetGamePhase()
+{
+	return m_iGamePhase;
+}
+
+
+
+
+struct SRoundOrder
+{
+	int iWhoWon;
+	bool bGameOver;
+};
+
 void CMortalNetworkImpl::SendRoundOver( int a_iWhoWon, bool a_bGameOver )
 {
+	SRoundOrder oPackage;
+
+	oPackage.iWhoWon = a_iWhoWon;
+	oPackage.bGameOver = a_bGameOver;
+	SendRawData( 'O', &oPackage, sizeof(SRoundOrder) );
+
+	if ( a_bGameOver )
+	{
+		m_enState = NS_CHARACTER_SELECTION;
+	}
 }
 
-
-int CMortalNetworkImpl::ReceiveRoundOver( void* a_pData, int a_iLength )
+void CMortalNetworkImpl::ReceiveRoundOver( void* a_pData, int a_iLength )
 {
-	return a_iLength;
+	if ( a_iLength != sizeof(SRoundOrder) ) DISCONNECTONCOMMUNICATIONERROR;
+	SRoundOrder* poPackage = (SRoundOrder*) a_pData;
+	m_iWhoWon = poPackage->iWhoWon;
+	m_bGameOver = poPackage->bGameOver;
+	m_bRoundOver = true;
 }
 
-bool CMortalNetworkImpl::IsRoundOver( int& a_riOutWhoWon )
+bool CMortalNetworkImpl::IsRoundOver()
 {
-	return false;
+	return m_bRoundOver;
 }
 
 bool CMortalNetworkImpl::IsGameOver()
 {
-	return false;
+	return m_bGameOver;
 }
 
+int CMortalNetworkImpl::GetWhoWon()
+{
+	return m_iWhoWon;
+}
 
 

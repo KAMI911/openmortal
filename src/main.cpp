@@ -284,7 +284,8 @@ int main(int argc, char *argv[])
 	g_oState.SetLanguage( g_oState.m_acLanguage );
 	
 	new MszAudio;
-	Audio->LoadMusic( "Last_Ninja_-_The_Wilderness.mid", "DemoMusic" );
+//	Audio->LoadMusic( "Last_Ninja_-_The_Wilderness.mid", "DemoMusic" );
+	Audio->LoadMusic( "VUJICS.IT", "DemoMusic" );
 	Audio->PlayMusic( "DemoMusic" );
 	Audio->LoadMusic( "2nd_pm.s3m", "GameMusic" );
 	

@@ -62,6 +62,7 @@ F <number>			- I have switched to fighter X.
 R					- I have chosen a fighter.
 S					- Ready for the next round (synch).
 O <number> <bool>	- The round is over (who won, are there more rounds).
+T <number> <number>	- Update the game time and game phase.
 
 */
 
@@ -107,11 +108,16 @@ public:
 	virtual void		SendGameData( const char* a_pcGameData ) = 0;
 	virtual const char*	GetLatestGameData() = 0;
 	virtual void		SendKeystroke( int a_iKey, bool a_bPressed ) = 0;
-	virtual bool		GetKeystroke( int& a_riOutKey, bool a_rbPressed ) = 0;
+	virtual bool		GetKeystroke( int& a_riOutKey, bool& a_rbPressed ) = 0;
+	virtual void		SendGameTime( int a_iGameTime, int a_iGamePhase ) = 0;
+	virtual int			GetGameTime() = 0;
+	virtual int			GetGamePhase() = 0;
+
 
 	virtual void		SendRoundOver( int a_iWhoWon, bool a_bGameOver ) = 0;
-	virtual bool		IsRoundOver( int& a_riOutWhoWon ) = 0;
+	virtual bool		IsRoundOver() = 0;
 	virtual bool		IsGameOver() = 0;
+	virtual int			GetWhoWon() = 0;
 };
 
 

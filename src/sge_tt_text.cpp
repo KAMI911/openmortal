@@ -1409,6 +1409,296 @@ int sge_tt_input_UNI(SDL_Surface *screen,sge_TTFont *font,Uint16 *string, Uint8 
 }
 
 
+
+
+CReadline::CReadline( SDL_Surface *a_poScreen, sge_TTFont *a_poFont,
+		char *a_pcString, int a_iPos, int a_iLen,
+		int a_x, int a_y, int a_w, Uint32 a_iFCol, Uint32 a_iBCol, int a_iAlpha )
+{
+	m_iResult = 0;
+	m_poScreen = a_poScreen;
+	m_poFont = a_poFont;
+	m_piString = 0;
+	m_iLen = -1;
+	w = a_w;
+	x = a_x;
+	y = a_y;
+	
+	SDL_EnableUNICODE(1);
+
+	// Create background copy.
+
+	m_oWorkArea.x = x;
+	m_oWorkArea.y = y - sge_TTF_FontAscent(m_poFont);
+	m_oWorkArea.w = w;
+	m_oWorkArea.h = sge_TTF_FontHeight(a_poFont);
+	
+	m_poBackground = sge_copy_surface( a_poScreen, m_oWorkArea.x, m_oWorkArea.y, m_oWorkArea.w, m_oWorkArea.h );
+	
+	Restart( a_pcString, a_iPos, a_iLen, a_iFCol, a_iBCol, a_iAlpha );
+}
+
+
+void CReadline::Restart( char *a_pcString, int a_iPos, int a_iLen,
+		Uint32 a_iFCol, Uint32 a_iBCol, int a_iAlpha )
+{
+	if ( NULL == m_piString
+		|| m_iLen <= a_iLen )
+	{
+		if ( m_piString ) delete[] m_piString;
+		m_iLen = a_iLen;
+		m_piString = new Uint16[a_iLen+2];
+	}
+	
+	m_iResult = 0;
+
+	m_pcLatin1String = a_pcString;
+	m_iPos = a_iPos;
+	m_iFCol = a_iFCol;
+	m_iBCol = a_iBCol;
+	m_iAlpha = a_iAlpha;
+
+	// Convert the original string into an unicode string
+
+	int i;
+	for(i=0; i<m_iPos; i++)
+	{
+		m_piString[i]=(unsigned char)m_pcLatin1String[i];
+	}
+	m_piString[m_iPos]=0;
+
+	// Insert the cursor at the end
+
+	m_iCursor = 124;	// '|' character
+	m_iMax=m_iPos;
+	m_piString[m_iPos+1]=0;
+	m_piString[m_iPos]=m_iCursor;
+	m_oUpdateRect = sge_tt_textout_UNI( m_poScreen, m_poFont, m_piString, x, y, m_iFCol, m_iBCol, m_iAlpha );
+}
+
+
+CReadline::~CReadline()
+{
+	delete[] m_piString;
+	SDL_EnableUNICODE(0);
+	SDL_FreeSurface( m_poBackground );
+	m_poBackground = NULL;
+}
+
+
+/** Returns the current state of the line input.
+\retval -1	A quit event was encountered.
+\retval -2	Escape was pressed
+\retval 0	Input is in progress.
+\retval 1	Input has finished.
+*/
+int CReadline::GetResult()
+{
+	if ( m_iResult == 0 )
+	{
+		return m_iResult;
+	}
+	
+	sge_Blit( m_poBackground, m_poScreen, m_oUpdateRect.x, m_oUpdateRect.y,
+		m_oUpdateRect.x, m_oUpdateRect.y, m_oUpdateRect.w, m_oUpdateRect.h);
+	sge_UpdateRect(m_poScreen, m_oUpdateRect.x, m_oUpdateRect.y, m_oUpdateRect.w, m_oUpdateRect.h);
+
+	if ( m_iResult < 0 )
+	{
+		return m_iResult;
+	}
+
+	delete_char( m_piString, m_iPos, m_iMax );
+	
+	memset( m_pcLatin1String, 0, sizeof(char)*(m_iPos+1) );
+	for( int i=0; i<=m_iMax; i++)
+	{
+		m_pcLatin1String[i] = (char)m_piString[i];
+	}
+	
+	insert_char( m_piString, m_iCursor, m_iPos, m_iMax );
+	
+	return 1;
+}
+
+
+
+
+/** Internal method for redrawing the string. */
+void CReadline::Update( int a_iCode )
+{
+	//m_oUpdateRect = nice_update( m_poScreen, m_poBackground, m_oUpdateRect, a_iCode, m_poFont, m_piString,
+	//	x, y, m_iFCol, m_iBCol, m_iAlpha );
+
+	SDL_Rect oOldClipRect;
+	SDL_GetClipRect( m_poScreen, &oOldClipRect );
+	SDL_SetClipRect( m_poScreen, &m_oWorkArea );
+	
+	sge_Blit( m_poBackground, m_poScreen, 0, 0, m_oWorkArea.x, m_oWorkArea.y, m_oWorkArea.w, m_oWorkArea.h );
+	sge_tt_textout_UNI( m_poScreen, m_poFont, m_piString, x, y, m_iFCol, m_iBCol, m_iAlpha );
+	sge_UpdateRect( m_poScreen, m_oWorkArea.x, m_oWorkArea.y, m_oWorkArea.w, m_oWorkArea.h );
+	
+	SDL_SetClipRect( m_poScreen, &oOldClipRect );
+}
+
+
+void CReadline::Clear()
+{
+	sge_Blit( m_poBackground, m_poScreen, 0, 0, m_oWorkArea.x, m_oWorkArea.y, m_oWorkArea.w, m_oWorkArea.h );
+}
+
+
+/** Runs the event queue until the input is finished.
+\see GetResult
+*/
+int CReadline::Execute()
+{
+	int iRetval;
+	SDL_Event e;
+	while ( 1 )
+	{
+		SDL_WaitEvent( &e );
+		HandleKeyEvent( e );
+		iRetval = GetResult();
+		if ( iRetval )
+			break;
+	}
+
+	return iRetval;
+}
+
+
+
+void CReadline::HandleKeyEvent( SDL_Event& a_roEvent )
+{
+	if(a_roEvent.type==SDL_QUIT)
+	{
+		m_iResult = -1;
+		return;
+	}
+
+	if ( a_roEvent.type != SDL_KEYDOWN )
+	{
+		return;
+	}
+	
+	if( a_roEvent.key.keysym.sym==SDLK_ESCAPE )
+	{
+		m_iResult = -2;
+		return;
+	}
+	
+	if ( a_roEvent.key.keysym.sym==SDLK_RETURN
+		|| a_roEvent.key.keysym.sym==SDLK_KP_ENTER )
+	{
+		m_iResult = 1;
+		return;
+	}
+
+	if( a_roEvent.key.keysym.sym==SDLK_BACKSPACE )
+	{
+		if ( m_iPos == 0 )
+		{
+			return;
+		}
+		/* Delete char cursor-1 */
+		delete_char(m_piString,m_iPos-1,m_iMax);
+		m_iPos--;
+		m_iMax--;
+		Update( 1 );
+		return;
+	}
+	
+	if( a_roEvent.key.keysym.sym==SDLK_RIGHT
+		&& m_iPos!=m_iMax && m_iPos!=m_iLen )
+	{
+		/* Move cursor right */
+		delete_char(m_piString,m_iPos,m_iMax);
+		m_iPos++;
+		insert_char(m_piString,m_iCursor,m_iPos,m_iMax);
+		Update( 3 );
+		return;
+	}
+
+	if ( a_roEvent.key.keysym.sym==SDLK_LEFT
+		&& m_iPos>0 )
+	{
+		/* Move cursor left */
+		delete_char(m_piString,m_iPos,m_iMax);
+		m_iPos--;
+		insert_char(m_piString,m_iCursor,m_iPos,m_iMax);
+		Update( 3 );
+		return;
+	}
+
+	if( a_roEvent.key.keysym.sym==SDLK_DELETE )
+	{
+		if ( m_iPos!=m_iMax && m_iPos!=m_iLen )
+		{
+			delete_char(m_piString,m_iPos+1,m_iMax);
+			m_iMax--;
+			Update( 1 );
+		}
+		return;
+	}
+	
+	if( a_roEvent.key.keysym.unicode!=0
+		&& m_iMax != m_iLen )
+	{
+		m_iMax++;
+		insert_char(m_piString, a_roEvent.key.keysym.unicode, m_iPos, m_iMax);
+		m_iPos++;
+		Update( 0 );
+	}
+}
+
+
+/*
+SDL_Rect CReadline::NiceUpdate( SDL_Surface *Surface,SDL_Surface *buffer,
+	SDL_Rect ret, int type,sge_TTFont *font,Uint16 *string, Sint16 x,Sint16 y,
+	Uint32 fcol, Uint32 bcol, int Alpha )
+{
+	if(type==0){
+		sge_Update_OFF();
+		sge_Blit(buffer,Surface, ret.x, ret.y, ret.x, ret.y, ret.w, ret.h);
+		ret=sge_tt_textout_UNI(Surface,font,string, x,y, fcol, bcol, Alpha);
+		sge_Update_ON();
+		sge_UpdateRect(Surface, ret.x, ret.y, ret.w, ret.h);
+	}
+	else if(type==1){
+  	SDL_Rect temp;
+
+  	sge_Update_OFF();
+		sge_Blit(buffer,Surface, ret.x, ret.y, ret.x, ret.y, ret.w, ret.h);
+		temp=sge_tt_textout_UNI(Surface,font,string, x,y, fcol, bcol, Alpha);
+		sge_Update_ON();
+		sge_UpdateRect(Surface, ret.x, ret.y, ret.w, ret.h);
+		ret=temp;
+	}
+	else{
+  	SDL_Rect temp;
+
+  	sge_Update_OFF();
+		sge_Blit(buffer,Surface, ret.x, ret.y, ret.x, ret.y, ret.w, ret.h);
+		temp=sge_tt_textout_UNI(Surface,font,string, x,y, fcol, bcol, Alpha);
+		sge_Update_ON();
+		if(ret.w>=temp.w){
+			sge_UpdateRect(Surface, ret.x, ret.y, ret.w, ret.h);
+		}
+		else{
+			sge_UpdateRect(Surface, temp.x, temp.y, temp.w, temp.h);
+		}
+		ret=temp;
+	}
+
+	return ret;
+}
+*/
+
+
+
+
+
 //==================================================================================
 // Text input UNICODE (RGB)
 //==================================================================================

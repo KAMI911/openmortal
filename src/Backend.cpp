@@ -32,7 +32,7 @@ SV
 	*perl_bgx, *perl_bgy,
 	*perl_p1x, *perl_p1y, *perl_p1f, *perl_p1h,
 	*perl_p2x, *perl_p2y, *perl_p2f, *perl_p2h,
-	*perl_time, *perl_over, *perl_ko;
+	*perl_over, *perl_ko;
 
 SV
 	*perl_doodad_x, *perl_doodad_y,
@@ -233,6 +233,32 @@ int Backend::GetPerlInt( const char* acScalarName )
 
 
 
+/** Returns the total number of registered fighters in the backend.
+This may be more than the actual number of playable characters, as
+some or many characters may not be ready or installed.
+
+\see GetFighterID
+*/
+int Backend::GetNumberOfFighters()
+{
+	PerlEvalF( "$::CppNumberOfFighters = scalar keys %::FighterStats;" );
+	return GetPerlInt( "CppNumberOfFighters" );
+}
+
+/** Returns the ID of a fighter. The index parameter should start from
+zero, and be less than the value returned by GetNumberOfFighters().
+
+\see GetNumberOfFighters
+*/
+FighterEnum Backend::GetFighterID( int a_iIndex )
+{
+	PerlEvalF( "$::CppFighterID = (sort { $a - $b } keys %%::FighterStats)[%d];", a_iIndex );
+	return (FighterEnum) GetPerlInt( "CppFighterID" );
+}
+
+
+
+
 void Backend::AdvancePerl()
 {
 	PERLEVAL("GameAdvance();");
@@ -254,7 +280,6 @@ void Backend::ReadFromPerl()
 		perl_p2y = get_sv("p2y", TRUE);
 		perl_p2f = get_sv("p2f", TRUE);
 		perl_p2h = get_sv("p2h", TRUE);
-		perl_time= get_sv("time", TRUE);
 		perl_over= get_sv("over", TRUE);
 		perl_ko = get_sv("ko", TRUE);
 	}
@@ -269,7 +294,6 @@ void Backend::ReadFromPerl()
 	m_aoPlayers[1].m_iY = SvIV( perl_p2y );
 	m_aoPlayers[1].m_iFrame = SvIV( perl_p2f );
 	m_aoPlayers[1].m_iHitPoints = SvIV( perl_p2h ) / 10;
-	m_iGameTime = SvIV( perl_time );
 	m_iGameOver = SvIV( perl_over );
 	m_bKO = SvIV( perl_ko );
 	
@@ -388,17 +412,21 @@ void Backend::WriteToString( std::string& a_rsOutString )
 
 void Backend::ReadFromString( const std::string& a_rsString )
 {
-	if ( a_rsString.length() < 10 )
+	ReadFromString( a_rsString.c_str() );
+}
+
+
+void Backend::ReadFromString( const char* a_pcBuffer )
+{
+	if ( strlen( a_pcBuffer ) < 10 )
 	{
 		m_iNumDoodads = m_iNumSounds = 0;
 		return;
 	}
 	
-	const char* pcBuffer = a_rsString.c_str();
-	
 	int iNumMatches;
 	int iOffset, iTotal;
-	iNumMatches = sscanf( pcBuffer, "%d %d %d %d %d %d %d %d %d %d %d%n",
+	iNumMatches = sscanf( a_pcBuffer, "%d %d %d %d %d %d %d %d %d %d %d%n",
 		&m_iBgX, &m_iBgY,
 		&m_aoPlayers[0].m_iX, &m_aoPlayers[0].m_iY, &m_aoPlayers[0].m_iFrame, &m_aoPlayers[0].m_iHitPoints,
 		&m_aoPlayers[1].m_iX, &m_aoPlayers[1].m_iY, &m_aoPlayers[1].m_iFrame, &m_aoPlayers[1].m_iHitPoints,
@@ -414,16 +442,16 @@ void Backend::ReadFromString( const std::string& a_rsString )
 	for ( i=0; i<m_iNumDoodads; ++i )
 	{
 		SDoodad& roDoodad = m_aoDoodads[i];
-		iNumMatches += sscanf( pcBuffer+iTotal, "%d %d %d %d %d %d %d %n",
+		iNumMatches += sscanf( a_pcBuffer+iTotal, "%d %d %d %d %d %d %d %n",
 			&roDoodad.m_iX, &roDoodad.m_iY, &roDoodad.m_iType, &roDoodad.m_iFrame,
 			&roDoodad.m_iDir, &roDoodad.m_iGfxOwner,
 			&j, &iOffset );
 		iTotal += iOffset;
-		roDoodad.m_sText.assign( pcBuffer + iTotal, j );
+		roDoodad.m_sText.assign( a_pcBuffer + iTotal, j );
 		iTotal += j;
 	}
 	
-	iNumMatches += sscanf( pcBuffer + iTotal, "%d%n",
+	iNumMatches += sscanf( a_pcBuffer + iTotal, "%d%n",
 		&m_iNumSounds, &iOffset );
 		
 	if ( m_iNumSounds > MAXSOUNDS )
@@ -436,10 +464,10 @@ void Backend::ReadFromString( const std::string& a_rsString )
 	
 	for ( i=0; i<m_iNumSounds; ++i )
 	{
-		iNumMatches += sscanf( pcBuffer+iTotal, "%d %n",
+		iNumMatches += sscanf( a_pcBuffer+iTotal, "%d %n",
 			&j, &iOffset );
 		iTotal += iOffset;
-		m_asSounds[i].assign( pcBuffer + iTotal, j );
+		m_asSounds[i].assign( a_pcBuffer + iTotal, j );
 		iTotal += j;
 	}
 }
