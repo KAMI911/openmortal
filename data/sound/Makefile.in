@@ -79,7 +79,7 @@ perl_embed_ccflags = @perl_embed_ccflags@
 perl_embed_ldflags = @perl_embed_ldflags@
 
 sounddatadir = $(pkgdatadir)/sound
-sounddata_DATA =  2nd_pm.s3m         Last_Ninja_-_The_Wilderness.mid  strange_button.voc alarm.voc          magic.voc                        strange_quack.voc ba_gooock.voc      thump3.voc                       aroooga.voc bowling.voc        pop.voc                          thump.voc car_start.voc      shades_rollup.voc                thump.wav crashhh.voc        slip4.voc                        woman_screams.voc ding.voc           splat2.voc                       woosh.voc evil_laughter.voc  splat_.voc                       woosh.wav splat.wav          machine_start.voc
+sounddata_DATA =  2nd_pm.s3m         Last_Ninja_-_The_Wilderness.mid  splat.wav          alarm.voc          machine_start.voc                strange_button.voc aroooga.voc        magic.voc                        strange_quack.voc  ba_gooock.voc      moo2.voc                         thump3.voc         bowling.voc        pop.voc                          thump.voc          car_start.voc      shades_rollup.voc                thump.wav          crashhh.voc        slip4.voc                        woman_screams.voc  ding.voc           splat2.voc                       woosh.voc          evil_laughter.voc  splat_.voc                       woosh.wav
 
 
 EXTRA_DIST = $(sounddata_DATA)
@@ -98,9 +98,9 @@ GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu --include-deps data/sound/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu data/sound/Makefile
 
-Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
@@ -132,6 +132,11 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 subdir = data/sound
 
 distdir: $(DISTFILES)
+	here=`cd $(top_builddir) && pwd`; \
+	top_distdir=`cd $(top_distdir) && pwd`; \
+	distdir=`cd $(distdir) && pwd`; \
+	cd $(top_srcdir) \
+	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu data/sound/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
