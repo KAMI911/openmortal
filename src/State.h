@@ -20,17 +20,35 @@ to the backend. This includes transient variables such as the current
 game mode (e.g. SStade::IN_DEMO) and configuration variables (such as the
 keyboard layout).
 
-The SState variables are manipulated by the CMenu.
+SState is a singlular object, and is accessed with a global pointer, 
+g_oState. All other frontend modules access the state through this object. 
+The state is made persistent through it's methods, Load() and Save(). 
+Load() is called on program start, Save() is called when the program exits.
+
+
+The State is the way the CMenu communicate with the rest of the system. 
+For example, if the user chooses "Quit" from the menu, the m_bQuitFlag is 
+set to true, and the program will react accordingly.
+
+
+The state's most important properties are:
+
+\li m_enGameMode: The mode changes when a game is started or the game ends 
+(either in the GameOver screen, or via the "Surrender Game" menu option).
+\li m_bQuitFlag: This is set if the program receives a quit event from the operating system (e.g. KILL signal, window close event, etc), or the user chooses "Quit" from the menu. Once the quit flag is set, the program will abort. All main loops check the value of the quit flag, and will break as soon as it is true.
+\li m_bFullScreen: Quite simply, it is true in fullscreen mode, and false in windowed mode. The user can change this via the menu. The State's ToggleFullscreen() method will switch between fullscreen and windowed mode. Maybe this functionality doesn't belong to the State? ...
+\li Sound properties: Mixing rate, number of channels, volume, etc.
+\li m_aiPlayerKeys: A double array of each player's keys. This is used most often in processing SDL key events: if the event's keysym matches a value in m_aiPlayerKeys, that means that a meaningful key was pushed or released.
 */
 
 struct SState
 {
 	enum TGameMode {
-		IN_DEMO,
-		IN_SINGLE,
-		IN_MULTI,
-		IN_NETWORK,
-		IN_CHAT,
+		IN_DEMO,				///< The game is currently in "demo" mode: displaying the intro screens, etc.
+		IN_SINGLE,				///< The game is in single-player mode.
+		IN_MULTI,				///< The game is in multi-player mode.
+		IN_NETWORK,				///< There is against a network opponent in progress
+		IN_CHAT,				///< The user is on MortalNet
 	} m_enGameMode;
 
 	bool	m_bQuitFlag;		// true if quit event came

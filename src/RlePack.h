@@ -16,22 +16,33 @@ struct SDL_Surface;
 
 /** 
 \class CRlePack
-\brief CRlePack is responsible for loading and drawing "sprites" from a .DAT file.
+\brief CRlePack is an array of images, compressed with runlength encoding.
 \ingroup Media
+
+OpenMortal stores the character graphics in CRlePack objects. The reason is 
+simple: CRlePacks give an acceptable tradeoff between memory usage and 
+blitting speed. Also the CRlePack allows the sprites to be draw horizontally 
+flipped, thus saving memory (the mirrored version of the same sprite doesn't 
+need to be stored).
+
+The sprites in the RlePack are always paletted (8 bits per pixel). The size 
+of the palette is between 1 and 256. The RlePack stores two copies of its 
+palette: one is the "base" palette, as it was read from disk, the other is 
+the "tinted" palette. The TintEnum contains values that can be passed to 
+SetTint(). This is used for two things:
+
+\li In case both players choose the same fighter, player 2's fighter is 
+tinted so they won't get confused.
+\li Some special effects (e.g. frozen) make the figther tinted as well.
 
 CRlePack loads the sprites from a .DAT file in its constructor. If there is
 an error (e.g. file doesn't exist), the number of sprites loaded will be 0.
-CRlePack is usually used to store the many frames of a fighter in MSZ. It is
-also used for the 'cast' in the MainScreenDemo.
+CRlePack is usually used to store the many frames of a fighter in OpenMortal.
+It is also used for the 'cast' in the CMainScreenDemo.
 
-The palette by default ranges from 1 to N (the number of colors). This, 
-however, can be changed with OffsetSprites(). This is used to make sure that
-the two loaded fighters don't overwrite each others palettes or the background
-palette.
-
-The 'tint' can be set with the SetTint method. It will not immediately appear
-until ApplyPalette() is called. For an explanation about tints, please see the
-TintEnum documentation.
+CRlePack doesn't concern itself with concepts such as "player" or "doodad", 
+it merely stores the palette and sprites. This part of OpenMortal can be 
+reused in any project with little changes.
 
 \sa TintEnum
 */

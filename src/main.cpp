@@ -25,7 +25,7 @@ program with Perl embedding.
 
 
  
-\section s1 Modules
+\section s1 1. Modules
 
 The classes of OpenMortal are organized into the following groups (see Modules above).
 
@@ -33,7 +33,6 @@ The classes of OpenMortal are organized into the following groups (see Modules a
 access such as screen drawing, music, sound effect and keyboard input. For 
 information and documentation of SDL, SDL_image, SDL_ttf and SDL_mixer, 
 please look at the SDL homepage.
-
 \li \ref PlayerSelect
 \li \ref Network
 \li \ref Demo
@@ -41,7 +40,7 @@ please look at the SDL homepage.
 
 
 
-\section s2 Main Functions
+\section s2 2. Main Functions
 These global functions implement important parts of the program. They serve
 as entry points into functional parts.
 
@@ -53,16 +52,14 @@ as entry points into functional parts.
 \li CPlayerSelect::DoPlayerSelect() - Runs the player selection screen.
 
 
-\section s3 Definitions
+\section s3 3. Definitions
 
 Here are the definitions of terms used in this documentation.
 
 <dl>
 
 <dt>\b Player <dd>
- Player refers to one of the two persons playing the game. A player chooses a fighter. The two players are referred to as "Player 1" and "Player 2", even though the C++ and perl code count arrays from 0.
-
-	
+	Player refers to one of the two persons playing the game. A player chooses a fighter. The two players are referred to as "Player 1" and "Player 2", even though the C++ and perl code count arrays from 0.
 <dt>\b Fighter <dd>
 	Fighter is one of the many available characters. Usually there are only two fighters loaded at any time. Fighters are static: their properties never change. Maybe Fighter should be renamed to Character?
 <dt>\b Game <dd>
@@ -80,7 +77,7 @@ Here are the definitions of terms used in this documentation.
 </dl>
 
 
-\section s4 C++ Coding conventions
+\section s4 4. C++ Coding conventions
 
 Historically two different coding conventions were mixed in OpenMortal. 
 Hopefully most of the old conventions are eliminated by now.

@@ -279,7 +279,12 @@ int CBackend::GetNumberOfAvailableFighters()
 }
 
 
-
+/**
+Makes the perl interpreter advance from the current scene to the next one. 
+This should be called a constant number of time per second to make the game 
+running seamlessly. Most speedup or slowdown effects are accomplished by 
+changing the frequency at which this method is called.
+*/
 void CBackend::AdvancePerl()
 {
 	PerlEvalF("GameAdvance();");

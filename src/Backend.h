@@ -31,6 +31,16 @@ provides access for the frontend to the backend's variables and functions.
 Some of this is done via custom methods (such as GetNumberOfFighters()),
 but certain functions are only available via the "generic" perl interface,
 PerlEvalF().
+
+It is the CBackend's job to provide variables which describe the current
+\i scene to the frontend. The backend can
+
+\li Read the scene from the Perl backend.
+\li Write the scene into a string
+\li Read the scene from a string.
+
+The string conversion routines are used for saving replays and instant 
+playback.
 */
 
 class CBackend
