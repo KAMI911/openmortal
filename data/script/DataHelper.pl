@@ -71,6 +71,7 @@ SOUND	string	The sound effect associated with this state (if any);
 HITSND	string	The sound effect if the HIT is successful.
 MISSSND	string	The sound effect if the HIT fails.
 CODE	string	This code will be evaled at the beginning of this state.
+LAYER	int		The "priority" of the graphics. 5: hurt; 10: block; 15: kneeling; 20: normal; 25: attack
 
 
 =cut
@@ -90,7 +91,13 @@ CODE	string	This code will be evaled at the beginning of this state.
 sub LoadFrames ($$$)
 {
 	my ($DataName, $PivotX, $PivotY) = @_;
-	my (@Frames, $data, $frame);
+	my (@Frames, $data, $frame, $DatName);
+
+	# Make sure that Whatever.dat also exists.
+	$DatName = $DataName;
+	$DatName =~ s/\.txt$//;
+	open DATFILE, "../characters/$DatName" || die ("Couldn't open ../characters/$DatName");
+	close DATFILE;
 	
 	open DATAFILE, "../characters/$DataName" || die ("Couldn't open ../characters/$DataName");
 	$data = '';
@@ -347,12 +354,17 @@ sub BlockStates($$)
 {
 	my ( $frames, $del) = @_;
 	my ( $retval, $i );
+
+	# We need to make sure that blocking is the same speed for every character.
+	# Typical is 5 frames, +- 1 frame
+	$del = int( 25 / $frames );			# 1/1
 	
-	$retval = { 'N'=>'Block', 'DEL'=>$del, 'S'=>'+block', "BLOCK$frames"=>1 };
+	$retval = { 'N'=>'Block', 'DEL'=>$del, 'S'=>'+block', };
 	for ($i = 1; $i <= $frames; ++$i )
 	{
 		$retval->{"NEXTST$i"} = "Block " . ($i-1);
 		$retval->{"CON$i"} = { 'block'=> "Block " . ($i+1) };
+		$retval->{"BLOCK$i"} = 1 if $i*$del > 10;
 	}
 	
 	$retval->{'NEXTST1'} = 'Stand';

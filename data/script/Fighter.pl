@@ -36,6 +36,8 @@ DELIVERED int	1 if a hit was delivered in this state.
 COMBO	int		The number of consecutive hits delivered to this fighter.
 COMBOHP	int		The amount of HP delivered in the last combo.
 OTHER	hash	A reference to the other Fighter
+LANDINGPENALTY int This is added to DEL when the character lands (used to penaltize blocked jumpkicks). Becomes DELPENALTY upon landing.
+DELPENALTY int	This is added to DEL in the next state.
 
 
 
@@ -113,6 +115,8 @@ sub Reset {
 	$self->{DELIVERED} = 0;
 	$self->{COMBO} 	= 0;
 	$self->{COMBOHP}= 0;
+	$self->{LANDINGPENALTY} = 0;
+	$self->{DELPENALTY} = 0;
 	$self->{OK}		= 1;
 	
 	&{$self->{STATS}->{STARTCODE}}($self);
@@ -212,9 +216,13 @@ sub Advance {
 		if ($self->{Y} >= $::GROUND2)
 		{
 			# LANDING
+			
+			$self->{DELPENALTY} = $self->{LANDINGPENALTY};
+			$self->{LANDINGPENALTY} = 0;
+			
 			if ( $st->{SITU} eq 'Falling')
 			{
-				::AddEarthquake( $self->{PUSHY} / 20 );
+				::AddEarthquake( $self->{PUSHY} / 20 );				# 1/1
 				push @::Sounds, ('splat.wav') if $self->{PUSHY} > 40;
 				# print "PUSHY = ", $self->{PUSHY}, "; ";
 				if ( $self->{PUSHY} > 30 )
@@ -488,6 +496,14 @@ sub HitEvent($$$)
 	{
 		push @::Sounds, ('thump.wav');
 		$self->HitPush( - $damage * 20 * $self->{DIR} );
+		$self->{OTHER}->{DEL} += 20 * $::DELMULTIPLIER;
+
+		if ( $self->{OTHER}->{Y} < $::GROUND2 )
+		{
+			$self->{OTHER}->{PUSHY} = -20 if $self->{OTHER}->{PUSHY} > 0;
+			$self->{OTHER}->{PUSHX} *= 0.2;
+			$self->{OTHER}->{LANDINGPENALTY} = 30 * $::DELMULTIPLIER;
+		}
 		# $self->{PUSHX} = - $damage * 5 * $self->{DIR};
 		return;
 	}
@@ -678,7 +694,10 @@ sub Update
 	$self->{'FR'} = $st->{'F'};
 die "ERROR IN STATE $nextst" unless defined $st->{DEL};
 	$self->{'DEL'} = $st->{'DEL'} * $::DELMULTIPLIER;
-
+	
+	$self-> {'DEL'} += $self->{'DELPENALTY'};
+	$self->{'DELPENALTY'} = 0;
+	
 	# HANDLE THE JUMP and PUSH ATTRIBUTE
 	
 	if ( defined ($st->{'JUMP'}) )
