@@ -303,14 +303,7 @@ $::Hungarian = {  'LanguageCode' => 3,
 
 	"Credits"			=> 'Készítették',
 	"CreditsText1"		=>
-"
-. .   ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ µ ¶ · ¸ ¹ º » ¼ ½ 
-¾ ¿ À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö × Ø Ù Ú Û Ü Ý 
-Þ ß à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö ÷ ø ù ú û ü ý þ ÿ
-
-
-
-A Mortál Szombat Elkövetõi
+"A Mortál Szombat Elkövetõi
 
 
 -- A MORTÁL SZOMBAT CSAPAT --
@@ -574,7 +567,7 @@ Seulement afin de devenir le TUEUR IMPITOYABLE sur le long chemin du tournoi Mor
 
 
 
-$::Spanish = { 'LanguageCode' => 2,
+$::Spanish = { 'LanguageCode' => 1,
 
 # In-game text
 
@@ -807,11 +800,11 @@ sub SetLanguage($)
 sub Translate($)
 {
 	my $text = shift;
-	print "The translation of '$text' is ";
+	# print "The translation of '$text' is ";
 
 	$text = $::Language->{$text} if defined $::Language->{$text};
 
-	print "'$text'.\n";
+	# print "'$text'.\n";
 
 	$::Translated = $text;
 }

@@ -623,7 +623,7 @@ sub ComboEnds
 	{
 		my ( $head, $doodad, $x, $y, $combotext );
 		
-		$combotext = $ismaxcombo ? "MAX COMBO!!!" : ($self->{COMBO} . "-hit combo!");
+		$combotext = $ismaxcombo ? ::Translate("MAX COMBO!!!") : sprintf( ::Translate('%d-hit combo!'), $self->{COMBO} );
 		
 		$head = $self->{FRAMES}->[$self->{FR}]->{head};
 		$x = $self->{X} + $head->[0] * $::GAMEBITS2 * $self->{DIR};
@@ -636,7 +636,7 @@ sub ComboEnds
 		
 		$doodad = Doodad::CreateTextDoodad( $x, $y - 10 * $::GAMEBITS2,
 			$self->{NUMBER},
-			int($self->{COMBOHP}*$::HitPointScale/10) . "% damage" );
+			sprintf( ::Translate('%d%% damage'), int($self->{COMBOHP}*$::HitPointScale/10) ) );
 		$doodad->{LIFETIME} = 80;
 		$doodad->{SPEED} = [+3,-3];
 		
