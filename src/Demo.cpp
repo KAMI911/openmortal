@@ -83,7 +83,7 @@ int Demo::AdvanceGame( int a_iNumFrames )
 	{
 		g_oBackend.AdvancePerl();
 	}
-	return g_oState.m_bGameOver ? 1 : 0;
+	return 0;
 }
 
 

@@ -25,13 +25,7 @@ struct SState
 	bool	m_bQuitFlag;		// true if quit event came
 	const char* m_pcArgv0;		// Set by main to argv[0]
 	
-	// VARIABLES DURING GAMEPLAY (OR REPLAY)
-	
-	bool	m_bGameOver;		// true if the game is over
-	bool	m_bIsReplay;		// true if in replay mode
-	FILE*	m_poReplayFile;		// the file to load/save replay from/to, or NULL
-	
-	
+
 	// CONFIGURATION VARIABLES
 	
 	int		m_iGameTime;		// Time of rounds in seconds.
@@ -53,10 +47,6 @@ struct SState
 		
 		m_bQuitFlag = false;
 		m_pcArgv0 = NULL;
-		
-		m_bGameOver = true;
-		m_bIsReplay = false;
-		m_poReplayFile = NULL;
 		
 		m_iGameTime = 60;
 		m_iHitPoints = 100;
