@@ -268,7 +268,14 @@ int DrawMainScreen()
 
 	int iNumFighterFiles, i;
 
+#ifdef MACOSX
+	//[segabor]
+	char char_buf[256];
+	sprintf(char_buf, "%s/characters", DATADIR);
+	g_oBackend.PerlEvalF( "$CppRetval = GetNumberOfFighterFiles('%s')", char_buf );
+#else
 	g_oBackend.PerlEvalF( "$CppRetval = GetNumberOfFighterFiles('%s')", DATADIR "/characters" );
+#endif
 	iNumFighterFiles = g_oBackend.GetPerlInt( "CppRetval" );
 	
 	for ( i=0; i<iNumFighterFiles; ++i )

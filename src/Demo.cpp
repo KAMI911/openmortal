@@ -411,8 +411,13 @@ void DoReplayDemo()
 	}
 	
 	char acFilename[1024];
+#if defined (MACOSX)
+	//[segabor] path fix.
+	sprintf( acFilename, "%s/demo%d.om", DATADIR, aiOrder[iNext] );
+#else
 	sprintf( acFilename, DATADIR "/demo%d.om", aiOrder[iNext] );
-//	DoGame( acFilename, true, false );
+#endif
+	//	DoGame( acFilename, true, false );
 	
 	iNext = ( iNext + 1 ) % 6;
 }

@@ -247,7 +247,7 @@ some or many characters may not be ready or installed.
 */
 int Backend::GetNumberOfFighters()
 {
-	PerlEvalF( "$::CppNumberOfFighters = scalar keys %::FighterStats;" );
+	PerlEvalF( "$::CppNumberOfFighters = scalar keys %%::FighterStats;" );
 	return GetPerlInt( "CppNumberOfFighters" );
 }
 

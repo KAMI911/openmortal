@@ -7,7 +7,10 @@
  ***************************************************************************/
 
 #include <string.h>
+//[segabor]: On OS X we don't need malloc.h
+#ifndef MACOSX
 #include <malloc.h>
+#endif
 
 
 #include "SDL.h"

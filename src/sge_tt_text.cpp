@@ -26,7 +26,10 @@
 
 #include "SDL.h"
 #include <stdlib.h>
+//[segabor]
+#ifndef MACOSX
 #include <malloc.h>
+#endif
 #include <memory.h>
 #include <string.h>
 #include <stdarg.h>

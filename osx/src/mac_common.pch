@@ -1,0 +1,25 @@
+/*
+ *  mac_common.h
+ *  OpenMortal
+ *
+ *  Created by Sebestyén Gábor on Sat Apr 03 2004.
+ *  Copyright (c) 2004 __MyCompanyName__. All rights reserved.
+ *
+ */
+
+//#include <Carbon/Carbon.h>
+
+#ifndef _MAC_COMMON_H_
+#define _MAC_COMMON_H_
+
+//[segabor] My identity
+#define MACOSX
+
+//#include "mac_datadir.h"
+extern char mac_datadir[255];
+
+#define DATADIR mac_datadir
+#define VERSION "0.7"
+#define PACKAGE "openmortal"
+
+#endif

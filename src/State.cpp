@@ -6,7 +6,10 @@
     email                : upi@apocalypse.rulez.org
  ***************************************************************************/
 
+//[segabor] using Xcode to build OpenMortal makes config.h unneccessary
+#ifndef MACOSX
 #include "../config.h"
+#endif
 #include "gfx.h"
 #include "common.h"
 #include "State.h"
@@ -16,6 +19,10 @@
 
 #include <string>
 #include <fstream>
+#ifdef MACOSX
+//[segabor]
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 //include <unistd.h>
 
 #include "Backend.h"
@@ -43,6 +50,9 @@ std::string GetConfigFilename()
 		return std::string(g_oState.m_pcArgv0) + ".ini";
 	}
 	return "c:\\openmortal.ini";	
+#elif defined(MACOSX)
+	//[segabor] get os-ified path
+	return std::string(getenv("HOME")) + "/Library/Preferences/OpenMortal.cfg";
 #else
 	return std::string(getenv("HOME")) + "/.openmortalrc";
 #endif
@@ -73,6 +83,13 @@ SState::SState()
 
 	#ifdef _WINDOWS
 		#ifdef _DEBUG
+			m_bFullscreen = false;
+		#else
+			m_bFullscreen = true;
+		#endif
+	#elif defined(MACOSX)
+		//[segabor]
+		#ifdef DEBUG
 			m_bFullscreen = false;
 		#else
 			m_bFullscreen = true;
@@ -127,6 +144,20 @@ SState::SState()
 	strcpy( m_acNick, pcLang );
 	
 
+#elif defined(MACOSX)
+	//[segabor] OS X style locale handling
+	CFLocaleRef userLocaleRef = CFLocaleCopyCurrent();
+	char cbuff[255];
+	
+	CFStringGetCString(CFLocaleGetIdentifier(userLocaleRef),
+					   cbuff,
+					   255,
+					   kCFStringEncodingASCII);
+	m_acLanguage[0] = cbuff[0];
+	m_acLanguage[1] = cbuff[1];
+	m_acLanguage[2] = 0;
+	
+	debug("Language code is %s\n", m_acLanguage);
 #else
 	// Read the locale from the operating system
 	char* pcLocale = setlocale( LC_CTYPE, NULL );
