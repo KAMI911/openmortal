@@ -26,9 +26,11 @@ void debug( const char* format, ... );
 extern SDL_Surface* gamescreen;
 
 
-void DoMenu( bool a_bDrawBackground );
+void DoMenu();
 void GameOver( int a_iPlayerWon );
 void DoDemos();
+void DoOnlineChat();
+bool Connect( const char* a_pcHostname );
 
 const char* Translate( const char* a_pcText );
 const char* TranslateUTF8( const char* a_pcText );

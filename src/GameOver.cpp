@@ -18,7 +18,6 @@
 #include <stdio.h>
 
 
-void DoMenu( bool );
 
 
 
@@ -125,7 +124,7 @@ void GameOver( int a_iPlayerWon )
 				{
 					if ( event.key.keysym.sym == SDLK_ESCAPE )
 					{
-						DoMenu( true );
+						DoMenu();
 						break;
 					}
 

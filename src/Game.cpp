@@ -583,7 +583,7 @@ int Game::ProcessEvents()
 				if ( event.key.keysym.sym == SDLK_ESCAPE && !IsNetworkGame() )
 				{
 					SState::TGameMode enMode = g_oState.m_enGameMode;
-					::DoMenu( true );
+					::DoMenu();
 					return g_oState.m_enGameMode == enMode ? 0 : 1;
 				}
 				if ( event.key.keysym.sym == SDLK_F1  /*&& !IsNetworkGame()*/ )

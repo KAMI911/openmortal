@@ -168,12 +168,11 @@ int Demo::Run()
 }
 
 
-void DoMenu( bool a_bDrawBackground );
 
 
 void Demo::OnMenu()
 {
-	::DoMenu( true );
+	::DoMenu();
 }
 
 
