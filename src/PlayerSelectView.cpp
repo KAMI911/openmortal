@@ -372,7 +372,7 @@ CPlayerSelectView::CPlayerSelectView( bool a_bNetworkGame, bool a_bTeamMode )
 	m_bOver = false;
 	m_bNetworkGame = a_bNetworkGame;
 	m_bTeamMode = a_bTeamMode;
-	m_bTeamMultiselect = g_oState.m_bTeamMultiselect;
+	m_bTeamMultiselect = g_oState.m_bTeamMultiselect > 0;
 	m_poReadline = NULL;
 	m_poTextArea = NULL;
 	m_iTime = 0;
@@ -516,7 +516,7 @@ void CPlayerSelectView::Draw()
 	TViewElements::iterator it;
 
 	g_oBackend.ReadFromPerl();
-	m_bOver = g_oBackend.m_iGameOver;
+	m_bOver = g_oBackend.m_iGameOver > 0;
 
 	g_oChooser.DrawRectangles(m_iTime);
 	SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );

@@ -39,6 +39,7 @@ SDL_Color		MakeColor( Uint8 r, Uint8 g, Uint8 b );
 SDLKey			GetKey( bool a_bTranslate );
 
 SDL_Surface*	LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset=0, bool a_bTransparent = false );
+SDL_Surface*	LoadImage( const char* a_pcFilename );
 
 bool			SetVideoMode( bool a_bLarge, bool a_bFullscreen, int a_iAdditionalFlags=0 );
 

@@ -76,7 +76,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 	{
 		char *str2 = strdup( string );
 		char onechar[2];
-		char *c1, *c2, *c3;
+		char *c1, *c2;
 		int w = 0;
 		int i, j;
 		bool notend;
@@ -92,7 +92,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 			{
 				c2 = c1;								// c1: start of this run
 				while (*c2 && (*c2!='~')) c2++;			// c2: end of this run
-				notend = *c2;
+				notend = *c2 != 0;
 				*c2 = 0;
 
 				sge_TTF_SizeText( font, c1, &i, &j);
@@ -114,7 +114,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 		{
 			c2 = c1;
 			while (*c2 && (*c2!='~')) c2++;			// c2: end of this run
-			notend = *c2;
+			notend = *c2 != 0;
 			*c2 = 0;
 
 			sge_TTF_SizeText( font, c1, &i, &j);
@@ -176,7 +176,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 
 void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* target, bool a_bTranslate )
 {
-	int i, j;
+	int i;
 
 	if ( a_bTranslate )
 	{
@@ -331,7 +331,9 @@ SDLKey GetKey( bool a_bTranslate )
 	return SDLK_ESCAPE;
 }
 
-
+/**
+\TODO Remove a_iNumcolors, a_iPaletteOffset
+*/
 
 SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset, bool a_bTransparent )
 {
@@ -407,6 +409,12 @@ SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_i
 	SDL_SetColorKey( poRetval, SDL_SRCCOLORKEY, iTransparent );
 	
 	return poRetval;
+}
+
+
+SDL_Surface *LoadImage( const char* a_pcFilename )
+{
+	return LoadBackground(a_pcFilename, 0, 0);
 }
 
 
