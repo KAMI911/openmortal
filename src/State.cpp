@@ -34,9 +34,9 @@ std::string GetConfigFilename()
 	{
 		return std::string(g_oState.m_pcArgv0) + ".ini";
 	}
-	return "c:\openmortal.ini";	
+	return "c:\\openmortal.ini";	
 #else
-	return "/home/upi/.openmortalrc";
+	return std::string(getenv("HOME")) + "/.openmortalrc";
 #endif
 }
 
