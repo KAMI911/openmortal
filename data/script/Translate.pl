@@ -762,18 +762,18 @@ Only to become ROADKILL on his way to the Mortal Szombat tournament! It was Cumi
 
 
 
-$::Portuguese = { 'LanguageCode' => 0,
+$::Portuguese = { 'LanguageCode' => 4,
 
 # In-game text
 
 	'MAX COMBO!!!'		=> 'COMBO MÁXIMO!!!',
 	'%d-hit combo!'		=> 'Combo de %d golpes!',  
-	'%d%% damage'		=> '%d%% de dano',		
+	'%d%% damage'		=> 'Dano de %d%%',		
 	'Round %d'		=> 'Round %d',
-	'REW'			=> 'RETROCEDER',
+	'REW'			=> 'REBOBINANDO',
 	'REPLAY'		=> 'REPLAY',
 	'DEMO'			=> 'DEMO',
-	'Press F1 to skip...'	=>'Pressione F1 para resumir...',
+	'Press F1 to skip...'	=> 'Pressione F1 para resumir...',
 	'HURRY UP!'		=> 'APRESSEM-SE!',
 	'TIME IS UP!'		=> 'TEMPO ESGOTADO!',
 
@@ -936,7 +936,7 @@ DESTUÍSSEM O SÁBADO,
 condenando a humanidade a uma era sombria, com 5 dias úteis e apenas 1 dia de folga por semana... PARA SEMPRE!\n\n\n\n\n\n\n\n\n",
 
 	'Story2Text',		=>
-"Sempre que o Mal surge no horizonte, os heróis estão lá para salvar o dia. Son Goku, o protetor da Terra e da Humanidade veio então para nos salvar...
+"Sempre que o Mal surge no horizonte, os heróis estão lá para salvar o dia. Son Goku, o protetor da Terra e da Humanidade, veio então para nos salvar...
 
 Apenas para ser MORTO ATROPELADO em seu caminho para o torneio de Mortal Szombat! Bem, afinal era o primeiro dia de direção de Cumi...\n\n\n\n\n\n\n\n\n",
 };
