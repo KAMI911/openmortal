@@ -9,7 +9,7 @@
 #ifndef FIGHTERSTATS_H
 #define FIGHTERSTATS_H
  
-#include <Demo.h>
+#include "Demo.h"
 #include <string>
 
 

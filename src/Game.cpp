@@ -369,7 +369,7 @@ void Game::Draw()
 			h, h2, C_BLACK );
 	}
 
-	for ( int i=0; i<2; ++i )
+	for ( i=0; i<2; ++i )
 	{
 		Backend::SPlayer& roPlayer = g_oBackend.m_aoPlayers[i];
 		int iFrame = roPlayer.m_iFrame;

@@ -13,7 +13,9 @@
 
 #include <string>
 #include <fstream>
+#ifndef _WINDOWS
 #include <unistd.h>
+#endif
 
 #include "Backend.h"
 #include "MszPerl.h"
@@ -111,15 +113,22 @@ SState::SState()
 	}
 
 	strcpy( m_acLatestServer, "apocalypse.rulez.org" );
+
+#ifdef _WINDOWS
+	m_acNick[0] = 0;
+	DWORD iLen = 127;
+	GetUserName( m_acNick, &iLen )
+#else
 	int iResult = getlogin_r( m_acNick, 127 );
 	if ( iResult )
 	{
 		debug( "getlogin_r failed: %d\n", iResult );
 		strcpy( m_acNick, getenv("USER") );
-		if ( !m_acNick[0] )
-		{
-			strcpy( m_acNick, "Mortal");	// Last-ditch default..
-		}
+	}
+#endif
+	if ( !m_acNick[0] )
+	{
+		strcpy( m_acNick, "Mortal");	// Last-ditch default..
 	}
 	
 	m_bServer = false;

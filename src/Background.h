@@ -11,7 +11,7 @@
 
 
 #include <vector>
-class SDL_Surface;
+struct SDL_Surface;
 
 struct BackgroundLayer
 {

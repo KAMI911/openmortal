@@ -493,6 +493,19 @@ const char* CMortalNetworkImpl::GetMsg()
 *************************************************************************/
 
 
+/** Unfortunately not all STL are created equal... Some do not have the
+find algorithm. So, here is our feeble implementation... */
+template<class InputIterator, class EqualityComparable>
+InputIterator MszFind(InputIterator first, InputIterator last, const EqualityComparable& value )
+{
+	while ( first != last
+		&& *first != value )
+	{
+		++first;
+	}
+	return first;
+}
+
 
 
 bool CMortalNetworkImpl::IsRemoteFighterAvailable( FighterEnum a_enFighter )
@@ -503,11 +516,11 @@ bool CMortalNetworkImpl::IsRemoteFighterAvailable( FighterEnum a_enFighter )
 	}
 	
 	// Check if we already have it cached.
-	if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+	if ( MszFind( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), a_enFighter ) != m_aiAvailableRemoteFighters.end() )
 	{
 		return true;
 	}
-	if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), -a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+	if ( MszFind( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), -a_enFighter ) != m_aiAvailableRemoteFighters.end() )
 	{
 		return false;
 	}
@@ -519,11 +532,11 @@ bool CMortalNetworkImpl::IsRemoteFighterAvailable( FighterEnum a_enFighter )
 	{
 		SDL_Delay(10);
 		Update();
-		if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+		if ( MszFind( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), a_enFighter ) != m_aiAvailableRemoteFighters.end() )
 		{
 			return true;
 		}
-		if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), -a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+		if ( MszFind( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), -a_enFighter ) != m_aiAvailableRemoteFighters.end() )
 		{
 			return false;
 		}
