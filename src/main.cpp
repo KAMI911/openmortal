@@ -51,6 +51,7 @@ _sge_TTFont* chatFont;
 sge_bmpFont* fastFont;
 sge_bmpFont* creditsFont;
 sge_bmpFont* storyFont;
+bool bDebug = false;
 
 SDL_Color Colors[] =
 {
@@ -233,6 +234,100 @@ int InitJoystick();
 
 
 
+/**
+The game loop consists of the following events:
+
+\li Player selection
+\li DoGame
+\li GameOver and FighterStatsDemo (not in network mode)
+
+The loop ends if the game mode changes to a non-game mode (e.g. IN_DEMO or IN_CHAT)
+*/
+
+void GameLoop()
+{
+#define IS_GAME_MODE (g_oState.m_enGameMode != SState::IN_DEMO \
+	&& g_oState.m_enGameMode != SState::IN_CHAT \
+	&& !g_oState.m_bQuitFlag)
+	
+	Audio->PlaySample( "car_start.voc" );
+	Audio->PlayMusic( "GameMusic" );
+
+	bool bNetworkGame = SState::IN_NETWORK == g_oState.m_enGameMode;
+
+	while ( IS_GAME_MODE )
+	{
+		g_oPlayerSelect.DoPlayerSelect();
+		if ( !IS_GAME_MODE ) break;
+
+		//sprintf( acReplayFile, "/tmp/msz%d.replay", ++iGameNumber );
+
+		int iGameResult = DoGame( NULL, false, bDebug );
+		//int iGameResult = DoGame( acReplayFile, false, bDebug );
+		//DoGame( acReplayFile, true, bDebug );
+		debug ( "iGameResult = %d\n", iGameResult );
+
+		if ( !IS_GAME_MODE ) break;
+		
+		if ( iGameResult >= 0 && !bNetworkGame )
+		{
+			GameOver( iGameResult );
+			FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );
+			oDemo.Run();
+		}
+		
+		if ( !IS_GAME_MODE ) break;
+	}
+
+	if ( bNetworkGame && !g_oState.m_bQuitFlag )
+	{
+		DrawTextMSZ( "Connection closed.", inkFont, 320, 210, AlignHCenter | UseShadow, C_WHITE, gamescreen );
+		DrawTextMSZ( g_poNetwork->GetLastError(), impactFont, 320, 250, AlignHCenter | UseShadow, C_WHITE, gamescreen );
+		SDL_Delay( 1000 );
+		GetKey( true );
+	}
+
+	if ( !g_oState.m_bQuitFlag )
+	{
+		Audio->PlayMusic( "DemoMusic" );
+	}
+
+}
+
+
+
+/**
+The chat loop consists of:
+
+\li DoOnlineChat
+\li GameLoop (if a game was started
+
+The loop ends if DoOnlineChat returns with a quit or disconnect
+(not IN_NETWORK mode).
+*/
+
+void ChatLoop()
+{
+	while (1)
+	{
+		DoOnlineChat();
+		
+		if ( g_oState.m_bQuitFlag ) break;
+		
+		if ( SState::IN_NETWORK == g_oState.m_enGameMode )
+		{
+			GameLoop();
+		}
+		
+		if ( g_oState.m_bQuitFlag ) break;
+
+		g_oState.m_enGameMode = SState::IN_CHAT;
+	}
+}
+
+
+
+
 int main(int argc, char *argv[])
 {
 	srand( (unsigned int)time(NULL) );
@@ -246,7 +341,7 @@ int main(int argc, char *argv[])
 	g_oState.Load();
 	CMortalNetwork::Create();
 	
-	bool bDebug = false;
+	bDebug = false;
 
 	int iFlags = SDL_SWSURFACE | SDL_HWPALETTE;
 
@@ -350,14 +445,17 @@ int main(int argc, char *argv[])
 		case SState::IN_DEMO:
 			DoDemos();
 			continue;
+			
 		case SState::IN_CHAT:
-			DoOnlineChat();
-
+			ChatLoop();
 			continue;
+			
 		default:
-			break;		// Handled below.
+			GameLoop();
+			continue;
 		}
 
+#if 0
 		// Remaining are game modes: IN_SINGLE, IN_MULTI, IN_NETWORK
 		
 		Audio->PlaySample( "car_start.voc" );
@@ -387,6 +485,7 @@ int main(int argc, char *argv[])
 			{
 				GameOver( iGameResult );
 
+
 				FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );
 				oDemo.Run();		
 			}
@@ -403,6 +502,7 @@ int main(int argc, char *argv[])
 		
 		if ( g_oState.m_bQuitFlag ) break;
 		Audio->PlayMusic( "DemoMusic" );
+#endif
 	}
 	
 	g_oState.Save();
