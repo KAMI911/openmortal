@@ -17,7 +17,7 @@
 #include "Backend.h"
 #include "RlePack.h"
 #include "FighterStats.h"	// #includes Demo.h
-
+#include "config.h"
 
 
 
@@ -95,6 +95,11 @@ int Demo::Run()
 	int thisTick, lastTick, firstTick, gameSpeed;
 	SDL_Event event;
 	gameSpeed = 12;
+
+	if ( m_poBackground )
+	{
+		DrawTextMSZ( "Press Escape for the menu", impactFont, 10, 450, UseShadow, C_WHITE, m_poBackground );
+	}
 	
 	thisTick = SDL_GetTicks() / gameSpeed;
 	lastTick = thisTick - 1;
@@ -263,6 +268,7 @@ public:
 		i = 0;
 		m_iTimeLeft = 50;
 		m_poBackground = LoadBackground( "Mortal.png", 240 );
+		DrawTextMSZ( VERSION, inkFont, 540, 430, UseShadow | AlignHCenter, C_WHITE, m_poBackground, false );
 		std::string sStaffFilename = DATADIR;
 		sStaffFilename += "/characters/STAFF.DAT";
 		m_poPack = new RlePack( sStaffFilename.c_str(), 240 );

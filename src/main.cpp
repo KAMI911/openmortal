@@ -174,6 +174,7 @@ int init2()
 int DrawMainScreen()
 {
 	SDL_Surface* background = LoadBackground( "Mortal.png", 240 );
+	DrawTextMSZ( VERSION, inkFont, 540, 430, UseShadow | AlignHCenter, C_WHITE, background, false );
 	SDL_Rect r;
 	r.x = r.y = 0;
 	
