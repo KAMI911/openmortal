@@ -1,3 +1,5 @@
+// This is not a real include file. It is used byt RlePack.cpp
+
 // At this point the following methods should be defined:
 
 // METHODNAME: The name of the drawing method
@@ -7,7 +9,7 @@
 // PITCH: This added to PIXEL_PTR type will result in the next scanline
 
 
-void METHODNAME_FLIP( RLE_SPRITE* src, int dx, int dy )
+void METHODNAME_FLIP( SRleSprite* src, int dx, int dy )
 {
 #define RLE_PTR					signed char*
 #define RLE_IS_EOL(c)			((c) == 0)
@@ -144,7 +146,7 @@ void METHODNAME_FLIP( RLE_SPRITE* src, int dx, int dy )
 					x -= c;
 					for (c--; c >= 0; s++, DEC_PIXEL_PTR(d), c--) 
 					{
-						unsigned long col = *s;
+						unsigned long col = (unsigned char) (*s);
 						PUT_PIXEL(d, col);
 					}
 				}
@@ -154,7 +156,7 @@ void METHODNAME_FLIP( RLE_SPRITE* src, int dx, int dy )
 					c -= x;
 					for (x--; x >= 0; s++, DEC_PIXEL_PTR(d), x--) 
 					{
-						unsigned long col = *s;
+						unsigned long col = (unsigned char) (*s);
 						PUT_PIXEL(d, col);
 					}
 					break;
@@ -184,7 +186,7 @@ void METHODNAME_FLIP( RLE_SPRITE* src, int dx, int dy )
    //@@@bmp_unwrite_line(dst);
 }
 
-void METHODNAME( RLE_SPRITE* src, int dx, int dy )
+void METHODNAME( SRleSprite* src, int dx, int dy )
 {
 #define RLE_PTR					signed char*
 #define RLE_IS_EOL(c)			((c) == 0)
@@ -316,7 +318,7 @@ void METHODNAME( RLE_SPRITE* src, int dx, int dy )
 					/* Clipped on the right.  */
 					c -= x;
 					for (x--; x >= 0; s++, INC_PIXEL_PTR(d), x--) {
-						unsigned long col = *s;
+						unsigned long col = (unsigned char) (*s);
 						PUT_PIXEL(d, col);
 					}
 					break;

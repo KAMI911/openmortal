@@ -11,16 +11,17 @@
 
 #include "FighterEnum.h"
 
-struct RlePack_P;
+struct CRlePack_P;
 struct SDL_Surface;
 
 /** 
-\class RlePack
-\brief RlePack is responsible for loading and drawing "sprites" from a .DAT file.
+\class CRlePack
+\brief CRlePack is responsible for loading and drawing "sprites" from a .DAT file.
+\ingroup Media
 
-RlePack loads the sprites from a .DAT file in its constructor. If there is
+CRlePack loads the sprites from a .DAT file in its constructor. If there is
 an error (e.g. file doesn't exist), the number of sprites loaded will be 0.
-RlePack is usually used to store the many frames of a fighter in MSZ. It is
+CRlePack is usually used to store the many frames of a fighter in MSZ. It is
 also used for the 'cast' in the MainScreenDemo.
 
 The palette by default ranges from 1 to N (the number of colors). This, 
@@ -35,11 +36,11 @@ TintEnum documentation.
 \sa TintEnum
 */
 
-class RlePack
+class CRlePack
 {
 public:
-	RlePack( const char* a_pcFilename, int a_iNumColors );
-	~RlePack();
+	CRlePack( const char* a_pcFilename, int a_iNumColors );
+	~CRlePack();
 
 	void		Clear();
 	int			LoadFile( const char* a_pcFilename, int a_iNumColors );	
@@ -54,7 +55,7 @@ public:
 	SDL_Surface* CreateSurface( int a_iIndex, bool a_bFlipped=false );
 	
 private:
-	RlePack_P*	p;
+	CRlePack_P*	p;
 };
 
 #endif

@@ -7,20 +7,10 @@
  ***************************************************************************/
 
 #include <string.h>
-//[segabor]: On OS X we don't need malloc.h
-#ifndef MACOSX
-#include <malloc.h>
-#endif
-
 
 #include "SDL.h"
 #include "SDL_video.h"
 #include "SDL_image.h"
-
-
-
-
-
 #include "sge_tt_text.h"
 #include "sge_surface.h"
 
@@ -49,7 +39,7 @@ void sge_TTF_SizeText( _sge_TTFont*font, const char* text, int* x, int* y )
 
 	/* Copy the UTF-8 text to a UNICODE text buffer */
 	unicode_len = strlen(text);
-	unicode_text = (Uint16 *)malloc( (unicode_len+1) * sizeof (Uint16) );
+	unicode_text = new Uint16[unicode_len+1]; // (Uint16 *)malloc( (unicode_len+1) * sizeof (Uint16) );
 	if ( unicode_text == NULL )
 	{
 		SDL_SetError("SGE - Out of memory");
@@ -62,7 +52,7 @@ void sge_TTF_SizeText( _sge_TTFont*font, const char* text, int* x, int* y )
 	SDL_Rect r = sge_TTF_TextSizeUNI(font, unicode_text);
 
 	/* Free the text buffer and return */
-	free(unicode_text);
+	delete[] unicode_text; //free(unicode_text);
 #else
 	SDL_Rect r = sge_TTF_TextSize( font, text );
 #endif

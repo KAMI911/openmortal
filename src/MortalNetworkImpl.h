@@ -20,6 +20,7 @@ typedef std::list<int> TIntList;
 typedef std::list<std::string> TStringList;
 
 /**
+\ingroup Network
 Implementation of the CMortalNetwork interface.
 
 SUMMARY OF MESSAGES:

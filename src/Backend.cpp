@@ -22,7 +22,7 @@
 ***************************************************************************/
 
 PerlInterpreter*	my_perl;
-Backend				g_oBackend;
+CBackend			g_oBackend;
 
 
 /***************************************************************************
@@ -119,7 +119,7 @@ const char* TranslateUTF8( const char* a_pcText )
 }
 
 
-Backend::Backend()
+CBackend::CBackend()
 {
 	m_iBgX = m_iBgY = 0;
 	m_iNumDoodads = m_iNumSounds = 0;
@@ -132,7 +132,7 @@ Backend::Backend()
 }
 
 
-Backend::~Backend()
+CBackend::~CBackend()
 {
 	if ( NULL != my_perl )
 	{
@@ -143,7 +143,7 @@ Backend::~Backend()
 }
 
 
-bool Backend::Construct()
+bool CBackend::Construct()
 {
 	if ( my_perl != NULL )
 	{
@@ -190,7 +190,7 @@ bool Backend::Construct()
 }
 
 
-const char* Backend::PerlEvalF( const char* a_pcFormat, ... )
+const char* CBackend::PerlEvalF( const char* a_pcFormat, ... )
 {
 	va_list ap;
 	va_start( ap, a_pcFormat );
@@ -213,7 +213,7 @@ const char* Backend::PerlEvalF( const char* a_pcFormat, ... )
 }
 
 
-const char* Backend::GetPerlString( const char* acScalarName )
+const char* CBackend::GetPerlString( const char* acScalarName )
 {
 	SV* poScalar = get_sv( acScalarName, FALSE );
 	if ( NULL == poScalar )
@@ -225,7 +225,7 @@ const char* Backend::GetPerlString( const char* acScalarName )
 }
 
 
-int Backend::GetPerlInt( const char* acScalarName )
+int CBackend::GetPerlInt( const char* acScalarName )
 {
 	SV* poScalar = get_sv( acScalarName, FALSE );
 	if ( NULL == poScalar )
@@ -245,7 +245,7 @@ some or many characters may not be ready or installed.
 \see GetFighterID
 \see GetNumberOfAvailableFighters
 */
-int Backend::GetNumberOfFighters()
+int CBackend::GetNumberOfFighters()
 {
 	PerlEvalF( "$::CppNumberOfFighters = scalar keys %%::FighterStats;" );
 	return GetPerlInt( "CppNumberOfFighters" );
@@ -257,7 +257,7 @@ zero, and be less than the value returned by GetNumberOfFighters().
 
 \see GetNumberOfFighters
 */
-FighterEnum Backend::GetFighterID( int a_iIndex )
+FighterEnum CBackend::GetFighterID( int a_iIndex )
 {
 	PerlEvalF( "$::CppFighterID = (sort { $a - $b } keys %%::FighterStats)[%d];", a_iIndex );
 	return (FighterEnum) GetPerlInt( "CppFighterID" );
@@ -272,7 +272,7 @@ fighters as well, so it can only be used in conjunction with GetNumberOfFighters
 
 \see GetNumberOfFighters
 */
-int Backend::GetNumberOfAvailableFighters()
+int CBackend::GetNumberOfAvailableFighters()
 {
 	PerlEvalF( "GetNumberOfAvailableFighters();" );	// Defined in FighterStats.pl
 	return GetPerlInt( "CppNumberOfAvailableFighters" );
@@ -280,14 +280,14 @@ int Backend::GetNumberOfAvailableFighters()
 
 
 
-void Backend::AdvancePerl()
+void CBackend::AdvancePerl()
 {
 	PerlEvalF("GameAdvance();");
 }
 
 
 
-void Backend::ReadFromPerl()
+void CBackend::ReadFromPerl()
 {
 	int i;
 
@@ -320,7 +320,7 @@ void Backend::ReadFromPerl()
 	m_iBgX = SvIV( perl_bgx );
 	m_iBgY = SvIV( perl_bgy );
 	m_iGameOver = SvIV( perl_over );
-	m_bKO = SvIV( perl_ko );
+	m_bKO = SvIV( perl_ko ) != 0;
 
 	for ( i=0; i<g_oState.m_iNumPlayers; ++i )
 	{
@@ -398,13 +398,13 @@ void Backend::ReadFromPerl()
 }
 
 
-bool Backend::IsDead( int a_iPlayer )
+bool CBackend::IsDead( int a_iPlayer )
 {
 	return m_aoPlayers[ a_iPlayer ].m_iRealHitPoints <= 0;
 }
 
 
-void Backend::PlaySounds()
+void CBackend::PlaySounds()
 {
 	for ( int i=0; i<m_iNumSounds; ++i )
 	{
@@ -419,7 +419,7 @@ void Backend::PlaySounds()
 ***************************************************************************/
 
 
-void Backend::WriteToString( std::string& a_rsOutString )
+void CBackend::WriteToString( std::string& a_rsOutString )
 {
 	char acBuffer[2048];
 	int iNumChars = sprintf( acBuffer, "%d %d  %d %d %d %d  %d %d %d %d  %d  ",
@@ -450,13 +450,13 @@ void Backend::WriteToString( std::string& a_rsOutString )
 }
 
 
-void Backend::ReadFromString( const std::string& a_rsString )
+void CBackend::ReadFromString( const std::string& a_rsString )
 {
 	ReadFromString( a_rsString.c_str() );
 }
 
 
-void Backend::ReadFromString( const char* a_pcBuffer )
+void CBackend::ReadFromString( const char* a_pcBuffer )
 {
 	if ( strlen( a_pcBuffer ) < 10 )
 	{

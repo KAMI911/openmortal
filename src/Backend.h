@@ -13,21 +13,34 @@
 #include <string>
 #include "FighterEnum.h"
 
-class RlePack;
+class CRlePack;
 
 
 #define MAXDOODADS 20
 #define MAXSOUNDS 20
 
 
-class Backend
+/**
+\class CBackend
+\ingroup GameLogic
+\brief The CBackend class provides access to the perl game engine.
+
+The backend maintains just about all game-relevant data, such as fighters,
+player information, doodads, current game state, and so forth. CBackend
+provides access for the frontend to the backend's variables and functions.
+Some of this is done via custom methods (such as GetNumberOfFighters()),
+but certain functions are only available via the "generic" perl interface,
+PerlEvalF().
+*/
+
+class CBackend
 {
 public:
 
 	// Lifecycle
 	
-	Backend();
-	~Backend();
+	CBackend();
+	~CBackend();
 	bool Construct();
 	
 	// Miscellaneous
@@ -76,11 +89,7 @@ public:
 	std::string		m_asSounds[ MAXSOUNDS ];
 };
 
-extern Backend g_oBackend;
+extern CBackend g_oBackend;
 
-
-
-
-int			DoGame( char* replay, bool isReplay, bool bDebug );
 
 #endif

@@ -11,16 +11,26 @@
 #ifndef DEMO_H
 #define DEMO_H
 
-class FlyingChars;
+/**
+\defgroup Demo Demos and special screens
+*/
+
+class CFlyingChars;
 struct SDL_Surface;
 
+/**
+\class CDemo
+\ingroup Demo
+\brief CDemo is the base class for every specific demo.
 
+The demos are played by the DoDemos() function in a predefined order.
+*/
 
-class Demo
+class CDemo
 {
 public:
-	Demo();
-	virtual ~Demo();
+	CDemo();
+	virtual ~CDemo();
 	
 	virtual int Run();
 	
@@ -32,7 +42,7 @@ protected:
 	
 	
 protected:
-	FlyingChars*	m_poFlyingChars;
+	CFlyingChars*	m_poFlyingChars;
 	bool			m_bAdvanceGame;
 	SDL_Surface*	m_poBackground;
 };

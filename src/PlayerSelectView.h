@@ -12,6 +12,10 @@ class CPlayerSelectView;
 class CTeamDisplay;
 
 
+/**
+A visual element that runs independently within CPlayerSelectView
+\ingroup PlayerSelect
+*/
 
 class IViewElement
 {
@@ -30,7 +34,10 @@ protected:
 
 
 
-
+/**
+View part model-view-controller architecture of the player selection.
+\ingroup PlayerSelect
+*/
 
 class CPlayerSelectView
 {

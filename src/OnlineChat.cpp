@@ -53,11 +53,16 @@ enum
 };
 
 
-class CChallengeMenu: public Menu
+/**
+\ingroup Network
+Displays the 'you have been challenged' screen.
+*/
+
+class CChallengeMenu: public CMenu
 {
 public:
 	CChallengeMenu::CChallengeMenu( std::string a_sChallenger )
-	: Menu( "You have been challenged!" ),
+	: CMenu( "You have been challenged!" ),
 	m_sChallenger( a_sChallenger )
 	{
 		m_bAccepted = false;
@@ -72,7 +77,7 @@ public:
 		return m_bAccepted;
 	}
 
-	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
+	void ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem )
 	{
 		switch ( a_iItemCode )
 		{
@@ -94,12 +99,19 @@ protected:
 
 
 
+/**
+\ingroup Network
 
-class CChatMenu: public Menu
+The Chat menu is displayed instead of the regular CMenu when the user is 
+connected to MortalNet. The Chat menu has a different set of operations.
+*/
+
+
+class CChatMenu: public CMenu
 {
 public:
 	CChatMenu( const TNickMap& a_roNicks )
-	: Menu( "MortalNet Menu" ),
+	: CMenu( "MortalNet Menu" ),
 	m_roNicks( a_roNicks )
 	{
 		int i=0;
@@ -142,7 +154,7 @@ public:
 		return m_sChallengedNick;
 	}
 
-	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
+	void ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem )
 	{
 		switch ( a_iItemCode )
 		{
@@ -160,7 +172,7 @@ public:
 
 		case MENU_CHALLENGE:
 		{
-			m_sChallengedNick = ((EnumMenuItem*)a_poMenuItem)->GetCurrentText();
+			m_sChallengedNick = ((CEnumMenuItem*)a_poMenuItem)->GetCurrentText();
 			
 			m_bDone = true;
 			m_iReturnCode = 100;
@@ -175,7 +187,7 @@ public:
 		}
 		
 		default:
-			Menu::ItemActivated( a_iItemCode, a_poMenuItem );
+			CMenu::ItemActivated( a_iItemCode, a_poMenuItem );
 		
 		} // end of switch statement
 		
@@ -188,7 +200,7 @@ protected:
 	const TNickMap&	m_roNicks;
 	const char*		m_apcNicks[1024];
 	int				m_aiNicks[1024];
-	TextMenuItem*	m_poNickMenuItem;
+	CTextMenuItem*	m_poNickMenuItem;
 };
 
 

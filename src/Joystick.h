@@ -13,7 +13,10 @@
 #include "SDL.h"
 
 struct SMortalEvent;
- 
+
+/**
+\ingroup Media
+*/
 class CJoystick
 {
 public:

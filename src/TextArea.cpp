@@ -168,3 +168,9 @@ void CTextArea::Redraw()
 	sge_TTF_AAOff();
 }
 
+/*
+int CTextArea::RenderLine( SDL_Surface* a_poScreen, const char* a_poText, int a_iLength, int a_iColor )
+{
+}
+*/
+

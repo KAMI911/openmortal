@@ -14,8 +14,13 @@
 #include "SDL_types.h"
 
 
-/** Mortal Network messages:
+/**
+\defgroup Network Networking layer
+Classes related to networking (MortalNet and internet game)
+*/
 
+/** Mortal Network messages:
+\ingroup Network
 
 TYPICAL MESSAGE FLOW:
 

@@ -14,7 +14,6 @@
 #include "SDL_types.h"
 #endif
 
-struct SDL_Surface;
 #define MAXPLAYERS 4
 
 
@@ -29,16 +28,30 @@ void debug( const char* format, ... );
 #define MIN(A,B) ( (A) < (B) ? (A) : (B) )
 #endif
 
+// -----------------------------------------------------------------------
+// Main program methods
+// -----------------------------------------------------------------------
 
 void DoMenu();
 void GameOver( int a_iPlayerWon );
 void DoDemos();
+int  DoGame( char* replay, bool isReplay, bool bDebug );
 void DoOnlineChat();
+
+// -----------------------------------------------------------------------
+// Other subroutines
+// -----------------------------------------------------------------------
+
 bool Connect( const char* a_pcHostname );
 
 const char* Translate( const char* a_pcText );
 const char* TranslateUTF8( const char* a_pcText );
 
+// -----------------------------------------------------------------------
+// Global variables
+// -----------------------------------------------------------------------
+
+struct SDL_Surface;
 extern SDL_Surface* gamescreen;
 
 extern Uint32 C_BLACK;

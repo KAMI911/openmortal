@@ -41,7 +41,7 @@
 ***************************************************************************/
 
 
-PlayerSelect g_oPlayerSelect;
+CPlayerSelect g_oPlayerSelect;
 
 
 
@@ -50,7 +50,7 @@ PlayerSelect g_oPlayerSelect;
 
 
 
-PlayerSelect::PlayerSelect()
+CPlayerSelect::CPlayerSelect()
 {
 	for ( int i=0; i<MAXPLAYERS; ++i )
 	{
@@ -66,31 +66,31 @@ PlayerSelect::PlayerSelect()
 							GENERAL PLAYER INFO
 *************************************************************************/
 
-const PlayerInfo& PlayerSelect::GetPlayerInfo( int a_iPlayer )
+const SPlayerInfo& CPlayerSelect::GetPlayerInfo( int a_iPlayer )
 {
 	return m_aoPlayers[ a_iPlayer ];
 }
 
 
-PlayerInfo& PlayerSelect::EditPlayerInfo( int a_iPlayer )
+SPlayerInfo& CPlayerSelect::EditPlayerInfo( int a_iPlayer )
 {
 	return m_aoPlayers[ a_iPlayer ];
 }
 
 
-const char* PlayerSelect::GetFighterName( int a_iPlayer )
+const char* CPlayerSelect::GetFighterName( int a_iPlayer )
 {
 	return m_aoPlayers[ a_iPlayer ].m_sFighterName.c_str();
 }
 
 
-int PlayerSelect::GetFighterNameWidth( int a_iPlayer )
+int CPlayerSelect::GetFighterNameWidth( int a_iPlayer )
 {
 	return m_aiFighterNameWidth[ a_iPlayer ];
 }
 
 
-bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
+bool CPlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 {
 	if ( a_enFighter <= UNKNOWN )
 	{
@@ -109,7 +109,7 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 }
 
 
-bool PlayerSelect::IsLocalFighterAvailable( FighterEnum a_enFighter )
+bool CPlayerSelect::IsLocalFighterAvailable( FighterEnum a_enFighter )
 {
 	if ( a_enFighter <= UNKNOWN )
 	{
@@ -123,7 +123,7 @@ bool PlayerSelect::IsLocalFighterAvailable( FighterEnum a_enFighter )
 
 
 
-bool PlayerSelect::IsFighterInTeam( FighterEnum a_enFighter )
+bool CPlayerSelect::IsFighterInTeam( FighterEnum a_enFighter )
 {
 	std::vector<FighterEnum>::const_iterator it;
 	for ( int i=0; i<g_oState.m_iNumPlayers; ++i )
@@ -144,12 +144,12 @@ bool PlayerSelect::IsFighterInTeam( FighterEnum a_enFighter )
 
 
 /** LoadFighter simply looks up the filename associated with the given
-fighter, loads it, and returns the RlePack.
+fighter, loads it, and returns the CRlePack.
 
-\return The freshly loaded RlePack, or NULL if it could not be loaded.
+\return The freshly loaded CRlePack, or NULL if it could not be loaded.
 */
 
-RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
+CRlePack* CPlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 {
 	char a_pcFilename[FILENAME_MAX+1];
 	const char* s;
@@ -161,10 +161,10 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 	strcat( a_pcFilename, "/characters/" );
 	strcat( a_pcFilename, s );
 
-	RlePack* pack = new RlePack( a_pcFilename, COLORSPERPLAYER );
+	CRlePack* pack = new CRlePack( a_pcFilename, COLORSPERPLAYER );
 	if ( pack->Count() <= 0 )
 	{
-		debug( "Couldn't load RlePack: '%s'\n", a_pcFilename );
+		debug( "Couldn't load CRlePack: '%s'\n", a_pcFilename );
 		delete pack;
 		return NULL;
 	}
@@ -176,10 +176,10 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 
 /** SetPlayer loads the given fighter for the given player.
 
-The RlePack is loaded first. If that succeeds, then the perl backend is
+The CRlePack is loaded first. If that succeeds, then the perl backend is
 set too. The tint and palette of both players are set. */
 
-void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
+void CPlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 {
 	if ( m_aoPlayers[a_iPlayer].m_enFighter == a_enFighter )
 	{
@@ -195,12 +195,12 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 	}
 
 	int iOffset = COLOROFFSETPLAYER1 + a_iPlayer*64;
-	RlePack* poPack = LoadFighter( a_enFighter );
+	CRlePack* poPack = LoadFighter( a_enFighter );
 	poPack->OffsetSprites( iOffset );
 
 	if ( NULL == poPack )
 	{
-		debug( "SetPlayer(%d,%d): Couldn't load RlePack\n", a_iPlayer, a_enFighter );
+		debug( "SetPlayer(%d,%d): Couldn't load CRlePack\n", a_iPlayer, a_enFighter );
 		return;
 	}
 
@@ -225,7 +225,7 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 
 
 
-void PlayerSelect::SetTint( int a_iPlayer, TintEnum a_enTint )
+void CPlayerSelect::SetTint( int a_iPlayer, TintEnum a_enTint )
 {
 	m_aoPlayers[a_iPlayer].m_enTint = a_enTint;
 	if ( m_aoPlayers[a_iPlayer].m_poPack )
@@ -242,14 +242,14 @@ void PlayerSelect::SetTint( int a_iPlayer, TintEnum a_enTint )
 
 
 /*
-bool PlayerSelect::IsNetworkGame()
+bool CPlayerSelect::IsNetworkGame()
 {
 	return SState::IN_NETWORK == g_oState.m_enGameMode;
 }
 
 
 
-FighterEnum PlayerSelect::GetFighterCell( int a_iIndex )
+FighterEnum CPlayerSelect::GetFighterCell( int a_iIndex )
 {
 	if ( IsNetworkGame() )
 	{
@@ -263,7 +263,7 @@ FighterEnum PlayerSelect::GetFighterCell( int a_iIndex )
 
 
 
-void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
+void CPlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 {
 	// If we are in network mode, all keys count as the local player's...
 	if ( IsNetworkGame() )
@@ -325,7 +325,7 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 }
 
 
-void PlayerSelect::HandleNetwork()
+void CPlayerSelect::HandleNetwork()
 {
 	g_poNetwork->Update();
 
@@ -387,7 +387,7 @@ void PlayerSelect::HandleNetwork()
 }
 
 
-void PlayerSelect::DrawRect( int a_iPos, int a_iColor )
+void CPlayerSelect::DrawRect( int a_iPos, int a_iColor )
 {
 	int iRow = a_iPos / m_iChooserCols;
 	int iCol = a_iPos % m_iChooserCols;
@@ -416,7 +416,7 @@ void PlayerSelect::DrawRect( int a_iPos, int a_iColor )
 }
 
 
-void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor )
+void CPlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor )
 {
 	int x1, y1;
 
@@ -441,7 +441,7 @@ void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_i
 
 #if 0
 
-void PlayerSelect::DoPlayerSelect()
+void CPlayerSelect::DoPlayerSelect()
 {
 	// 1. Set up: Load background, mark unavailable fighters
 
@@ -759,7 +759,7 @@ void PlayerSelect::DoPlayerSelect()
 
 #else
 
-void PlayerSelect::DoPlayerSelect()
+void CPlayerSelect::DoPlayerSelect()
 {
 	CPlayerSelectController oController( SState::IN_NETWORK == g_oState.m_enGameMode );
 	oController.DoPlayerSelect();

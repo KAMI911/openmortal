@@ -13,6 +13,15 @@
 
 #define MAXPLAYERS 4
 
+/**
+\ingroup GameLogic
+SState aggregates all the state variables of OpenMortal that do not belong
+to the backend. This includes transient variables such as the current
+game mode (e.g. SStade::IN_DEMO) and configuration variables (such as the
+keyboard layout).
+
+The SState variables are manipulated by the CMenu.
+*/
 
 struct SState
 {

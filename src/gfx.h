@@ -10,6 +10,11 @@
 #ifndef _GFX_H
 #define _GFX_H
 
+/**
+\defgroup Media Sound and graphics
+Classes that deal with sound, graphics, input, etc.
+*/
+
 
 struct _sge_TTFont;
 
@@ -39,6 +44,9 @@ bool			SetVideoMode( bool a_bLarge, bool a_bFullscreen, int a_iAdditionalFlags=0
 
 extern SDL_Surface* gamescreen;
 
+/**
+\ingroup Media
+*/
 class CSurfaceLocker
 {
 public:

@@ -15,6 +15,10 @@
 #define COLOROFFSETPLAYER2	(COLOROFFSETPLAYER1+64)
 
 
+/**
+\defgroup PlayerSelect Fighter selection
+This module runs the fighter selection part of the game.
+*/
 
 #include "FighterEnum.h"
 #include "common.h"
@@ -22,10 +26,12 @@
 #include <string>
 #include <vector>
 
-class RlePack;
+class CRlePack;
 struct SDL_Surface;
 class CTextArea;
 class CReadline;
+
+
 
 /** PlayerInfo structure stores information about a PLAYER.
 
@@ -34,13 +40,15 @@ game, as opposed to FIGHTER, which refers to one of the many playable
 characters.
 
 PlayerInfo stores: the player's selected fighter, the fighters tint and
-RlePack. */
+CRlePack. 
+\ingroup PlayerSelect
+*/
 
-struct PlayerInfo
+struct SPlayerInfo
 {
 	FighterEnum		m_enFighter;
 	TintEnum		m_enTint;
-	RlePack*		m_poPack;
+	CRlePack*		m_poPack;
 	std::string		m_sFighterName;
 
 	std::vector<FighterEnum> m_aenTeam;
@@ -48,19 +56,26 @@ struct PlayerInfo
 
 
 
-/** This class implements services that allows players to select their
-fighters. It also stores info about which fighter is available, and
+/** This class implements services that allows players to select their fighters.
+
+It also stores info about which fighter is available, and
 allows other parts of the program to programmatically assign a fighter
 to a player, and set fighter tints (this is used by e.g. the "frozen"
-effect.) */
+effect.) 
 
-class PlayerSelect
+This is the model part model-view-controller architecture of the player selection.
+
+
+\ingroup PlayerSelect
+*/
+
+class CPlayerSelect
 {
 public:
-	PlayerSelect();
+	CPlayerSelect();
 	
-	const PlayerInfo& GetPlayerInfo( int a_iPlayer );
-	PlayerInfo& EditPlayerInfo( int a_iPlayer );
+	const SPlayerInfo& GetPlayerInfo( int a_iPlayer );
+	SPlayerInfo& EditPlayerInfo( int a_iPlayer );
 	const char* GetFighterName( int a_iPlayer );
 	int GetFighterNameWidth( int a_iPlayer );
 	
@@ -74,20 +89,14 @@ public:
 
 protected:
 
-//	void HandleKey( int a_iPlayer, int a_iKey );
-//	void HandleNetwork();
-//	void DrawRect( int a_iPos, int a_iColor );
-//	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor );
-	static RlePack* LoadFighter( FighterEnum m_enFighter );
-//	bool IsNetworkGame();
-//	FighterEnum GetFighterCell( int a_iIndex );
+	static CRlePack* LoadFighter( FighterEnum m_enFighter );
 
 protected:
-	PlayerInfo	m_aoPlayers[MAXPLAYERS];
+	SPlayerInfo	m_aoPlayers[MAXPLAYERS];
 	int			m_aiFighterNameWidth[MAXPLAYERS];
 };
 
 
-extern PlayerSelect g_oPlayerSelect;
+extern CPlayerSelect g_oPlayerSelect;
 
 #endif // PLAYERSELECT_H

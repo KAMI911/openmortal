@@ -282,7 +282,7 @@ const char* GetHitPointsString( int a_iValue )
 
 
 
-CNetworkMenu::CNetworkMenu(): Menu( "Network Play Setup" )
+CNetworkMenu::CNetworkMenu(): CMenu( "Network Play Setup" )
 {
 	m_bOK = false;
 	m_bServer = g_oState.m_bServer;
@@ -296,7 +296,7 @@ CNetworkMenu::CNetworkMenu(): Menu( "Network Play Setup" )
 	m_poServerMenuItem = AddTextMenuItem( "Connect to: ", m_sHostname.c_str(), MENU_HOSTNAME );
 	m_poServerMenuItem->SetEnabled(!m_bServer);
 	
-	MenuItem* poItem = AddMenuItem( "Cancel", SDLK_UNKNOWN, MENU_CANCEL );
+	CMenuItem* poItem = AddMenuItem( "Cancel", SDLK_UNKNOWN, MENU_CANCEL );
 	SDL_Rect oRect;
 	oRect.x = gamescreen->w - 150; oRect.w = 150;
 	oRect.y = gamescreen->h - 50; oRect.h = 30;
@@ -321,7 +321,7 @@ void CNetworkMenu::Connect()
 	Draw();
 }
 
-void Menu::EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuItem* a_poMenuItem, int a_iMaxlen )
+void CMenu::EnterName( const char* a_pcTitle, std::string& a_rsTarget, CTextMenuItem* a_poMenuItem, int a_iMaxlen )
 {
 	Clear();
 	Draw();
@@ -356,13 +356,13 @@ void Menu::EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuIt
 	Draw();
 }
 
-void CNetworkMenu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
+void CNetworkMenu::ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem )
 {
 	switch ( a_iItemCode )
 	{
 	case MENU_SERVER:
 	{
-		EnumMenuItem* poItem = (EnumMenuItem*) a_poMenuItem;
+		CEnumMenuItem* poItem = (CEnumMenuItem*) a_poMenuItem;
 		if ( m_bServer )
 		{
 			poItem->Decrement();
@@ -403,12 +403,12 @@ void CNetworkMenu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 	}
 }
 
-void CNetworkMenu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
+void CNetworkMenu::ItemChanged( int a_iItemCode, int a_iValue, CMenuItem* a_poMenuItem )
 {
 	switch ( a_iItemCode )
 	{
 	case MENU_SERVER:
-		m_bServer = a_iValue;
+		m_bServer = a_iValue != 0;
 		m_poServerMenuItem->SetEnabled(!m_bServer);
 		break;
 	}
@@ -425,7 +425,7 @@ void CNetworkMenu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMen
  
  
 
-MenuItem::MenuItem( Menu* a_poMenu, const char* a_pcUtf8Text, int a_iCode )
+CMenuItem::CMenuItem( CMenu* a_poMenu, const char* a_pcUtf8Text, int a_iCode )
 : m_sUtf8Text( a_pcUtf8Text )
 {
 	m_poMenu = a_poMenu;
@@ -444,11 +444,11 @@ MenuItem::MenuItem( Menu* a_poMenu, const char* a_pcUtf8Text, int a_iCode )
 }
 
 	
-MenuItem::~MenuItem()
+CMenuItem::~CMenuItem()
 {
 }
 
-void MenuItem::Draw()
+void CMenuItem::Draw()
 {
 	if ( NULL != poBackground )
 	{
@@ -477,7 +477,7 @@ void MenuItem::Draw()
 }
 
 
-void MenuItem::Clear()
+void CMenuItem::Clear()
 {
 //	debug( "Clear: %d:%d %dx%d\n", m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );
 	if (poBackground )
@@ -495,7 +495,7 @@ void MenuItem::Clear()
 }
 
 
-void MenuItem::Activate()
+void CMenuItem::Activate()
 {
 	if ( m_poMenu )
 	{
@@ -505,19 +505,19 @@ void MenuItem::Activate()
 
 	
 	
-void MenuItem::SetText( const char* a_pcUtf8Text, bool a_bCenter )
+void CMenuItem::SetText( const char* a_pcUtf8Text, bool a_bCenter )
 {
 	m_sUtf8Text = a_pcUtf8Text;
 	m_bCenter = a_bCenter;
 	Draw();
 }
 
-void MenuItem::SetPosition( const SDL_Rect& a_roPosition )
+void CMenuItem::SetPosition( const SDL_Rect& a_roPosition )
 {
 	m_oPosition = a_roPosition;
 }
 
-void MenuItem::SetActive( bool a_bActive )
+void CMenuItem::SetActive( bool a_bActive )
 {
 	if ( m_bActive == a_bActive )
 	{
@@ -527,7 +527,7 @@ void MenuItem::SetActive( bool a_bActive )
 	Draw();
 }
 	
-void MenuItem::SetEnabled( bool a_bEnabled )
+void CMenuItem::SetEnabled( bool a_bEnabled )
 {
 	if ( m_bEnabled == a_bEnabled )
 	{
@@ -546,32 +546,32 @@ void MenuItem::SetEnabled( bool a_bEnabled )
  
  
 
-EnumMenuItem::EnumMenuItem( Menu* a_poMenu, int a_iInitialValue, const char* a_pcUtf8Text, int a_iCode )
-: MenuItem( a_poMenu, a_pcUtf8Text, a_iCode )
+CEnumMenuItem::CEnumMenuItem( CMenu* a_poMenu, int a_iInitialValue, const char* a_pcUtf8Text, int a_iCode )
+: CMenuItem( a_poMenu, a_pcUtf8Text, a_iCode )
 {
 	m_sUtf8Title = a_pcUtf8Text;
 	m_iMax = -1;
 	m_iValue = a_iInitialValue;
 }
 
-EnumMenuItem::~EnumMenuItem()
+CEnumMenuItem::~CEnumMenuItem()
 {
 }
 
 
-int EnumMenuItem::GetCurrentValue()
+int CEnumMenuItem::GetCurrentValue()
 {
 	return m_iValue <= m_iMax ? m_piValues[m_iValue] : 0;
 }
 
 
-const char* EnumMenuItem::GetCurrentText()
+const char* CEnumMenuItem::GetCurrentText()
 {
 	return m_iValue <= m_iMax ? m_ppcNames[m_iValue] : "";
 }
 
 
-void EnumMenuItem::Draw()
+void CEnumMenuItem::Draw()
 {
 	m_sUtf8Text = Translate( m_sUtf8Title.c_str() );
 	if ( m_iValue <= m_iMax )
@@ -587,12 +587,12 @@ void EnumMenuItem::Draw()
 		m_sUtf8Text += " >";
 	}
 	
-	MenuItem::Draw();
+	CMenuItem::Draw();
 }
 
 
 
-void EnumMenuItem::Increment()
+void CEnumMenuItem::Increment()
 {
 	if ( m_iValue < m_iMax )
 	{
@@ -605,7 +605,7 @@ void EnumMenuItem::Increment()
 
 
 
-void EnumMenuItem::Decrement()
+void CEnumMenuItem::Decrement()
 {
 	if ( m_iValue > 0 )
 	{
@@ -619,7 +619,7 @@ void EnumMenuItem::Decrement()
 	
 
 
-void EnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValues )
+void CEnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValues )
 {
 	m_ppcNames = a_ppcNames;
 	m_piValues = a_piValues;
@@ -648,7 +648,7 @@ void EnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValu
 
 
 
-void EnumMenuItem::SetMaxValue( int a_iMaxValue )
+void CEnumMenuItem::SetMaxValue( int a_iMaxValue )
 {
 	for ( int i=0; NULL != m_ppcNames[i]; ++i )
 	{
@@ -659,7 +659,7 @@ void EnumMenuItem::SetMaxValue( int a_iMaxValue )
 		}
 	}
 
-	debug( "EnumMenuItem::SetMaxValue: value %d not found\n", a_iMaxValue );
+	debug( "CEnumMenuItem::SetMaxValue: value %d not found\n", a_iMaxValue );
 }
 
 
@@ -668,13 +668,13 @@ void EnumMenuItem::SetMaxValue( int a_iMaxValue )
 
 
 /***************************************************************************
-							TextMenuItem DEFINITION
+							CTextMenuItem DEFINITION
  ***************************************************************************/
 
 
 
-TextMenuItem::TextMenuItem( Menu* a_poMenu, const char* a_pcInitialValue, const char* a_pcUtf8Title, int a_iCode )
-	: MenuItem( a_poMenu, a_pcUtf8Title, a_iCode )
+CTextMenuItem::CTextMenuItem( CMenu* a_poMenu, const char* a_pcInitialValue, const char* a_pcUtf8Title, int a_iCode )
+	: CMenuItem( a_poMenu, a_pcUtf8Title, a_iCode )
 
 {
 	m_sTitle = a_pcUtf8Title;
@@ -682,21 +682,21 @@ TextMenuItem::TextMenuItem( Menu* a_poMenu, const char* a_pcInitialValue, const 
 }
 
 
-TextMenuItem::~TextMenuItem()
+CTextMenuItem::~CTextMenuItem()
 {
 }
 
 
-void TextMenuItem::Draw()
+void CTextMenuItem::Draw()
 {
 	m_sUtf8Text = Translate( m_sTitle.c_str() );
 	m_sUtf8Text += m_sValue;
 	
-	MenuItem::Draw();
+	CMenuItem::Draw();
 }
 
 
-void TextMenuItem::SetValue( const char* a_pcValue )
+void CTextMenuItem::SetValue( const char* a_pcValue )
 {
 	m_sValue = a_pcValue;
 	Draw();
@@ -717,7 +717,7 @@ void TextMenuItem::SetValue( const char* a_pcValue )
  
 
 
-Menu::Menu( const char* a_pcTitle )
+CMenu::CMenu( const char* a_pcTitle )
 : m_sTitle( a_pcTitle )
 {
 	m_iCurrentItem = 0;
@@ -726,9 +726,9 @@ Menu::Menu( const char* a_pcTitle )
 }
 
 
-Menu::~Menu()
+CMenu::~CMenu()
 {
-	ItemIterator it;
+	CItemIterator it;
 
 	for ( it = m_oItems.begin(); it != m_oItems.end(); ++it )
 	{
@@ -737,18 +737,18 @@ Menu::~Menu()
 }
 
 
-MenuItem* Menu::AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut, int a_iCode )
+CMenuItem* CMenu::AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut, int a_iCode )
 {
-	MenuItem* poItem = new MenuItem( this, a_pcUtf8Text, a_iCode );
+	CMenuItem* poItem = new CMenuItem( this, a_pcUtf8Text, a_iCode );
 	return AddMenuItem( poItem );
 }
 
 
 
-EnumMenuItem* Menu::AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
+CEnumMenuItem* CMenu::AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
 	const char** a_ppcNames, const int* a_piValues, int a_iCode )
 {
-	EnumMenuItem* poItem = new EnumMenuItem( this, a_iInitialValue, a_pcUtf8Text, a_iCode );
+	CEnumMenuItem* poItem = new CEnumMenuItem( this, a_iInitialValue, a_pcUtf8Text, a_iCode );
 	poItem->SetEnumValues( a_ppcNames, a_piValues );
 	
 	AddMenuItem( poItem );
@@ -756,9 +756,9 @@ EnumMenuItem* Menu::AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialVal
 }
 
 
-TextMenuItem* Menu::AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode )
+CTextMenuItem* CMenu::AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode )
 {
-	TextMenuItem* poItem = new TextMenuItem( this, a_pcValue, a_pcTitle, a_iCode );
+	CTextMenuItem* poItem = new CTextMenuItem( this, a_pcValue, a_pcTitle, a_iCode );
 	AddMenuItem( poItem );
 	return poItem;
 }
@@ -766,7 +766,7 @@ TextMenuItem* Menu::AddTextMenuItem( const char* a_pcTitle, const char* a_pcValu
 
 
 
-MenuItem* Menu::AddMenuItem( MenuItem* a_poItem )
+CMenuItem* CMenu::AddMenuItem( CMenuItem* a_poItem )
 {
 	m_oItems.push_back( a_poItem );
 	
@@ -781,13 +781,13 @@ MenuItem* Menu::AddMenuItem( MenuItem* a_poItem )
 }
 
 
-void Menu::AddOkCancel( int a_iOkCode )
+void CMenu::AddOkCancel( int a_iOkCode )
 {
 	SDL_Rect oRect;
 	oRect.x = 0; oRect.w = 150;
 	oRect.y = gamescreen->h - 50; oRect.h = sge_TTF_FontHeight( inkFont );
 
-	MenuItem* poItem = AddMenuItem( "~OK", SDLK_o, a_iOkCode );
+	CMenuItem* poItem = AddMenuItem( "~OK", SDLK_o, a_iOkCode );
 	poItem->SetPosition( oRect );
 	
 //	poItem = AddMenuItem( "Cancel", SDLK_UNKNOWN, 0 );
@@ -797,9 +797,9 @@ void Menu::AddOkCancel( int a_iOkCode )
 
 
 
-MenuItem* Menu::GetMenuItem( int a_iCode ) const
+CMenuItem* CMenu::GetMenuItem( int a_iCode ) const
 {
-	ItemList::const_iterator it;
+	CItemList::const_iterator it;
 	for ( it = m_oItems.begin(); it != m_oItems.end(); ++it )
 	{
 		if ( *it && (*it)->GetCode() == a_iCode )
@@ -813,7 +813,7 @@ MenuItem* Menu::GetMenuItem( int a_iCode ) const
 
 
 
-void Menu::InvokeSubmenu( Menu* a_poMenu )
+void CMenu::InvokeSubmenu( CMenu* a_poMenu )
 {
 	Audio->PlaySample( "MENU_ITEM_INVOKED" );
 	Clear();
@@ -838,9 +838,9 @@ void Menu::InvokeSubmenu( Menu* a_poMenu )
 }
 
 
-void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
+void CMenu::ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem )
 {
-	debug( "Menu::ItemActivated( %d )\n", a_iItemCode );
+	debug( "CMenu::ItemActivated( %d )\n", a_iItemCode );
 	
 	switch ( a_iItemCode )
 	{
@@ -863,7 +863,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		
 		case MENU_NETWORK_GAME:
 		{
-			Menu* poMenu = new CNetworkMenu();
+			CMenu* poMenu = new CNetworkMenu();
 			InvokeSubmenu( poMenu );
 			delete poMenu;
 			break;
@@ -871,7 +871,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 
 		case MENU_MULTI_PLAYER:
 		{
-			Menu* poMenu = new Menu( "Multi Player" );
+			CMenu* poMenu = new CMenu( "Multi Player" );
 			poMenu->AddMenuItem( "START GAME", SDLK_UNKNOWN, MENU_MULTI_PLAYER_START );
 //			poMenu->AddEnumMenuItem( "Number of Players: ", g_oState.m_iNumPlayers, g_ppcNumPlayers, g_piNumPlayers, MENU_NUM_PLAYERS );
 			poMenu->AddEnumMenuItem( "Team mode: ", g_oState.m_enTeamMode, g_ppcTeamMode, g_piTeamMode, MENU_TEAM_MODE );
@@ -912,7 +912,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		
 		case MENU_OPTIONS:
 		{
-			Menu* poMenu = new Menu( "Options" );
+			CMenu* poMenu = new CMenu( "Options" );
 			if ( g_oState.m_enGameMode != SState::IN_NETWORK || g_poNetwork->IsMaster() )
 			{
 				poMenu->AddEnumMenuItem( "GAME SPEED: ", g_oState.m_iGameSpeed, g_ppcGameSpeed, g_piGameSpeed, MENU_GAME_SPEED );
@@ -932,7 +932,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		
 		case MENU_SOUND:
 		{
-			Menu* poMenu = new Menu( "Sound" );
+			CMenu* poMenu = new CMenu( "Sound" );
 			poMenu->AddEnumMenuItem( "CHANNELS: ", 1, g_ppcChannels, g_piChannels, MENU_CHANNELS )->SetEnabled(false);
 			poMenu->AddEnumMenuItem( "SOUND QUALITY: ", 2, g_ppcMixingRate, g_piMixingRate, MENU_MIXING_RATE )->SetEnabled(false);
 			poMenu->AddEnumMenuItem( "SOUND FIDELITY: ", 2, g_ppcMixingBits, g_piMixingBits, MENU_BITS )->SetEnabled(false);
@@ -968,9 +968,9 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 
 
 
-void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
+void CMenu::ItemChanged( int a_iItemCode, int a_iValue, CMenuItem* a_poMenuItem )
 {
-	debug( "Menu::ItemChanged( %d, %d )\n", a_iItemCode, a_iValue );
+	debug( "CMenu::ItemChanged( %d, %d )\n", a_iItemCode, a_iValue );
 	
 	switch ( a_iItemCode )
 	{
@@ -981,7 +981,7 @@ void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
 		case MENU_TEAM_MODE:
 		{
 			g_oState.m_enTeamMode = (SState::TTeamModeEnum) a_iValue;
-			MenuItem* poItem;
+			CMenuItem* poItem;
 			poItem = GetMenuItem( MENU_TEAM_SIZE );
 			if ( poItem ) poItem->SetEnabled( SState::Team_CUSTOM==g_oState.m_enTeamMode );
 			poItem = GetMenuItem( MENU_TEAM_MULTISELECT );
@@ -1032,7 +1032,7 @@ menus modify the global game state.
 
 Returns 0, or the number of parent menus that should be cleared. */
 
-int Menu::Run()
+int CMenu::Run()
 {
 	if ( m_oItems[m_iCurrentItem]->GetEnabled() )
 	{
@@ -1081,14 +1081,14 @@ int Menu::Run()
 			
 			case SDLK_LEFT:
 			{
-				MenuItem* poItem = m_oItems[m_iCurrentItem];
+				CMenuItem* poItem = m_oItems[m_iCurrentItem];
 				poItem->Decrement();
 				break;
 			}
 			
 			case SDLK_RIGHT:
 			{
-				MenuItem* poItem = m_oItems[m_iCurrentItem];
+				CMenuItem* poItem = m_oItems[m_iCurrentItem];
 				poItem->Increment();
 				break;
 			}
@@ -1096,7 +1096,7 @@ int Menu::Run()
 			
 			case SDLK_RETURN:
 			{
-				MenuItem* poItem = m_oItems[m_iCurrentItem];
+				CMenuItem* poItem = m_oItems[m_iCurrentItem];
 				if ( poItem->GetEnabled() )
 				{
 					poItem->Activate();
@@ -1115,11 +1115,11 @@ int Menu::Run()
 
 
 
-void Menu::Draw()
+void CMenu::Draw()
 {
 	DrawGradientText( m_sTitle.c_str(), titleFont, 20, gamescreen );
 
-	for ( ItemIterator it=m_oItems.begin(); it!=m_oItems.end(); ++it )
+	for ( CItemIterator it=m_oItems.begin(); it!=m_oItems.end(); ++it )
 	{
 		(*it)->Draw();
 	}
@@ -1130,10 +1130,10 @@ void Menu::Draw()
 
 
 
-void Menu::FocusNext()
+void CMenu::FocusNext()
 {
 
-	MenuItem* poItem = NULL;
+	CMenuItem* poItem = NULL;
 	int iNextItem;
 	
 	for ( iNextItem = m_iCurrentItem+1; iNextItem < (int) m_oItems.size(); ++iNextItem )
@@ -1157,9 +1157,9 @@ void Menu::FocusNext()
 
 
 
-void Menu::FocusPrev()
+void CMenu::FocusPrev()
 {
-	MenuItem* poItem = NULL;
+	CMenuItem* poItem = NULL;
 
 	int iPrevItem;
 	
@@ -1184,7 +1184,7 @@ void Menu::FocusPrev()
 
 
 
-void Menu::Clear()
+void CMenu::Clear()
 {
 	if (poBackground)
 	{
@@ -1249,7 +1249,7 @@ void MakeMenuBackground()
 
 
 
-void DoMenu( Menu& a_roMenu )
+void DoMenu( CMenu& a_roMenu )
 {
 	Audio->PlaySample( "MENU_START" );
 
@@ -1277,7 +1277,7 @@ void DoMenu()
 {
 	MakeMenuBackground();
 	
-	Menu oMenu( "Main Menu" );
+	CMenu oMenu( "Main Menu" );
 	
 	if ( SState::IN_DEMO == g_oState.m_enGameMode )
 	{

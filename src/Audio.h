@@ -7,8 +7,8 @@
  ***************************************************************************/
 
 
-#ifndef MSZ_AUDIO_H
-#define MSZ_AUDIO_H
+#ifndef OPENMORTAL_AUDIO_H
+#define OPENMORTAL_AUDIO_H
 
 
 #ifndef NULL
@@ -16,14 +16,21 @@
 #endif
 
 
-class MszAudioPriv;
+class COpenMortalAudioPriv;
 
+/**
+\class COpenMortalAudio
+\brief Audio services for OpenMortal (sound and music).
+\ingroup Media
 
-class MszAudio
+This class is a wrapper around SDL_Mixer
+*/
+
+class COpenMortalAudio
 {
 public:
-	MszAudio();
-	~MszAudio();
+	COpenMortalAudio();
+	~COpenMortalAudio();
 	void LoadSampleMap();
 
 public:
@@ -47,10 +54,10 @@ public:
 protected:
 	// Attributes
 
-	MszAudioPriv*		m_poPriv;
+	COpenMortalAudioPriv* m_poPriv;
 };
 
 
-extern MszAudio* Audio;
+extern COpenMortalAudio* Audio;
 
-#endif // ifdef MSZ_AUDIO_H
+#endif // ifdef OPENMORTAL_AUDIO_H

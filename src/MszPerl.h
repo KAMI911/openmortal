@@ -7,6 +7,9 @@
  ***************************************************************************/
 
 /**
+\file MszPerl.h
+\ingroup GameLogic
+
 This file helps include perl.h
 The windows version of perl.h contains a lot of stupid #defines, this
 file helps undefine them.

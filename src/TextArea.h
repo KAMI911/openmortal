@@ -22,6 +22,11 @@ struct _sge_TTFont;
 typedef std::list<std::string> TStringList;
 typedef std::list<int> TIntList;
 
+/**
+\brief CTextArea displays scrolling text.
+\ingroup Media
+*/
+
 class CTextArea
 {
 public:

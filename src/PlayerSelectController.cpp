@@ -246,8 +246,8 @@ void CPlayerSelectController::HandleKey( int a_iPlayer, int a_iKey )
 
 	bool bKeepPlayerActive = false;
 
-	PlayerInfo& roInfo = g_oPlayerSelect.EditPlayerInfo(a_iPlayer);
-	const PlayerInfo& roOtherInfo = g_oPlayerSelect.GetPlayerInfo(1-a_iPlayer);
+	SPlayerInfo& roInfo = g_oPlayerSelect.EditPlayerInfo(a_iPlayer);
+	const SPlayerInfo& roOtherInfo = g_oPlayerSelect.GetPlayerInfo(1-a_iPlayer);
 	int iTeamSize = roInfo.m_aenTeam.size() + 1;
 	int iOtherTeamSize = roOtherInfo.m_aenTeam.size();
 
@@ -326,7 +326,7 @@ void CPlayerSelectController::HandleNetwork()
 		Audio->PlaySample("PLAYER_SELECTED");
 		g_oBackend.PerlEvalF( "PlayerSelected(%d);", iPlayer );
 
-		PlayerInfo& roInfo = g_oPlayerSelect.EditPlayerInfo( iPlayer );
+		SPlayerInfo& roInfo = g_oPlayerSelect.EditPlayerInfo( iPlayer );
 
 		roInfo.m_aenTeam.clear();
 		roInfo.m_aenTeam.push_back( enRemoteFighter );

@@ -7,6 +7,125 @@
  ***************************************************************************/
 
 
+/**
+\mainpage
+
+The document you read now describes the design of OpenMortal. This page 
+serves as a starting point. The documentation is generated with doxygen
+(http://doxygen.org).
+
+OpenMortal consists of two main parts: the \b frontend and the \b backend.
+
+\li The frontend is a C++ program, responsible for multimedia 
+(sounds, music, graphics) and general interaction with the players 
+(menus, keyboard input), and the demo and intro screens.
+
+\li The backend is written in Perl, and is incorporated into the C++ 
+program with Perl embedding.
+
+
+ 
+\section s1 Modules
+
+The classes of OpenMortal are organized into the following groups (see Modules above).
+
+\li \ref Media - OpenMortal uses \b SDL (http://libsdl.org) for hardware 
+access such as screen drawing, music, sound effect and keyboard input. For 
+information and documentation of SDL, SDL_image, SDL_ttf and SDL_mixer, 
+please look at the SDL homepage.
+
+\li \ref PlayerSelect
+\li \ref Network
+\li \ref Demo
+\li \ref GameLogic
+
+
+
+\section s2 Main Functions
+These global functions implement important parts of the program. They serve
+as entry points into functional parts.
+
+\li DoMenu() - Displays and runs the menu over the current screen
+\li GameOver() - Displays the "Final Judgeent" screen
+\li DoDemos() - Runs the demos in an endless loop until a game is started or the program ends.
+\li DoGame() - Runs the game.
+\li DoOnlineChat() - Connects to and runs the MortalNet.
+\li CPlayerSelect::DoPlayerSelect() - Runs the player selection screen.
+
+
+\section s3 Definitions
+
+Here are the definitions of terms used in this documentation.
+
+<dl>
+
+<dt>\b Player <dd>
+ Player refers to one of the two persons playing the game. A player chooses a fighter. The two players are referred to as "Player 1" and "Player 2", even though the C++ and perl code count arrays from 0.
+
+	
+<dt>\b Fighter <dd>
+	Fighter is one of the many available characters. Usually there are only two fighters loaded at any time. Fighters are static: their properties never change. Maybe Fighter should be renamed to Character?
+<dt>\b Game <dd>
+	One game is the part of the program in which the players actually compete. The game consists of a number of rounds. The player selection, and gameover screen are not part of this definition.
+<dt>\b Round <dd>
+	One round starts with both players at full health, and ends either with a timeout or with a ko.
+<dt>\b Doodad <dd>
+	A graphical element on the game screen that is not the background or the characters. E.g. the "3x combo" text or a thrown projectile are doodads.
+<dt>\b Tint <dd>
+	A tint is a methodical change in a palette. There are many ways to tint (e.g. grayscaling, darkening, green chroma, etc). Usually when two players choose the same fighter, the fighter of player 2 is tinted.
+<dt>\b Scene <dd>
+	The description of a frozen moment in the course of a game. The Backend is responsible for calculating each consecutive scene. The number of scenes calculated per second is constant (except for the "hurry up mode", or if the computer is too slow).
+<dt>\b FPS <dd>
+	Frames Per Second. The FPS indicator on the screen during a game indicates the number of scenes drawn, not the number of scenes calculated by the backend.
+</dl>
+
+
+\section s4 C++ Coding conventions
+
+Historically two different coding conventions were mixed in OpenMortal. 
+Hopefully most of the old conventions are eliminated by now.
+Here I will describe the new conventions:
+
+\li <B> Class names: </B> CMixedCaps.
+\li <B> Struct names: </B> SMixedCaps.
+\li <B> Typedef names: </B> CSomeTypedef (There's some traces of the old TSomeTypedef 
+    left, these should be eliminated.
+\li <B> Enum names: </B> SomeThingEnum.
+\li <B> Enum values: </B> Prefix_ENUM_VALUE
+\li <B> Method names: </B> MixedCaps.
+\li <B> Variable names: </B> &lt;prefix&gt;VariableName.
+\li <B> Instance property names: </B> m_&lt;prefix&gt;VariableName,
+\li <B> Class property names </B>(a.k.a. static class variables): mg_&lt;prefix&gt;VariableName.
+\li <B> Method argument names: </B> a_&lt;prefix&gt;VariableName. 
+If a reference or pointer argument is "output-only: a_&lt;prefix&gt;OutVariableName.
+\li <B> Global variable names: </B> g_&lt;prefix&gt;VariableName.
+
+The prefixes used are:
+
+\li <B> Array of something: </B> a&lt;something&gt;
+\li <B> Pointer to something: </B> p&lt;something&gt;
+\li <B> Reference of something: </B> r&lt;something&gt;
+\li <B> Basic types: </B> Integer: i; char: c; double: d; enum: en; object (class or struct): o; std::string: s;
+
+Example:
+\code
+CSomeExampleClass: public CSomeBaseClass
+{
+public:
+	CSomeExampleClass();
+	void SomeMethod( int& a_riOutSomething );
+protected:
+	int m_iSomething;
+	char* m_pcSomethingElse;
+	static enum SomeThingEnum
+	{
+		Ste_VALUE,
+	} mg_enWhatever;
+};
+\endcode
+*/
+
+
 #include "config.h"
 
 #include "PlayerSelect.h"
@@ -225,7 +344,7 @@ int DrawMainScreen()
 	
 	std::string sStaffFilename = DATADIR;
 	sStaffFilename += "/characters/STAFF.DAT";
-	RlePack pack( sStaffFilename.c_str(), 256 );
+	CRlePack pack( sStaffFilename.c_str(), 256 );
 	pack.ApplyPalette();
 	SDL_BlitSurface( background, NULL, gamescreen, &r );
 	SDL_Flip( gamescreen );
@@ -397,7 +516,7 @@ void GameLoop()
 		if ( iGameResult >= 0 && !bNetworkGame )
 		{
 			GameOver( iGameResult );
-			FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );
+			CFighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );
 			oDemo.Run();
 		}
 		
@@ -516,7 +635,7 @@ int main(int argc, char *argv[])
 	
 	g_oState.SetLanguage( g_oState.m_acLanguage );
 	
-	new MszAudio;
+	new COpenMortalAudio;
 //	Audio->LoadMusic( "Last_Ninja_-_The_Wilderness.mid", "DemoMusic" );
 	Audio->LoadMusic( "ride.mod", "DemoMusic" );
 	Audio->PlayMusic( "DemoMusic" );

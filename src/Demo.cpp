@@ -24,21 +24,21 @@
 
 
 
-Demo::Demo()
+CDemo::CDemo()
 {
 	m_poFlyingChars = NULL;
 	m_bAdvanceGame = false;
 }
 
 
-Demo::~Demo()
+CDemo::~CDemo()
 {
 	delete m_poFlyingChars;
 	m_poFlyingChars = NULL;
 }
 
 
-int Demo::Advance( int a_iNumFrames, bool a_bFlip )
+int CDemo::Advance( int a_iNumFrames, bool a_bFlip )
 {
 	int iRetVal = 1;
 	
@@ -70,7 +70,7 @@ int Demo::Advance( int a_iNumFrames, bool a_bFlip )
 }
 
 
-int Demo::AdvanceFlyingChars( int a_iNumFrames )
+int CDemo::AdvanceFlyingChars( int a_iNumFrames )
 {
 	m_poFlyingChars->Advance( a_iNumFrames );
 	return ( m_poFlyingChars->IsDone() ? 1 : 0 );
@@ -79,7 +79,7 @@ int Demo::AdvanceFlyingChars( int a_iNumFrames )
 
 
 
-int Demo::AdvanceGame( int a_iNumFrames )
+int CDemo::AdvanceGame( int a_iNumFrames )
 {
 	for ( int i=0; i<a_iNumFrames; ++i )
 	{
@@ -89,7 +89,7 @@ int Demo::AdvanceGame( int a_iNumFrames )
 }
 
 
-int Demo::Run()
+int CDemo::Run()
 {
 	SState::TGameMode enOriginalGameMode = g_oState.m_enGameMode;
 
@@ -194,18 +194,21 @@ int Demo::Run()
 
 
 
-void Demo::OnMenu()
+void CDemo::OnMenu()
 {
 	::DoMenu();
 }
 
 
 
+/**
+\ingroup Demo
+*/
 
-class CreditsDemo: public Demo
+class CCreditsDemo: public CDemo
 {
 public:
-	CreditsDemo()
+	CCreditsDemo()
 	{
 		m_poBackground = LoadBackground( "Credits.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
@@ -216,17 +219,17 @@ public:
 		oRect.x = 110; oRect.w = gamescreen->w - 220;
 		oRect.y = 100; oRect.h = 350;
 		
-		m_poFlyingChars = new FlyingChars( creditsFont, oRect );
+		m_poFlyingChars = new CFlyingChars( creditsFont, oRect );
 		
 		m_sText1 = Translate( "CreditsText1" );
 		m_sText2 = Translate( "CreditsText2" );
 		m_sText3 = Translate( "CreditsText3" );
 		
-		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignCenter, true );
-		m_poFlyingChars->AddText( m_sText2.c_str(), FlyingChars::FC_AlignJustify, true );
-		m_poFlyingChars->AddText( m_sText3.c_str(), FlyingChars::FC_AlignCenter, true );
+		m_poFlyingChars->AddText( m_sText1.c_str(), CFlyingChars::FC_AlignCenter, true );
+		m_poFlyingChars->AddText( m_sText2.c_str(), CFlyingChars::FC_AlignJustify, true );
+		m_poFlyingChars->AddText( m_sText3.c_str(), CFlyingChars::FC_AlignCenter, true );
 		
-		m_poFlyingChars->AddText( "\n\n\n\n\n\n:)", FlyingChars::FC_AlignRight, true );
+		m_poFlyingChars->AddText( "\n\n\n\n\n\n:)", CFlyingChars::FC_AlignRight, true );
 	}
 protected:
 	std::string m_sText1;
@@ -235,11 +238,14 @@ protected:
 };
 
 
+/**
+\ingroup Demo
+*/
 
-class EuDemo: public Demo
+class CEuDemo: public CDemo
 {
 public:
-	EuDemo()
+	CEuDemo()
 	{
 		m_poBackground = LoadBackground( "eu.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
@@ -248,10 +254,10 @@ public:
 		oRect.x = 50; oRect.w = gamescreen->w - 100;
 		oRect.y = 50; oRect.h = gamescreen->h - 100;
 		
-		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
+		m_poFlyingChars = new CFlyingChars( storyFont, oRect, -1 );
 		m_sText1 = "This version of OpenMortal was released on 2004-05-01, the day that Hungary "
 		"along with 9 other countries joined the European Union.\n\n\n\n\n\n\n\n\n";
-		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignJustify, true );
+		m_poFlyingChars->AddText( m_sText1.c_str(), CFlyingChars::FC_AlignJustify, true );
 	}
 protected:
 	std::string m_sText1;
@@ -259,11 +265,14 @@ protected:
 
 
 
+/**
+\ingroup Demo
+*/
 
-class Story1Demo: public Demo
+class CStory1Demo: public CDemo
 {
 public:
-	Story1Demo()
+	CStory1Demo()
 	{
 		m_poBackground = LoadBackground( "Story1.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
@@ -272,19 +281,22 @@ public:
 		oRect.x = 50; oRect.w = gamescreen->w - 100;
 		oRect.y = 50; oRect.h = gamescreen->h - 100;
 		
-		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
+		m_poFlyingChars = new CFlyingChars( storyFont, oRect, -1 );
 		m_sText1 = Translate( "Story1Text" );
-		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignJustify, true );
+		m_poFlyingChars->AddText( m_sText1.c_str(), CFlyingChars::FC_AlignJustify, true );
 	}
 protected:
 	std::string m_sText1;
 };
 
+/**
+\ingroup Demo
+*/
 
-class Story2Demo: public Demo
+class CStory2Demo: public CDemo
 {
 public:
-	Story2Demo()
+	CStory2Demo()
 	{
 		m_poBackground = LoadBackground( "Story2.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
@@ -293,20 +305,23 @@ public:
 		oRect.x = 50; oRect.w = gamescreen->w - 100;
 		oRect.y = 50; oRect.h = gamescreen->h - 100;
 
-		m_poFlyingChars = new FlyingChars( storyFont, oRect, -1 );
+		m_poFlyingChars = new CFlyingChars( storyFont, oRect, -1 );
 		m_sText1 = Translate( "Story2Text" );
-		m_poFlyingChars->AddText( m_sText1.c_str(), FlyingChars::FC_AlignJustify, true );
+		m_poFlyingChars->AddText( m_sText1.c_str(), CFlyingChars::FC_AlignJustify, true );
 	}
 protected:
 	std::string m_sText1;
 };
 
 
+/**
+\ingroup Demo
+*/
 
-class MainScreenDemo: public Demo
+class CMainScreenDemo: public CDemo
 {
 public:
-	MainScreenDemo()
+	CMainScreenDemo()
 	{
 		i = 0;
 		m_iTimeLeft = 50;
@@ -316,7 +331,7 @@ public:
 		
 		std::string sStaffFilename = DATADIR;
 		sStaffFilename += "/characters/STAFF.DAT";
-		m_poPack = new RlePack( sStaffFilename.c_str(), 255 );
+		m_poPack = new CRlePack( sStaffFilename.c_str(), 255 );
 		m_poPack->ApplyPalette();
 		SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
 		SDL_Flip( gamescreen );
@@ -334,7 +349,7 @@ public:
 		}
 	}
 
-	~MainScreenDemo()
+	~CMainScreenDemo()
 	{
 		delete m_poPack;
 		m_poPack = NULL;
@@ -380,7 +395,7 @@ public:
 	}
 	
 protected:
-	RlePack* m_poPack;
+	CRlePack* m_poPack;
 	int m_iTimeLeft;
 	int i;
 	int m_aiOrder[14];
@@ -440,7 +455,7 @@ void DoDemos()
 	}
 	else
 	{
-		MainScreenDemo oDemo;
+		CMainScreenDemo oDemo;
 		oDemo.Run();
 	}
 	
@@ -448,45 +463,45 @@ void DoDemos()
 	{
 		DoDemos_BREAKONEND;
 		{
-			EuDemo oDemo;
+			CEuDemo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
 		DoDemos_BREAKONEND;
 		{
-			Story1Demo oDemo;
+			CStory1Demo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
 		DoDemos_BREAKONEND;
 		{
-			FighterStatsDemo oDemo;
+			CFighterStatsDemo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
 		DoDemos_BREAKONEND;
 		{
-			Story2Demo oDemo;
+			CStory2Demo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;
 		{
-			FighterStatsDemo oDemo;
+			CFighterStatsDemo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;
 		DoReplayDemo();
 		DoDemos_BREAKONEND;
 		{
-			CreditsDemo oDemo;
+			CCreditsDemo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;
 		{
-			MainScreenDemo oDemo;
+			CMainScreenDemo oDemo;
 			oDemo.Run();
 		}
 		DoDemos_BREAKONEND;

@@ -7,6 +7,11 @@
 
 class CPlayerSelectView;
 
+/**
+Controller part model-view-controller architecture of the player selection.
+\ingroup PlayerSelect
+*/
+
 class CPlayerSelectController
 {
 public:

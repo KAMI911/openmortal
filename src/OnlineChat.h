@@ -9,7 +9,10 @@
 #ifndef ONLINECHAT_H
 #define ONLINECHAT_H
 
-/** The "mortal.net" chat protocoll should be simple enough...
+/** 
+\class COnlineChat
+\ingroup Network
+The "mortal.net" chat protocol should be simple enough...
 
 [LOGGING IN]
 

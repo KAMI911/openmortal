@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
-class MenuItem;
-class EnumMenuItem;
-class TextMenuItem;
+class CMenuItem;
+class CEnumMenuItem;
+class CTextMenuItem;
 
 
 enum
@@ -65,54 +65,73 @@ MENU_UNKNOWN,
 };
 
 
-class Menu
+
+/**
+\brief Base class for menu systems in OpenMortal.
+\ingroup GameLogic
+
+Menus are displayed over the current screen and allow for the editing
+of the game's state, SState. If you think in terms of model, view and
+controller, then SState is the model and CMenu is both the view and
+the controller.
+
+Menus have menu items. The items in turn can edit various state
+variables or invoke submenus. The menu ends then the user exits the
+toplevel menu or invokes a command which unrolls the entire menu
+stack.
+*/
+
+class CMenu
 {
-
-
 public:
-	Menu( const char* a_pcTitle );
-	virtual ~Menu();
+	CMenu( const char* a_pcTitle );
+	virtual ~CMenu();
 
-	virtual MenuItem*		AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut = SDLK_UNKNOWN, int a_iCode = 0 );
-	virtual EnumMenuItem*	AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
+	virtual CMenuItem*		AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut = SDLK_UNKNOWN, int a_iCode = 0 );
+	virtual CEnumMenuItem*	AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
 								const char** a_ppcNames, const int* a_piValues, int a_iCode = 0 );
-	virtual TextMenuItem*	AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode = 0 );
-	virtual MenuItem*		AddMenuItem( MenuItem* a_poItem );
+	virtual CTextMenuItem*	AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode = 0 );
+	virtual CMenuItem*		AddMenuItem( CMenuItem* a_poItem );
 	virtual void			AddOkCancel( int a_iOkCode = 0 );
-	virtual MenuItem*		GetMenuItem( int a_iCode ) const;
+	virtual CMenuItem*		GetMenuItem( int a_iCode ) const;
 
-	virtual void			ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
-	virtual void			ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
+	virtual void			ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem );
+	virtual void			ItemChanged( int a_iItemCode, int a_iValue, CMenuItem* a_poMenuItem );
 	virtual int				Run();
 
 	virtual void			Draw();
 	virtual void			Clear();
-	virtual void			EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuItem* a_poMenuItem, int a_iMaxlen );
+	virtual void			EnterName( const char* a_pcTitle, std::string& a_rsTarget, CTextMenuItem* a_poMenuItem, int a_iMaxlen );
 
 protected:
 
 	virtual void			FocusNext();
 	virtual void			FocusPrev();
-	virtual void			InvokeSubmenu( Menu* a_poSubmenu );
+	virtual void			InvokeSubmenu( CMenu* a_poSubmenu );
 
-	typedef std::vector<MenuItem*> ItemList;
-	typedef ItemList::iterator ItemIterator;
+	typedef std::vector<CMenuItem*> CItemList;
+	typedef CItemList::iterator CItemIterator;
 
 	
 	std::string				m_sTitle;
-	ItemList				m_oItems;
+	CItemList				m_oItems;
 	int						m_iCurrentItem;
 	int						m_iReturnCode;
 	bool					m_bDone;
 };
 
 
+/**
+\ingroup GameLogic
 
-class MenuItem
+Basic menu item. Menu items have a code which they pass to their parent
+menu when they are activated. Menu items can be enabled or disabled.
+*/
+class CMenuItem
 {
 public:
-	MenuItem( Menu* a_poMenu, const char* a_pcUtf8Text, int a_iCode = -1 );
-	virtual ~MenuItem();
+	CMenuItem( CMenu* a_poMenu, const char* a_pcUtf8Text, int a_iCode = -1 );
+	virtual ~CMenuItem();
 
 	virtual void Draw();
 	virtual void Clear();
@@ -129,7 +148,7 @@ public:
 	virtual int  GetCode() const { return m_iCode; }
 	
 protected:
-	Menu*			m_poMenu;
+	CMenu*			m_poMenu;
 
 	// appearance
 	std::string		m_sUtf8Text;
@@ -147,12 +166,20 @@ protected:
 };
 
 
+/**
+\ingroup GameLogic
 
-class EnumMenuItem: public MenuItem
+Enumerated menu items have an integer value, and a set of values and texts
+which they can display for the user. The user can switch between these
+values by incrementing and decrementing the value with the left and right
+arrow keys.
+*/
+
+class CEnumMenuItem: public CMenuItem
 {
 public:
-	EnumMenuItem(  Menu* a_poMenu, int a_iInitialValue, const char* a_pcUtf8Text, int a_iCode = -1 );
-	virtual ~EnumMenuItem();
+	CEnumMenuItem( CMenu* a_poMenu, int a_iInitialValue, const char* a_pcUtf8Text, int a_iCode = -1 );
+	virtual ~CEnumMenuItem();
 	
 	int GetCurrentValue();
 	const char* GetCurrentText();
@@ -172,12 +199,19 @@ protected:
 };
 
 
+/**
+\ingroup GameLogic
 
-class TextMenuItem: public MenuItem
+Text menu items are like regular menu items, but they have a text value
+which can be set. This value is displayed next to the regular name of
+the menu item.
+*/
+
+class CTextMenuItem: public CMenuItem
 {
 public:
-	TextMenuItem( Menu* a_poMenu, const char* a_pcInitialValue, const char* a_pcUtf8Title, int a_iCode );
-	virtual ~TextMenuItem();
+	CTextMenuItem( CMenu* a_poMenu, const char* a_pcInitialValue, const char* a_pcUtf8Title, int a_iCode );
+	virtual ~CTextMenuItem();
 
 	virtual void Draw();
 	virtual void SetValue( const char* a_pcValue );
@@ -189,8 +223,13 @@ protected:
 
 
 
+/**
+\ingroup GameLogic
 
-class CNetworkMenu: public Menu
+The Network displays and modifies the network connection parameters.
+*/
+
+class CNetworkMenu: public CMenu
 {
 public:
 	CNetworkMenu();
@@ -198,8 +237,8 @@ public:
 	
 	void Connect();
 	
-	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
-	void ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
+	void ItemActivated( int a_iItemCode, CMenuItem* a_poMenuItem );
+	void ItemChanged( int a_iItemCode, int a_iValue, CMenuItem* a_poMenuItem );
 
 protected:
 	bool			m_bOK;
@@ -207,14 +246,14 @@ protected:
 	std::string		m_sHostname;
 	std::string		m_sNick;
 
-	TextMenuItem*	m_poServerMenuItem;
-	TextMenuItem*	m_poNickMenuItem;
+	CTextMenuItem*	m_poServerMenuItem;
+	CTextMenuItem*	m_poNickMenuItem;
 };
 
 
 
 
 void DoMenu();
-void DoMenu( Menu& a_roMenu );
+void DoMenu( CMenu& a_roMenu );
 
 #endif

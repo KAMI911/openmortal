@@ -66,45 +66,56 @@ inline Uint16 ConvertEndian16( Uint16 a_iArg )
 
 
 
-typedef struct RLE_SPRITE           /* a RLE compressed sprite */
+/**
+\ingroup Media
+\brief CRleSprite is a runlength encoded sprite that can be blitted flipped.
+
+CRleSprite originally comes from Allegro. I use it in OpenMortal because
+it is relatively fast to blit and is economical on the memory too.
+*/
+struct SRleSprite
 {
 	Uint16 dummy;					// For better alignment... NASTY NASTY HACK!!
 	Uint16 color_depth;                 /* color depth of the image */
 	Uint16 w, h;                        /* width and height in pixels */
 	Uint32 size;
 	signed char dat[0];
-} RLE_SPRITE;
+};
 
 
-struct RlePack_P
+/**
+\ingroup Media
+\brief Internal data of CRlePack
+*/
+struct CRlePack_P
 {
 	SDL_Color		m_aoPalette[256];
 	SDL_Color		m_aoTintedPalette[256];
 	TintEnum		m_enTint;
 	int				m_iCount;
 	int				m_iArraysize;
-	RLE_SPRITE**	m_pSprites;
+	SRleSprite**	m_pSprites;
 	void*			m_pData;
 	
 	int				m_iColorCount;
 	int				m_iColorOffset;
 	Uint32			m_aiRGBPalette[256];
 
-	void			draw_rle_sprite8( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite_v_flip8( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite16( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite_v_flip16( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite24( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite_v_flip24( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite32( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
-	void			draw_rle_sprite_v_flip32( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite8( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip8( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite16( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip16( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite24( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip24( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite32( SRleSprite* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip32( SRleSprite* a_poSprite, int a_dx, int a_dy );
 };
 
 
 
-RlePack::RlePack( const char* a_pcFilename, int a_iNumColors )
+CRlePack::CRlePack( const char* a_pcFilename, int a_iNumColors )
 {
-	p = new RlePack_P;
+	p = new CRlePack_P;
 	p->m_enTint = NO_TINT;
 	p->m_iCount = 0;
 	p->m_iArraysize = 0;
@@ -120,7 +131,7 @@ RlePack::RlePack( const char* a_pcFilename, int a_iNumColors )
 }
 
 
-RlePack::~RlePack()
+CRlePack::~CRlePack()
 {
 	if (!p)
 		return;
@@ -137,7 +148,7 @@ RlePack::~RlePack()
 }
 
 
-void RlePack::Clear()
+void CRlePack::Clear()
 {
 	if ( p && p->m_pSprites )
 	{
@@ -147,7 +158,7 @@ void RlePack::Clear()
 }
 
 
-int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
+int CRlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 {
 	FILE* f;
 	
@@ -171,11 +182,11 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 	int iRead = fread( p->m_pData, 1, iFileSize, f );
 	fclose( f );
 	
-	p->m_iColorCount = a_iNumColors;
+	p->m_iColorCount = gamescreen->format->BitsPerPixel == 8 ? a_iNumColors : 256;
 	
 	if ( iFileSize != iRead )
 	{
-		debug( "Warning RlePack(): iFileSize=%d, iRead=%d\n", iFileSize, iRead );
+		debug( "Warning CRlePack(): iFileSize=%d, iRead=%d\n", iFileSize, iRead );
 	}
 	
 	struct SHeader
@@ -190,7 +201,7 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 	if (poHeader->iDatacount>MAXDATACOUNT) poHeader->iDatacount = MAXDATACOUNT;		// Sanity
 	
 	p->m_iArraysize = poHeader->iDatacount;
-	p->m_pSprites = new RLE_SPRITE*[ poHeader->iDatacount ];
+	p->m_pSprites = new SRleSprite*[ poHeader->iDatacount ];
 	
 	char* pcNext = ((char*)p->m_pData) + sizeof(SHeader);
 	char* pcEnd = ((char*)p->m_pData) + iFileSize;
@@ -212,7 +223,7 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 		{
 			struct SRLE
 			{
-				RLE_SPRITE	oSprite;
+				SRleSprite	oSprite;
 			} *poRle = (SRLE*) (pcNext+10);
 			poRle->oSprite.color_depth = ConvertEndian16(poRle->oSprite.color_depth);
 			poRle->oSprite.w = ConvertEndian16(poRle->oSprite.w);
@@ -264,6 +275,9 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 	return p->m_iCount;
 	
 #if 0
+// #
+// # Here's the old implementation or read, left here for reference only.
+// #
 	
 	int datacount;
 	
@@ -285,7 +299,7 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 	if (datacount>500) datacount = 500;			// Sanity
 	
 	p->arraysize = datacount;
-	p->sprites = new RLE_SPRITE*[ datacount ];
+	p->sprites = new SRleSprite*[ datacount ];
 	
 	while( (!feof(f)) && (!ferror(f)) && (datacount>0) )
 	{
@@ -298,7 +312,7 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 			READDW( propsize );
 			fseek( f, propsize, SEEK_CUR );
 		}
-		else if (!strcmp( s, "RLE " ))			// Found an RLE_SPRITE
+		else if (!strcmp( s, "RLE " ))			// Found an SRleSprite
 		{
 			datacount--;
 			
@@ -311,7 +325,7 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 			READW( height );
 			READDW( size );
 			
-			RLE_SPRITE* sprite = (RLE_SPRITE*) malloc( sizeof(RLE_SPRITE) + size );
+			SRleSprite* sprite = (SRleSprite*) malloc( sizeof(SRleSprite) + size );
 			p->sprites[ p->count ] = sprite;
 			(p->count)++;
 			sprite->w = width;
@@ -361,15 +375,15 @@ int RlePack::LoadFile( const char* a_pcFilename, int a_iNumColors )
 
 
 
-int RlePack::Count()
+int CRlePack::Count()
 {
 	return p->m_iCount;
 }
 
 
-/** Worker method of RlePack::OffsetSprites() .*/
+/** Worker method of CRlePack::OffsetSprites() .*/
 
-void OffsetRLESprite( RLE_SPRITE* spr, int offset ) // Static method
+void OffsetRLESprite( SRleSprite* spr, int offset ) // Static method
 {
 	if (!spr || !offset) return;
 	
@@ -402,16 +416,16 @@ no-op.
 Explanation: RlePacks have an internal palette which contains up to 256
 colors. These colors are always indexed from 0 up. However, if you load
 two RlePacks with different palettes, the palettes will collide, and one
-RlePack will be displayed with an incorrect palette.
+CRlePack will be displayed with an incorrect palette.
 
 To work around this, you can offset one of the sprites palette. For example,
-you might load an RlePack with 16 colors, and another with 64 colors. You
-can offset the second RlePack by 16 colors; the total effect is that the
+you might load an CRlePack with 16 colors, and another with 64 colors. You
+can offset the second CRlePack by 16 colors; the total effect is that the
 two RlePacks now use 80 colors of the available 256 colors, the first using
 colors 0-15, the second using colors 16-79.
 */
 
-void RlePack::OffsetSprites( int a_iOffset )
+void CRlePack::OffsetSprites( int a_iOffset )
 {
 	if ( (a_iOffset<=0) || (a_iOffset>255) || (8!=gamescreen->format->BitsPerPixel) )
 		return;
@@ -420,7 +434,7 @@ void RlePack::OffsetSprites( int a_iOffset )
 
 	int i;
 	
-	// Offset every RLE_SPRITE
+	// Offset every SRleSprite
 	
 	for ( i=0; i<p->m_iCount; ++i )
 	{
@@ -429,7 +443,7 @@ void RlePack::OffsetSprites( int a_iOffset )
 }
 
 
-void RlePack::SetTint( TintEnum a_enTint )
+void CRlePack::SetTint( TintEnum a_enTint )
 {
 	int i;
 
@@ -496,12 +510,12 @@ void RlePack::SetTint( TintEnum a_enTint )
 }
 
 
-/** Loads the palette of the RlePack to the gamescreen.
+/** Loads the palette of the CRlePack to the gamescreen.
 This only works in 8BPP mode; in other modes the palette is always considered
 to be loaded, and this is a no-operation.
 */
 
-void RlePack::ApplyPalette()
+void CRlePack::ApplyPalette()
 {
 	if ( 8 == gamescreen->format->BitsPerPixel )
 	{
@@ -524,12 +538,12 @@ void RlePack::ApplyPalette()
 \param a_iIndex The index of the sprite, 0 <= a_iIndex < Count()
 */
 
-int RlePack::GetWidth( int a_iIndex )
+int CRlePack::GetWidth( int a_iIndex )
 {
 	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
 		return -1;
 
-	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	SRleSprite* poSprite = p->m_pSprites[a_iIndex];
 	if (!poSprite)
 		return -1;
 
@@ -542,12 +556,12 @@ int RlePack::GetWidth( int a_iIndex )
 \param a_iIndex The index of the sprite, 0 <= a_iIndex < Count()
 */
 
-int RlePack::GetHeight( int a_iIndex )
+int CRlePack::GetHeight( int a_iIndex )
 {
 	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
 		return -1;
 
-	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	SRleSprite* poSprite = p->m_pSprites[a_iIndex];
 	if (!poSprite)
 		return -1;
 
@@ -556,8 +570,8 @@ int RlePack::GetHeight( int a_iIndex )
 
 
 
-#define METHODNAME				RlePack_P::draw_rle_sprite8
-#define METHODNAME_FLIP			RlePack_P::draw_rle_sprite_v_flip8
+#define METHODNAME				CRlePack_P::draw_rle_sprite8
+#define METHODNAME_FLIP			CRlePack_P::draw_rle_sprite_v_flip8
 #define PIXEL_PTR				unsigned char*
 #define PUT_PIXEL(p,c)			(*((unsigned char *)(p)) = (c))
 #define PITCH					(dst->pitch)
@@ -568,8 +582,8 @@ int RlePack::GetHeight( int a_iIndex )
 #undef PUT_PIXEL
 #undef PITCH
 
-#define METHODNAME				RlePack_P::draw_rle_sprite16
-#define METHODNAME_FLIP			RlePack_P::draw_rle_sprite_v_flip16
+#define METHODNAME				CRlePack_P::draw_rle_sprite16
+#define METHODNAME_FLIP			CRlePack_P::draw_rle_sprite_v_flip16
 #define PIXEL_PTR				Uint16*
 #define PUT_PIXEL(p,c)			(*((PIXEL_PTR )(p)) = (m_aiRGBPalette[c]))
 #define PITCH					(dst->pitch / 2)
@@ -581,8 +595,8 @@ int RlePack::GetHeight( int a_iIndex )
 #undef PUT_PIXEL
 #undef PITCH
 
-#define METHODNAME				RlePack_P::draw_rle_sprite32
-#define METHODNAME_FLIP			RlePack_P::draw_rle_sprite_v_flip32
+#define METHODNAME				CRlePack_P::draw_rle_sprite32
+#define METHODNAME_FLIP			CRlePack_P::draw_rle_sprite_v_flip32
 #define PIXEL_PTR				Uint32*
 #define PUT_PIXEL(p,c)			(*((PIXEL_PTR )(p)) = (m_aiRGBPalette[c]))
 #define PITCH					(dst->pitch / 4)
@@ -591,12 +605,12 @@ int RlePack::GetHeight( int a_iIndex )
 
 
 
-void RlePack::Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped )
+void CRlePack::Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped )
 {
 	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
 		return;
 	
-	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	SRleSprite* poSprite = p->m_pSprites[a_iIndex];
 	if (!poSprite)
 		return;
 	
@@ -631,12 +645,12 @@ void RlePack::Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped )
 }
 
 
-SDL_Surface* RlePack::CreateSurface( int a_iIndex, bool a_bFlipped )
+SDL_Surface* CRlePack::CreateSurface( int a_iIndex, bool a_bFlipped )
 {
 	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
 		return NULL;
 	
-	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	SRleSprite* poSprite = p->m_pSprites[a_iIndex];
 	if (!poSprite)
 		return NULL;
 

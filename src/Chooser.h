@@ -16,7 +16,11 @@
 #include "common.h"
 #include "SDL.h"
 
-
+/**
+CChooser is a control for choosing fighters.
+It is used on the fighter selection screens.
+\ingroup PlayerSelect
+*/
 
 class CChooser
 {

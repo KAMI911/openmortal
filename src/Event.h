@@ -35,6 +35,9 @@ enum TMortalKeysEnum
 	Mk_HKICK	= 8,
 };
 
+/**
+\ingroup GameLogic
+*/
 struct SMortalEvent
 {
 	TMortalEventEnum	m_enType;

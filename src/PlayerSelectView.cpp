@@ -16,6 +16,10 @@
 
 
 
+/**
+Displays teams in the player selection screen for CPlayerSelectView.
+\ingroup PlayerSelect
+*/
 
 class CTeamDisplay
 {
@@ -149,9 +153,11 @@ int IViewElement::GetPriority() const
 }
 
 
-/** 
+/**
+Flying portrait element for CPlayerSelectView.
 The portrait of a given fighter will gracefully fly from the chooser
 to a team display. The view element will delete itself afterwards.
+\ingroup PlayerSelect
 */
 
 class CFlyingPortraitViewElement: public IViewElement
@@ -233,9 +239,11 @@ protected:
 };
 
 /** 
-This view element implements the "opening courtain" effect at the start
-of the player selection routine. It removes itself when the effect is
-finished
+This view element implements the "opening courtain" effect at the start 
+of the player selection routine. 
+It removes itself when the effect is
+finished.
+\ingroup PlayerSelect
 */
 
 class CCourtainViewElement: public IViewElement
@@ -293,7 +301,10 @@ protected:
 
 
 
-/** This view element flashes the title and '?' mark of active teams. */
+/** 
+This view element flashes the title and '?' mark of active teams. 
+\ingroup PlayerSelect
+*/
 
 class CTeamFlashViewElement: public IViewElement
 {
@@ -519,7 +530,7 @@ void CPlayerSelectView::Draw()
 	{
 		if ( m_bTeamMode && 1==i && !m_bTeamMultiselect ) continue;
 
-		const PlayerInfo& roPlayerInfo = g_oPlayerSelect.GetPlayerInfo( i );
+		const SPlayerInfo& roPlayerInfo = g_oPlayerSelect.GetPlayerInfo( i );
 		int iPlayerNameWidth = g_oPlayerSelect.GetFighterNameWidth( i );
 
 		if ( g_oBackend.m_aoPlayers[i].m_iFrame )

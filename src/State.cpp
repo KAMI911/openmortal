@@ -297,7 +297,7 @@ void SState::Load()
 	poSv = get_sv("HITPOINTS", FALSE); if (poSv) m_iHitPoints = SvIV( poSv );
 	poSv = get_sv("GAMESPEED", FALSE); if (poSv) m_iGameSpeed = SvIV( poSv );
 
-	poSv = get_sv("FULLSCREEN", FALSE); if (poSv) m_bFullscreen = SvIV( poSv );
+	poSv = get_sv("FULLSCREEN", FALSE); if (poSv) m_bFullscreen = SvIV( poSv ) != 0;
 	poSv = get_sv("CHANNELS", FALSE); if (poSv) m_iChannels = SvIV( poSv );
 	poSv = get_sv("MIXINGRATE", FALSE); if (poSv) m_iMixingRate = SvIV( poSv );
 	poSv = get_sv("MIXINGBITS", FALSE); if (poSv) m_iMixingBits = SvIV( poSv );
@@ -306,7 +306,7 @@ void SState::Load()
 	poSv = get_sv("LANGUAGE", FALSE); if (poSv) { strncpy( m_acLanguage, SvPV_nolen( poSv ), 9 ); m_acLanguage[9] = 0; }
 
 	poSv = get_sv("LATESTSERVER", FALSE); if (poSv) { strncpy( m_acLatestServer, SvPV_nolen( poSv ), 255 ); m_acLatestServer[255] = 0; }
-	poSv = get_sv("SERVER", FALSE); if (poSv) m_bServer = SvIV( poSv );
+	poSv = get_sv("SERVER", FALSE); if (poSv) m_bServer = SvIV( poSv ) != 0;
 	poSv = get_sv("NICK", FALSE); if (poSv) { strncpy( m_acNick, SvPV_nolen( poSv ), 127 ); m_acNick[127] = 0; }
 	
 	char pcBuffer[1024];
