@@ -599,7 +599,7 @@ void EnumMenuItem::Increment()
 		++m_iValue;
 		Draw();
 		m_poMenu->ItemChanged( m_iCode, m_piValues[m_iValue], this );
-		Audio->PlaySample( "ding.voc" );
+		Audio->PlaySample( "MENU_ITEM_VALUE_CHANGES" );
 	}
 }
 
@@ -612,7 +612,7 @@ void EnumMenuItem::Decrement()
 		--m_iValue;
 		Draw();
 		m_poMenu->ItemChanged( m_iCode, m_piValues[m_iValue], this );
-		Audio->PlaySample( "ding.voc" );
+		Audio->PlaySample( "MENU_ITEM_VALUE_CHANGES" );
 	}
 }
 
@@ -815,7 +815,7 @@ MenuItem* Menu::GetMenuItem( int a_iCode ) const
 
 void Menu::InvokeSubmenu( Menu* a_poMenu )
 {
-	Audio->PlaySample( "strange_button.voc" );
+	Audio->PlaySample( "MENU_ITEM_INVOKED" );
 	Clear();
 
 	m_iReturnCode = a_poMenu->Run();
@@ -827,7 +827,7 @@ void Menu::InvokeSubmenu( Menu* a_poMenu )
 	
 	if ( m_iReturnCode < 0 )
 	{
-		Audio->PlaySample( "pop.voc" );
+		Audio->PlaySample( "MENU_SUBMENU_END" );
 		Draw();
 	}
 	else
@@ -873,7 +873,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		{
 			Menu* poMenu = new Menu( "Multi Player" );
 			poMenu->AddMenuItem( "START GAME", SDLK_UNKNOWN, MENU_MULTI_PLAYER_START );
-			//poMenu->AddEnumMenuItem( "Number of Players: ", g_oState.m_iNumPlayers, g_ppcNumPlayers, g_piNumPlayers, MENU_NUM_PLAYERS );
+//			poMenu->AddEnumMenuItem( "Number of Players: ", g_oState.m_iNumPlayers, g_ppcNumPlayers, g_piNumPlayers, MENU_NUM_PLAYERS );
 			poMenu->AddEnumMenuItem( "Team mode: ", g_oState.m_enTeamMode, g_ppcTeamMode, g_piTeamMode, MENU_TEAM_MODE );
 			poMenu->AddEnumMenuItem( "Team size: ", g_oState.m_iTeamSize, g_ppcTeamSize, g_piTeamSize, MENU_TEAM_SIZE )
 				->SetEnabled( SState::Team_CUSTOM == g_oState.m_enTeamMode );
@@ -891,7 +891,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 			break;
 		
 		case MENU_FULLSCREEN:
-			Audio->PlaySample( "strange_button.voc" );
+			Audio->PlaySample( "MENU_ITEM_INVOKED" );
 			g_oState.ToggleFullscreen();
 			if ( NULL != poBackground )
 			{
@@ -1148,7 +1148,7 @@ void Menu::FocusNext()
 	
 	if ( NULL != poItem )
 	{
-		Audio->PlaySample("strange_quack.voc");
+		Audio->PlaySample("MENU_ITEM_SELECTION");
 		m_oItems[m_iCurrentItem]->SetActive(false);
 		m_oItems[iNextItem]->SetActive(true);
 		m_iCurrentItem = iNextItem;
@@ -1175,7 +1175,7 @@ void Menu::FocusPrev()
 	
 	if ( NULL != poItem )
 	{
-		Audio->PlaySample("strange_quack.voc");
+		Audio->PlaySample("MENU_ITEM_SELECTION");
 		m_oItems[m_iCurrentItem]->SetActive(false);
 		m_oItems[iPrevItem]->SetActive(true);
 		m_iCurrentItem = iPrevItem;
@@ -1251,7 +1251,7 @@ void MakeMenuBackground()
 
 void DoMenu( Menu& a_roMenu )
 {
-	Audio->PlaySample( "crashhh.voc" );
+	Audio->PlaySample( "MENU_START" );
 
 	MakeMenuBackground();
 
@@ -1261,7 +1261,7 @@ void DoMenu( Menu& a_roMenu )
 
 	if ( !g_oState.m_bQuitFlag )
 	{
-		Audio->PlaySample("shades_rollup.voc");
+		Audio->PlaySample("MENU_END");
 	}
 
 	if ( NULL != poBackground )

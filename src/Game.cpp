@@ -850,10 +850,10 @@ void Game::HandleKO()
 
 void Game::HurryUp()
 {
-	Audio->PlaySample( "aroooga.voc" );
+	Audio->PlaySample( "GAME_HURRYUP" );
 	DrawGradientText( "HURRY UP!", titleFont, 200, gamescreen );
 	SDL_Delay( 1000 );
-	Audio->PlaySample( "machine_start.voc" );
+	Audio->PlaySample( "GAME_HURRYUP_ENDS" );
 }
 
 
@@ -1220,22 +1220,6 @@ int Game::GetBackgroundNumber()		//static
 
 
 
-class CVideoModeChange
-{
-public:
-	CVideoModeChange( bool a_bWide )
-	{
-		m_bWide = a_bWide;
-		if ( m_bWide ) SetVideoMode( true, g_oState.m_bFullscreen );
-	}
-	~CVideoModeChange()
-	{
-		if ( m_bWide ) SetVideoMode( false, g_oState.m_bFullscreen );
-	}
-	bool m_bWide;
-};
-
-
 /** Public static function.
 
 Other parts of OpenMortal need not include "Game.h" so long as they have
@@ -1249,7 +1233,7 @@ In normal mode, Run() is called. The replay file is recorded, if it is not NULL.
 int DoGame( char* a_pcReplayFile, bool a_bIsReplay, bool a_bDebug )
 {
 	bool bWide = g_oState.m_iNumPlayers > 2;
-	CVideoModeChange oVideoMode( bWide );
+//	CVideoModeChange oVideoMode( bWide );
 	Game oGame( a_bIsReplay, bWide, a_bDebug );
 	
 	if ( a_bIsReplay )

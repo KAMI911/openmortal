@@ -42,7 +42,7 @@ void GameOver( int a_iPlayerWon )
 	SDL_Surface* poBackground = LoadBackground( "GameOver.jpg", 112 );
 	DrawGradientText( "Final Judgement", titleFont, 20, poBackground );
 	DrawTextMSZ( "Continue?", inkFont, 320, 100, AlignHCenter, C_LIGHTCYAN, poBackground );
-	SDL_Surface* poFoot = LoadBackground( "Foot.png", 112, 0, true );
+	SDL_Surface* poFoot = LoadBackground( "Foot.jpg", 112, 0, true );
 	
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	
@@ -166,7 +166,7 @@ void GameOver( int a_iPlayerWon )
 			DrawTextMSZ( acString, inkFont, 320, 130, AlignHCenter, C_LIGHTCYAN, gamescreen );
 			if ( iNewCounter != iCounter )
 			{
-				Audio->PlaySample( "alarm.voc" );
+				Audio->PlaySample( "GAME_OVER_COUNTDOWN" );
 				iCounter = iNewCounter;
 			}
 		}
@@ -201,7 +201,7 @@ void GameOver( int a_iPlayerWon )
 	{
 		SDL_UnlockSurface( gamescreen );
 		DrawGradientText( "SPLAT!", titleFont, 220, gamescreen );
-		Audio->PlaySample( "splat2.voc" );
+		Audio->PlaySample( "GAME_OVER_SPLAT" );
 		SDL_Flip( gamescreen );
 		SDL_Delay( 1500 );
 		g_oState.m_enGameMode = SState::IN_DEMO;

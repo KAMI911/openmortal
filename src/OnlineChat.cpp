@@ -438,7 +438,7 @@ void COnlineChat::Update()
 
 	if ( bRedraw && m_poTextArea )
 	{
-		Audio->PlaySample( "pop.wav" );
+		Audio->PlaySample( "NETWORK_MESSAGE" );
 		m_poTextArea->Redraw();
 	}
 }
