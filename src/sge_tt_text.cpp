@@ -1486,7 +1486,6 @@ void CReadline::Restart( char *a_pcString, int a_iPos, int a_iLen,
 CReadline::~CReadline()
 {
 	delete[] m_piString;
-	SDL_EnableUNICODE(0);
 	SDL_FreeSurface( m_poBackground );
 	m_poBackground = NULL;
 	

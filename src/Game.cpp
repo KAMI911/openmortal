@@ -109,6 +109,8 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 	
 	m_aiRoundsWonByPlayer[0] = m_aiRoundsWonByPlayer[1] = 0;
 	m_iNumberOfRounds = 0;
+
+	SDL_EnableUNICODE( 0 );
 }
 
 
