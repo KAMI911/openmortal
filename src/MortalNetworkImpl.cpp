@@ -624,17 +624,17 @@ void CMortalNetworkImpl::ReceiveGameParams( void* a_pData, int a_iLength )
 	if ( m_oGameParams.iGameSpeed != SDL_SwapBE32( poPackage->iGameSpeed ) )
 	{
 		m_oGameParams.iGameSpeed = SDL_SwapBE32( poPackage->iGameSpeed );
-		m_asMsgs.push_back( GetGameSpeedString( m_oGameParams.iGameSpeed ) );
+		m_asMsgs.push_back( std::string("*** ") + GetGameSpeedString( m_oGameParams.iGameSpeed ) );
 	}
 	if ( m_oGameParams.iGameTime != SDL_SwapBE32( poPackage->iGameTime ) )
 	{
 		m_oGameParams.iGameTime = SDL_SwapBE32( poPackage->iGameTime );
-		m_asMsgs.push_back( GetGameTimeString( m_oGameParams.iGameTime) );
+		m_asMsgs.push_back( std::string("*** ") + GetGameTimeString( m_oGameParams.iGameTime) );
 	}
 	if ( m_oGameParams.iHitPoints != SDL_SwapBE32( poPackage->iHitPoints ) )
 	{
 		m_oGameParams.iHitPoints = SDL_SwapBE32( poPackage->iHitPoints );
-		m_asMsgs.push_back( GetHitPointsString( m_oGameParams.iHitPoints ) );
+		m_asMsgs.push_back( std::string("*** ") + GetHitPointsString( m_oGameParams.iHitPoints ) );
 	}
 }
 

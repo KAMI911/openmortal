@@ -30,6 +30,9 @@ public:
 	
 	void AddString( const char* a_poText, int a_iColor );
 	void Redraw();
+	void Clear();
+	void ScrollUp();
+	void ScrollDown();
 	
 protected:
 	SDL_Surface*		m_poScreen;
@@ -38,7 +41,7 @@ protected:
 	SDL_Rect			m_oClipRect;
 	int					x, y, w, h;
 	
-	int					m_iNumRows;
+	int					m_iScrollOffset;
 	TStringList			m_asRowTexts;
 	TIntList			m_aiRowColors;
 };

@@ -17,6 +17,7 @@ CTextArea::CTextArea( SDL_Surface* a_poScreen, _sge_TTFont* a_poFont, int a_x, i
 {
 	m_poScreen = a_poScreen;
 	m_poFont = a_poFont;
+	m_iScrollOffset = 0;
 
 	m_oClipRect.x = x = a_x;
 	m_oClipRect.y = y = a_y;
@@ -34,6 +35,14 @@ CTextArea::~CTextArea()
 }
 
 
+void CTextArea::Clear()
+{
+	m_aiRowColors.clear();
+	m_asRowTexts.clear();
+	m_iScrollOffset = 0;
+}
+
+
 void CTextArea::AddString( const char* a_poText, int a_iColor )
 {
 	m_asRowTexts.push_front( a_poText );
@@ -43,10 +52,36 @@ void CTextArea::AddString( const char* a_poText, int a_iColor )
 }
 
 
+void CTextArea::ScrollUp()
+{
+	if ( m_iScrollOffset < (int) m_asRowTexts.size() - 1 )
+	{
+		++m_iScrollOffset;
+		Redraw();
+	}
+}
+
+
+void CTextArea::ScrollDown()
+{
+	if ( m_iScrollOffset > 0 )
+	{
+		--m_iScrollOffset;
+		Redraw();
+	}
+}
+
+
 void CTextArea::Redraw()
 {
 	TStringList::const_iterator itString = m_asRowTexts.begin();
 	TIntList::const_iterator itColors = m_aiRowColors.begin();
+
+	for ( int i=0; i<m_iScrollOffset; ++i )
+	{
+		++itString;
+		++itColors;
+	}
 
 	SDL_Rect oOldClipRect;
 	SDL_GetClipRect( m_poScreen, &oOldClipRect );

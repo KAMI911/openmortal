@@ -171,6 +171,10 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 
 	if ( m_aoPlayers[a_iPlayer].m_enFighter == a_enFighter )
 	{
+		if ( m_aoPlayers[a_iPlayer].m_poPack )
+		{
+			m_aoPlayers[a_iPlayer].m_poPack->ApplyPalette();
+		}
 		return;
 	}
 	if ( !IsFighterAvailable( a_enFighter ) )
@@ -310,7 +314,10 @@ void PlayerSelect::HandleNetwork()
 	bool bUpdateText = false;
 	while ( g_poNetwork->IsMsgAvailable() )
 	{
-		m_poTextArea->AddString( g_poNetwork->GetMsg(), C_YELLOW );
+		const char* pcMsg = g_poNetwork->GetMsg();
+		int iColor = C_YELLOW;
+		if ( pcMsg[0] == '*' && pcMsg[1] == '*' && pcMsg[2] == '*' ) iColor = C_WHITE;
+		m_poTextArea->AddString( pcMsg, iColor );
 		bUpdateText = true;
 	}
 	if ( bUpdateText )
@@ -418,10 +425,10 @@ void PlayerSelect::DoPlayerSelect()
 
 	bool bNetworkMode = IsNetworkGame();
 
-	if ( IsNetworkGame() )
+	if ( bNetworkMode )
 	{
 		m_iChooserLeft = 158;
-		m_iChooserTop = 74;
+		m_iChooserTop = 26;
 		m_iChooserHeight = 64;
 		m_iChooserWidth = 64;
 		m_iChooserRows = 4;
@@ -440,9 +447,12 @@ void PlayerSelect::DoPlayerSelect()
 	SDL_FillRect( gamescreen, NULL, C_BLACK );
 	SDL_Flip( gamescreen );
 
-	SDL_Surface* poBackground = LoadBackground( IsNetworkGame() ? "PlayerSelect_chat.png" : "PlayerSelect.png", 111 );
+	SDL_Surface* poBackground = LoadBackground( bNetworkMode ? "PlayerSelect_chat.png" : "PlayerSelect.png", 111 );
 
-	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, poBackground );
+	if ( !bNetworkMode )
+	{
+		DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, poBackground );
+	}
 	//g_oChooser.Draw( poBackground );
 	
 	int i, j;
@@ -450,7 +460,7 @@ void PlayerSelect::DoPlayerSelect()
 	{
 		for ( int j=0; j<m_iChooserCols; ++j )
 		{
-			if ( IsNetworkGame() )
+			if ( bNetworkMode )
 			{
 				if ( !IsLocalFighterAvailable(ChooserCellsChat[i][j]) &&
 					UNKNOWN != ChooserCellsChat[i][j] )
@@ -482,7 +492,7 @@ void PlayerSelect::DoPlayerSelect()
 	SetPlayer( 0, GetFighterCell(m_iP1) );
 	SetPlayer( 1, GetFighterCell(m_iP2) );
 
-	if ( IsNetworkGame() && g_poNetwork->IsMaster() )
+	if ( bNetworkMode && g_poNetwork->IsMaster() )
 	{
 		g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
 	}
@@ -508,16 +518,16 @@ void PlayerSelect::DoPlayerSelect()
 
 	SDL_Event event;
 
-	// Chat is 165:350 - 470:470
+	// Chat is 165:318 - 470:470
 	char acMsg[256];
-	sprintf( acMsg, "Press Enter to chat..." );
+	sprintf( acMsg, "Press Enter to chat, Page Up/Page Down to scroll..." );
 	bool bDoingChat = false;
 
-	if ( IsNetworkGame() )
+	if ( bNetworkMode )
 	{
 		m_poReadline = new CReadline( IsNetworkGame() ? poBackground : NULL, impactFont,
 			acMsg, strlen(acMsg), 256, 15, 465, 610, C_LIGHTCYAN, C_BLACK, 255 );
-		m_poTextArea = new CTextArea( poBackground, impactFont, 15, 350, 610, 32*3 );
+		m_poTextArea = new CTextArea( poBackground, impactFont, 15, 313, 610, 32*4 );
 	}
 	else
 	{
@@ -586,6 +596,28 @@ void PlayerSelect::DoPlayerSelect()
 				g_oState.m_bQuitFlag = true;
 				break;
 			}
+
+			// HANDLE SCROLLING THE TEXT AREA
+
+			if ( event.type == SDL_KEYDOWN )
+			{
+				SDLKey enKey = event.key.keysym.sym;
+				if ( IsNetworkGame() )
+				{
+					if ( enKey == SDLK_PAGEUP || enKey == SDLK_KP9 )
+					{
+						m_poTextArea->ScrollUp();
+						continue;
+					}
+					if ( enKey == SDLK_PAGEDOWN || enKey == SDLK_KP3 )
+					{
+						m_poTextArea->ScrollDown();
+						continue;
+					}
+				}
+			}
+			
+			// HANDLE CHATTING
 			
 			if ( bDoingChat )
 			{
@@ -603,7 +635,7 @@ void PlayerSelect::DoPlayerSelect()
 					if ( strlen( acMsg ) )
 					{
 						g_poNetwork->SendMsg( acMsg );
-						m_poTextArea->AddString( acMsg, C_WHITE );
+						m_poTextArea->AddString( acMsg, C_LIGHTCYAN );
 						m_poTextArea->Redraw();
 						m_poReadline->Clear();
 						acMsg[0] = 0;
@@ -617,45 +649,46 @@ void PlayerSelect::DoPlayerSelect()
 				}
 				continue;
 			}
+
+			// HANDLE OTHER TYPES OF KEYBOARD EVENTS
 			
-			switch (event.type)
+			if ( event.type == SDL_KEYDOWN )
 			{
-				case SDL_KEYDOWN:
+				SDLKey enKey = event.key.keysym.sym;
+				
+				if ( enKey == SDLK_ESCAPE )
 				{
-					if ( event.key.keysym.sym == SDLK_ESCAPE )
+					DoMenu( false );
+					if ( IsNetworkGame() && g_poNetwork->IsMaster() )
 					{
-						DoMenu( false );
-						if ( IsNetworkGame() && g_poNetwork->IsMaster() )
-						{
-							g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
-						}
-						break;
+						g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
 					}
-					if ( IsNetworkGame() && bDoingChat == false &&
-						(event.key.keysym.sym == SDLK_RETURN
-						|| event.key.keysym.sym==SDLK_KP_ENTER) )
+					break;
+				}
+				if ( IsNetworkGame() && bDoingChat == false &&
+					(event.key.keysym.sym == SDLK_RETURN
+					|| event.key.keysym.sym==SDLK_KP_ENTER) )
+				{
+					bDoingChat = true;
+					acMsg[0] = 0;
+					m_poReadline->Clear();
+					m_poReadline->Restart( acMsg, strlen(acMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
+					break;
+				}
+				for ( i=0; i<2; i++ )
+				{
+					for ( j=0; j<9; j++ )
 					{
-						bDoingChat = true;
-						acMsg[0] = 0;
-						m_poReadline->Clear();
-						m_poReadline->Restart( acMsg, strlen(acMsg), 256, C_LIGHTCYAN, C_BLACK, 255 );
-						break;
-					}
-					for ( i=0; i<2; i++ )
-					{
-						for ( j=0; j<9; j++ )
+						if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
 						{
-							if (g_oState.m_aiPlayerKeys[i][j] == event.key.keysym.sym)
-							{
-								DrawRect( m_iP1, 240 );
-								DrawRect( m_iP2, 240 );
-								HandleKey( i, j );
-							}
+							DrawRect( m_iP1, 240 );
+							DrawRect( m_iP2, 240 );
+							HandleKey( i, j );
 						}
 					}
 				}
-				break;
-			}	// switch statement
+			}
+			
 		}	// Polling events
 
 		if ( IsNetworkGame() )
@@ -685,7 +718,7 @@ void PlayerSelect::DoPlayerSelect()
 			if ( i ) x = gamescreen->w - x - m_aiFighterNameWidth[i];
 			
 			sge_BF_textout( gamescreen, fastFont, GetFighterName(i),
-				x, gamescreen->h - 30 + iYOffset );
+				x, gamescreen->h - 30 + iYOffset - (bNetworkMode ? 40 : 0) );
 		}
 		
 		SDL_Flip( gamescreen );
