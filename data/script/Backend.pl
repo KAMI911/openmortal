@@ -372,11 +372,12 @@ sub DoFighterEvents
 	
 	if ( $hit )
 	{
-		$fighter->Event( $fighter->{OTHER}->GetCurrentState()->{HIT}, $hit );
+		$fighter->HitEvent( $fighter->{OTHER}->GetCurrentState()->{HIT}, $hit );
 		return;
 	}
 	
-	if ( ($fighter->{X} - $fighter->{OTHER}->{X}) * ($fighter->{DIR}) > 0 )
+	#if ( ($fighter->{X} - $fighter->{OTHER}->{X}) * ($fighter->{DIR}) > 0 )
+	if ( $fighter->IsBackTurned )
 	{
 		$fighter->Event("Turn");
 	}

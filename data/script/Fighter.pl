@@ -377,12 +377,17 @@ sub IsHitAt
 
 
 
+=comment
+Event($self, $event, $eventpar): Handles the following events:
+'Won', 'Hurt', 'Thread', 'Fun', 'Turn'
+=cut
+
 
 sub Event($$$)
 {
 	my ($self, $event, $eventpar) = @_;
 	
-	my ($st, $damage);
+	my ($st);
 
 	$st = $self->GetCurrentState();
 	
@@ -401,32 +406,42 @@ sub Event($$$)
 				$event = 'Funb';
 			}
 			$self->{NEXTST} = $event;
-			return;
 		}
 	}
-	
-	if ( $event =~/Won|Hurt|Threat|Fun|Turn/ )
-	{
-		return;
-	}
-	
-	$eventpar = '' unless defined $eventpar;
-	$damage = ::GetDamage( $self->{OTHER}->{NAME}, $self->{OTHER}->{ST} );
-	print "Event '$event', '$eventpar'\n";
-	print "Blocked.\n" if ( $st->{BLOCK} );
+}
 
+
+=comment
+Event($self, $event, $eventpar): Handles the following events:
+'Highhit', 'Uppercut', 'Hit', 'Groinhit', 'Leghit', 'Fall'
+=cut
+
+
+sub HitEvent($$$)
+{
+	my ($self, $event, $eventpar) = @_;
+	
+	my ($st, $blocked, $damage);
+
+	$st = $self->GetCurrentState();
+	
 	# Do events: Highhit, Uppercut, Hit, Groinhit, Leghit, Fall
 
+	$eventpar = '' unless defined $eventpar;		# Supress useless warning
+	$damage = ::GetDamage( $self->{OTHER}->{NAME}, $self->{OTHER}->{ST} );
+	$blocked = $st->{BLOCK};
+	$blocked = 0 if ( $self->IsBackTurned() );
+	
+	print "Event '$event', '$eventpar'\n";
+	print "Blocked.\n" if ( $blocked );
+
 	# Hit point adjustment here.
-
-	$self->{HP} -= $st->{BLOCK} ? $damage >> 3 : $damage;
-
+	
+	$self->{HP} -= $blocked ? $damage >> 3 : $damage;
+	
 	# Turn if we must.
 
-	if ( ($self->{X} - $self->{OTHER}->{X}) * ($self->{DIR}) > 0 )
-	{
-		$self->{DIR} = - $self->{DIR};
-	}
+	$self->{DIR} = ( $self->{X} > $self->{OTHER}->{X} ) ? -1 : 1;
 	
 	# Handle the unfortunate event of the player "dying".
 
@@ -446,7 +461,7 @@ sub Event($$$)
 
 	# Handle blocked attacks.
 
-	if ( $st->{BLOCK} )
+	if ( $blocked )
 	{
 		push @::Sounds, ('thump.wav');
 		$self->{PUSHX} = - $damage * 5 * $self->{DIR};
@@ -461,7 +476,7 @@ sub Event($$$)
 	
 	$self->{COMBO} +=  1;
 	$self->{COMBOHP} += $damage;
-	$damage *= $self->{COMBO};
+	$damage *= $self->{COMBO};		# Only for the purpose of pushing
 	
 	if ( $st->{SITU} eq 'Crouch' )
 	{
@@ -696,6 +711,17 @@ sub GetCenterX
 	return $self->{X} / $::GAMEBITS2 + $x / 4 * $self->{DIR};
 }
 
+
+=comment
+Is my back turned to my opponent? Returns true if it is.
+=cut
+
+sub IsBackTurned
+{
+	my ($self) = @_;
+	
+	return ( ($self->{X} - $self->{OTHER}->{X}) * ($self->{DIR}) > 0 );
+}
 
 
 return 1;
