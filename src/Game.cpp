@@ -678,6 +678,7 @@ int Game::ProcessEvents()
 					::DoMenu();
 					return g_oState.m_enGameMode == enMode ? 0 : 1;
 				}
+				break;
 
 			case Me_SKIP:
 				return 1;
@@ -690,6 +691,7 @@ int Game::ProcessEvents()
 					break;
 					
 				HandleKey( oEvent.m_iPlayer, oEvent.m_iKey, Me_PLAYERKEYDOWN == oEvent.m_enType );
+				break;
 			}
 
 			case Me_NOTHING:

@@ -69,6 +69,7 @@ int CJoystick::Init()
 		m_aiVerticalAxis[m_iNumJoysticks] = 0;
 		
 		debug( "CJoystick::Init(): Joystick #%d has %d axes, %d buttons, %d balls, %d hats\n",
+			i,
 			SDL_JoystickNumAxes( poJoystick ),
 			SDL_JoystickNumButtons( poJoystick ),
 			SDL_JoystickNumBalls( poJoystick ),

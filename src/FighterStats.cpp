@@ -182,7 +182,7 @@ FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{
 		m_sKeys = SvPV_nolen(get_sv("Keys", TRUE ));
-		m_poFlyingChars->AddText( "\nKEYS\n", FlyingChars::FC_AlignCenter, true );
+		m_poFlyingChars->AddText( "\n\nKEYS\n", FlyingChars::FC_AlignCenter, true );
 		m_poFlyingChars->AddText( m_sKeys.c_str(), FlyingChars::FC_AlignCenter, true );
 	}
 	else

@@ -145,8 +145,21 @@ int Demo::Run()
 					break;
 				
 				case Me_MENU:
-				case Me_PLAYERKEYDOWN:
 					OnMenu();
+					break;
+					
+				case Me_PLAYERKEYDOWN:
+					if ( oEvent.m_iKey < 4 )
+						break;
+					
+					if ( SState::IN_DEMO == g_oState.m_enGameMode )
+					{
+						OnMenu();
+					}
+					else
+					{
+						return 0;
+					}
 					break;
 				
 				case Me_SKIP:
