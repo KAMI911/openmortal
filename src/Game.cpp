@@ -464,11 +464,18 @@ void Game::Advance( int a_iNumFrames )
 			// We don't run our own backend, just pull the data from the network.
 			const char* pcRemoteBackend = g_poNetwork->GetLatestGameData();
 			g_oBackend.ReadFromString( pcRemoteBackend );
+			g_oBackend.PlaySounds();
 			return;
 		}
 	}
+
+	// OK. The trick here is to collect the sound information, and then
+	// inject it into the last frame to send it to the remote side.
 	
 	static std::string sFrameDesc;
+	int iSounds = 0;
+	std::string asSounds[ MAXSOUNDS ];
+	int i;
 	
 	while ( a_iNumFrames > 0 )
 	{
@@ -481,14 +488,25 @@ void Game::Advance( int a_iNumFrames )
 		m_sReplayString += sFrameDesc;
 		m_sReplayString += '\n';
 		m_aReplayOffsets.push_back( m_sReplayString.size() );
+
+		for ( i=0;
+			IsNetworkGame() && i<g_oBackend.m_iNumSounds && iSounds<MAXSOUNDS;
+			++i, ++iSounds )
+		{
+			asSounds[iSounds] = g_oBackend.m_asSounds[i];
+		}
 	}
 
 	if ( IsNetworkGame() && sFrameDesc.size() )
 	{
+		g_oBackend.m_iNumSounds = iSounds;
+		for ( i=0; i<iSounds; ++i )
+		{
+			g_oBackend.m_asSounds[i] = asSounds[i];
+		}
+		g_oBackend.WriteToString( sFrameDesc );
 		g_poNetwork->SendGameData( sFrameDesc.c_str() );
-		g_oBackend.PlaySounds();
 	}
-
 }
 
 
