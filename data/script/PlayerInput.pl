@@ -22,6 +22,19 @@ sub Reset {
 	$self->{'KeyTimer'} = 0;
 }
 
+sub RewindData {
+	my ($self) = @_;
+	my ($rewinddata);
+	$rewinddata = {
+		InputQueue		=> [ @{$self->{InputQueue}} ],
+		InputPointer	=> $self->{InputPointer},
+		Keys			=> [ @{$self->{Keys}} ],
+		KeyTimer		=> $self->{KeyTimer},
+	};
+	bless ($rewinddata, PlayerInput);
+	return $rewinddata;
+}
+
 sub ClearInput {
 	my ($self) = @_;
 	

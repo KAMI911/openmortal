@@ -1009,3 +1009,5 @@ sub Translate($)
 # "Network mode: ",  "Connect to: ", "Start Network Play!", "Cancel"
 # "Connection closed."
 # "Press Escape to abort"
+# "Press Escape for the menu"
+# "You must have port 14882 open for this to work."

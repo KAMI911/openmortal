@@ -7,8 +7,13 @@ use strict;
 sub store {
 	my $x = shift;
 	my ($t, $i, $key, $value);
+	
+	unless ( defined $x ) {
+		$t = "undef";
+	}
 
-	if ( not ref($x) ) {			# $x is scalar
+	elsif ( not ref($x) ) {			# $x is scalar
+		$x =~ s/'/\\'/g;
 		$t = "'$x'";
 	}
 

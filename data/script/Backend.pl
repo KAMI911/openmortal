@@ -69,6 +69,7 @@ require 'Doodad.pl';
 require 'Keys.pl';
 require 'State.pl';
 require 'Translate.pl';
+require 'Rewind.pl';
 
 
 
@@ -91,14 +92,13 @@ $Fighter2->{OTHER} = $Fighter1;
 @Fighters = ( $Fighter1, $Fighter2 );
 
 
-
-
 =comment
 
 VARIABLES FOR DRAWING THE SCENE
 
 =cut
 
+$gametick = 0;	# Number of Advance()'s called since the start.
 $p1x = 10;		# Player 1 X position
 $p1y = 100;		# Player 1 Y position
 $p1f = 10;		# Player 1 frame
@@ -124,6 +124,35 @@ $doodad_gfxowner = -1;	# 0: first player; 1: second player; 2: Global doodad
 $doodad_text = '';		# The text of type 0 doodads.
 
 
+sub ResetGame
+{
+	$gametick		= 0;
+	$over			= 0;
+	$ko				= 0;
+	
+	$bgx			= 0;
+	$bgy			= 0;
+	$BgSpeed		= 0;
+	$BgPosition		= 0;
+	$BgScrollEnabled = 0;
+	
+	$OverTimer		= 0;
+	$JudgementMode	= 0;
+	$Debug			= 0;
+	
+	@Doodads = ();
+	@Sounds = ();
+	
+	ResetEarthquake();
+	ResetRewind();
+
+	$Fighter1->Reset() if $Fighter1->{OK};
+	$Fighter2->Reset() if $Fighter2->{OK};
+	$Input1->Reset();
+	$Input2->Reset();
+}
+
+
 =comment
 
 JUDGEMENT METHODS
@@ -131,35 +160,22 @@ JUDGEMENT METHODS
 =cut
 
 
-sub JudgementStart
+sub JudgementStart($)
 {
-	$bgx = 0;
-	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
-	$BgSpeed = 0;
-	$BgPosition = 0;
-	$BgScrollEnabled = 0;
-	$OverTimer = 0;
+	ResetGame();
+	# $bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
 	$JudgementMode = 1;
-	$Debug = 0;
 	($JudgementWinner) = @_;
-	ResetEarthquake();
 	
-	$over = 0;
-	
-	$Fighter1->Reset();
 	$Fighter1->{X} =  ($JudgementWinner ? 150 : 520 ) * $GAMEBITS2;
 	$Fighter1->{DIR} = ($JudgementWinner ? 1 : -1 );
 	$Fighter1->{NEXTST} = 'Stand';
 	$Fighter1->Update();
 	
-	$Fighter2->Reset();
 	$Fighter2->{X} = ($JudgementWinner ? 520 : 150 ) * $GAMEBITS2;
 	$Fighter2->{DIR} = ($JudgementWinner ? -1 : 1 );
 	$Fighter2->{NEXTST} = 'Stand';
 	$Fighter2->Update();
-	
-	$Input1->Reset();
-	$Input2->Reset();
 }
 
 
@@ -171,35 +187,20 @@ PLAYER SELECTION METHODS
 
 sub SelectStart
 {
-	$bgx = 0;
-	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
-	$BgSpeed = 0;
-	$BgPosition = 0;
-	$BgScrollEnabled = 0;
-	$OverTimer = 0;
-	$JudgementMode = 0;
-	$Debug = 0;
-	ResetEarthquake();
+	ResetGame();
 	
-	$over = 0;
-
 	if ( $Fighter1->{OK} )
 	{
-		$Fighter1->Reset();
 		$Fighter1->{X} = 80 * $GAMEBITS2;
 		$Fighter1->{NEXTST} = 'Stand';
 		$Fighter1->Update();
 	}
 	if ( $Fighter2->{OK} )
 	{
-		$Fighter2->Reset();
 		$Fighter2->{X} = 560 * $GAMEBITS2;
 		$Fighter2->{NEXTST} = 'Stand';
 		$Fighter2->Update();
 	}
-	
-	$Input1->Reset();
-	$Input2->Reset();
 }
 
 
@@ -295,38 +296,45 @@ GAME BACKEND METHODS
 
 =cut
 
-sub GameStart
+sub GameStart($$)
 {
 	my ( $MaxHP, $debug ) = @_;
+
+	ResetGame();
 	
-	@Doodads = ();
-	@Sounds = ();
 	$bgx = ( $SCRWIDTH2 - $BGWIDTH2) >> 1;
 	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
-	$BgSpeed = 0;
 	$BgPosition = $BgMax >> 1;
 	$BgScrollEnabled = 1;
 	$HitPointScale = 1000 / $MaxHP;			# 1/1
 	$Debug = $debug;
-	ResetEarthquake();
-	
+
 	$Fighter1->Reset();
 	$Fighter1->{HP} = $MaxHP;
-	$Input1->Reset();
 	$Fighter2->Reset();
 	$Fighter2->{HP} = $MaxHP;
-	$Input2->Reset();
-	$over = 0;
-	$ko = 0;
-	$OverTimer = 0;
-	$JudgementMode = 0;	
-
+	
 	$p1h = $p2h = 0;
 }
 
 
 
-sub GetFighterData
+=comment
+
+Takes a Fighter object, and returns the data relevant for the frontend.
+
+Parameters:
+$fighter	The fighter which is to be converted to frontend data.
+
+Returns:
+$x			The physical X coordinate of the fighter
+$y			The physical Y coordinate of the fighter
+$fnum		The frame number of the fighter. A negative sign means the
+			fighter is flipped horizontally (facing left)
+
+=cut
+
+sub GetFighterData($)
 {
 	my ($fighter) = @_;
 	my ($x, $y, $fnum, $f, $hp);
@@ -455,21 +463,22 @@ sub DoFighterEvents
 	{
 		$fighter->Event("Won");
 	}
-	if ( ($fighter->{IDLE} > 150) and (rand(350) < 1) )
+	if ( $fighter->{IDLE} > 150 )
 	{
-		$fighter->Event("Fun");
-	}
-	if ( ($fighter->{IDLE} > 150) and (rand(350) < 1) )
-	{
-		$fighter->Event("Threat");
+		my ($r) = $fighter->QuasiRandom( 353 );
+		$fighter->Event("Fun") if $r==1;
+		$fighter->Event("Threat") if $r==2;
 	}
 }
+
 
 
 
 sub GameAdvance
 {
 	my ($hit1, $hit2);
+	
+	$gametick += 1;
 	
 	$NextDoodad = 0;
 	$NextSound = 0;
@@ -544,51 +553,51 @@ sub GameAdvance
 	
 	# 5. DEBUG POLYGONS
 	
-	return unless $Debug;
+	if ( $Debug )
+	{
+		$fr1 = $Fighter1->{FRAMES}->[ $Fighter1->{FR} ];
+		@p1head = @{ $fr1->{head} };
+		MirrorPolygon( \@p1head ) if $Fighter1->{DIR} < 0;
+		OffsetPolygon( \@p1head,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
+		@p1body = @{ $fr1->{body} };
+		MirrorPolygon( \@p1body ) if $Fighter1->{DIR} < 0;
+		OffsetPolygon( \@p1body,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
+		@p1legs = @{ $fr1->{legs} };
+		MirrorPolygon( \@p1legs) if $Fighter1->{DIR} < 0;
+		OffsetPolygon( \@p1legs,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
+		if ( defined $fr1->{hit} )
+		{
+			@p1hit = @{ $fr1->{hit} };
+			MirrorPolygon( \@p1hit ) if $Fighter1->{DIR} < 0;
+			OffsetPolygon( \@p1hit,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
+		}
+		else
+		{
+			undef @p1hit;
+		}
+		
+		$fr2 = $Fighter2->{FRAMES}->[ $Fighter2->{FR} ];
+		@p2head = @{ $fr2->{head} };
+		MirrorPolygon( \@p2head ) if $Fighter2->{DIR} < 0;
+		OffsetPolygon( \@p2head,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
+		@p2body = @{ $fr2->{body} };
+		MirrorPolygon( \@p2body ) if $Fighter2->{DIR} < 0;
+		OffsetPolygon( \@p2body,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
+		@p2legs = @{ $fr2->{legs} };
+		MirrorPolygon( \@p2legs) if $Fighter2->{DIR} < 0;
+		OffsetPolygon( \@p2legs,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
+		if ( defined $fr2->{hit} )
+		{
+			@p2hit = @{ $fr2->{hit} };
+			MirrorPolygon( \@p2hit ) if $Fighter2->{DIR} < 0;
+			OffsetPolygon( \@p2hit,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
+		}
+		else
+		{
+			undef @p2hit;
+		}
+	}
 
-	$fr1 = $Fighter1->{FRAMES}->[ $Fighter1->{FR} ];
-	@p1head = @{ $fr1->{head} };
-	MirrorPolygon( \@p1head ) if $Fighter1->{DIR} < 0;
-	OffsetPolygon( \@p1head,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
-	@p1body = @{ $fr1->{body} };
-	MirrorPolygon( \@p1body ) if $Fighter1->{DIR} < 0;
-	OffsetPolygon( \@p1body,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
-	@p1legs = @{ $fr1->{legs} };
-	MirrorPolygon( \@p1legs) if $Fighter1->{DIR} < 0;
-	OffsetPolygon( \@p1legs,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
-	if ( defined $fr1->{hit} )
-	{
-		@p1hit = @{ $fr1->{hit} };
-		MirrorPolygon( \@p1hit ) if $Fighter1->{DIR} < 0;
-		OffsetPolygon( \@p1hit,  $Fighter1->{X} / $GAMEBITS2 - $bgx, $Fighter1->{Y} / $GAMEBITS2 - $bgy );
-	}
-	else
-	{
-		undef @p1hit;
-	}
-
-	$fr2 = $Fighter2->{FRAMES}->[ $Fighter2->{FR} ];
-	@p2head = @{ $fr2->{head} };
-	MirrorPolygon( \@p2head ) if $Fighter2->{DIR} < 0;
-	OffsetPolygon( \@p2head,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
-	@p2body = @{ $fr2->{body} };
-	MirrorPolygon( \@p2body ) if $Fighter2->{DIR} < 0;
-	OffsetPolygon( \@p2body,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
-	@p2legs = @{ $fr2->{legs} };
-	MirrorPolygon( \@p2legs) if $Fighter2->{DIR} < 0;
-	OffsetPolygon( \@p2legs,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
-	if ( defined $fr2->{hit} )
-	{
-		@p2hit = @{ $fr2->{hit} };
-		MirrorPolygon( \@p2hit ) if $Fighter2->{DIR} < 0;
-		OffsetPolygon( \@p2hit,  $Fighter2->{X} / $GAMEBITS2 - $bgx, $Fighter2->{Y} / $GAMEBITS2 - $bgy );
-	}
-	else
-	{
-		undef @p2hit;
-	}
-	
-	
 }
 
 

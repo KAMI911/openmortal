@@ -13,31 +13,32 @@ use strict;
 
 Fighter's members are:
 
-ID		int		The ID of the fighter
-STATS	hash	Reference to the fighter's stats (includes GENDER)
-NAME	string	The name of the character, e.g. "Ulmar".
-FRAMES	array	The character's frame description.
-STATES	hash	The character's state description.
+ID			int		The ID of the fighter
+STATS		hash	Reference to the fighter's stats (includes GENDER)
+NAME		string	The name of the character, e.g. "Ulmar".
+FRAMES		array	The character's frame description.
+STATES		hash	The character's state description.
+OK			bool	Is the fighter good to go?
 
-NUMBER	int		Player number (either 0 or 1)
-X		int		The fighter's current anchor, horizontal coordinate.
-Y		int		The fighter's current anchor, vertical coordinate.
-ST		string	The name of the fighter's current state.
-FR		int		The number of the fighter's current frame (same as STATES->{ST}->{F}).
-DEL		int		The amount of time before the character moves to the next state.
-NEXTST	string	The name of the next state after this one (calculated by Advance and Event, user by Update).
-DIR		int		-1: the character is facing left; 1: if the character is facing right.
-PUSHY	int		The character's vertical momentum, from jumping/hits.
-PUSHX	int		The character's horizontal momentum, from hits.
-HP		int		Hit points, from 100 down to 0.
-IDLE	int		The amount of game time since the player is ready.
-CHECKEHIT int	1 if the hit needs to be checked soon.
-DELIVERED int	1 if a hit was delivered in this state.
-COMBO	int		The number of consecutive hits delivered to this fighter.
-COMBOHP	int		The amount of HP delivered in the last combo.
-OTHER	hash	A reference to the other Fighter
-LANDINGPENALTY int This is added to DEL when the character lands (used to penaltize blocked jumpkicks). Becomes DELPENALTY upon landing.
-DELPENALTY int	This is added to DEL in the next state.
+NUMBER		int		Player number (either 0 or 1)
+X			int		The fighter's current anchor, horizontal coordinate.
+Y			int		The fighter's current anchor, vertical coordinate.
+ST			string	The name of the fighter's current state.
+FR			int		The number of the fighter's current frame (same as STATES->{ST}->{F}).
+DEL			int		The amount of time before the character moves to the next state.
+NEXTST		string	The name of the next state after this one (calculated by Advance and Event, user by Update).
+DIR			int		-1: the character is facing left; 1: if the character is facing right.
+PUSHY		int		The character's vertical momentum, from jumping/hits.
+PUSHX		int		The character's horizontal momentum, from hits.
+HP			int		Hit points, from 100 down to 0.
+IDLE		int		The amount of game time since the player is ready.
+CHECKEHIT	int		1 if the hit needs to be checked soon.
+DELIVERED	int		1 if a hit was delivered in this state.
+COMBO		int		The number of consecutive hits delivered to this fighter.
+COMBOHP		int		The amount of HP delivered in the last combo.
+OTHER		hash	A reference to the other Fighter
+LANDINGPENALTY int	This is added to DEL when the character lands (used to penaltize blocked jumpkicks). Becomes DELPENALTY upon landing.
+DELPENALTY	int		This is added to DEL in the next state.
 
 
 
@@ -74,6 +75,13 @@ sub new {
 	bless $self, $class;
 	return $self;
 }
+
+
+sub RewindData {
+	my ($self) = @_;
+	return $self;
+}
+
 
 sub Reset {
 	my ($self, $fighterenum) = @_;
@@ -123,6 +131,26 @@ sub Reset {
 }
 
 
+=comment
+Returns a "random" number that is deterministic in the sense that it is
+always the same, given the current state of the character and the current
+game time.
+=cut
+
+sub QuasiRandom($$)
+{
+	my ( $self, $randmax ) = @_;
+
+	$randmax = 1 unless $randmax;
+
+	return int( $self->{HP} * 543857
+		+ $self->{NUMBER} * 834973
+		+ $self->{DEL} * 4358397
+		+ $self->{IDLE} * 92385029
+		+ $::gametick * 23095839
+		+ 5304981 ) % $randmax;
+}
+
 
 =comment
 
@@ -139,6 +167,8 @@ should be followed by CheckHit and Event calls, and finally Update.
 sub Advance {
 	my ($self, $in) = @_;
 	
+#	print STDERR "$::gametick\t$self->{X},$self->{HP}\t$self->{NUMBER}\t$self->{DEL}\t$self->{IDLE}\n";
+
 	my ($stname,		# The name of the current state.
 		$st,			# The descriptor of the current state.
 		$move,			# The move associated with the current state.
@@ -431,7 +461,7 @@ sub Event($$$)
 		$self->{IDLE} = 0;
 		if ( $event =~ /Hurt|Threat|Fun|Turn/ )
 		{
-			if ( $event eq 'Fun' and defined $self->{STATES}->{'Funb'} and rand() < 0.5 )
+			if ( $event eq 'Fun' and defined $self->{STATES}->{'Funb'} and $self->QuasiRandom(2)==1 )
 			{
 				$event = 'Funb';
 			}

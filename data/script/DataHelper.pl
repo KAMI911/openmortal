@@ -571,7 +571,7 @@ sub TravelingStates( $$$$$$ )
 		if ( $state->{F} >= $fromIndex and $state->{F} <= $toIndex )
 		{
 			$nextst = $states->{$state->{NEXTST}};
-			if ( $nextst->{F} >= $fromIndex and $nextst->{F} <= $toIndex )
+			if ( defined($nextst) and $nextst->{F} >= $fromIndex and $nextst->{F} <= $toIndex )
 			{
 				$state->{DELTAX} = $deltax * ($nextst->{F} - $state->{F});
 				# print "Fixing state $i : deltax = ", $state->{DELTAX}, "\n";

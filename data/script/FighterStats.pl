@@ -527,6 +527,19 @@ tulelem, csatlakozom azokhoz a hulye Mortalosokhoz!',
 
 
 
+'15'=>
+{	'ID'	=> 15,
+	'CODENAME' => 'Elf',
+	'NAME'	=> 'Pixie',
+	'TEAM'	=> 'Good',
+	'STYLE'	=> 'Glamour',
+	'AGE'	=> '140',
+	'WEIGHT'=> '1',
+	'HEIGHT'=> '1',
+	'SHOE'	=> '1',
+	'STORY'	=> '...',
+},
+
 
 
 '14'=>
@@ -639,9 +652,9 @@ sub GetFighterStats($)
 	$::Story	= GetStatsTranslated( $source, 'STORY' );
 	$::Keys		= GetStatsTranslated( $source, 'KEYS' );
 	$::Datafile	= $source->{'DATAFILE'};
-	$::Portrait	= $::Codename . ".icon.png";
+	$::Portrait	= $::Codename . ".icon.png" if defined $::Codename;
 	
-	$::Story =~ s/([^\n])\n([^\n])/$1 $2/gms;
+	$::Story =~ s/([^\n])\n([^\n])/$1 $2/gms if defined $::Story;
 	
 	@::StatTags = ( 'Name: ', 'Team: ', 'Style: ', 'Age: ', 'Weight: ', 'Height: ', 'Shoe size: ' );
 	

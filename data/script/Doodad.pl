@@ -197,6 +197,20 @@ sub CreateTextDoodad
 
 
 
+sub RewindData
+{
+	my ($self) = @_;
+
+	return {
+		%{$self},
+		POS			=> [ @{$self->{POS}} ],
+		SIZE		=> [ @{$self->{SIZE}} ],
+		SPEED		=> [ @{$self->{SPEED}} ],
+		ACCEL		=> [ @{$self->{ACCEL}} ],
+	}
+}
+
+
 =comment
 UpdateDoodad is called once every game tick.
 

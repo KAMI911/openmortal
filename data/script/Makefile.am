@@ -2,7 +2,9 @@
 
 scriptdatadir	= $(pkgdatadir)/script
 scriptdata_DATA	= \
-Backend.pl    Damage.pl      Doodad.pl   Keys.pl         State.pl \
-Collision.pl  DataHelper.pl  Fighter.pl  FighterStats.pl  PlayerInput.pl  Translate.pl
+Backend.pl         Collision.pl   Doodad.pl        Keys.pl         Rewind.pl    \
+CollectedStats.pl  Damage.pl      Fighter.pl       PlayerInput.pl  State.pl     \
+CollectStats.pl    DataHelper.pl  FighterStats.pl  QuickSave.pl    Translate.pl
+
 
 EXTRA_DIST = $(scriptdata_DATA)
