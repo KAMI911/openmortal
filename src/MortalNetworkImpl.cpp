@@ -14,6 +14,7 @@
 
 
 #define MORTALNETWORKPORT 0x3A22
+#define MAXSTRINGLENGTH 900
 
 
 // Some graphics routines, defined in menu.cpp
@@ -231,10 +232,13 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	m_iHurryupCode = 0;
 	m_iIncomingBufferSize = 0;
 	m_aiAvailableRemoteFighters.clear();
-	m_oGameParams.iGameTime = m_oGameParams.iGameSpeed = m_oGameParams.iHitPoints = -1;
+	m_oGameParams.iGameTime = m_oGameParams.iGameSpeed = m_oGameParams.iHitPoints = 0;
+	m_sRemoteUserName = "HIM";
 	
 	m_poSocketSet = SDLNet_AllocSocketSet( 1 );
 	SDLNet_TCP_AddSocket( m_poSocketSet, m_poSocket );	// Check for errors?
+
+	SendRawData( 'U', g_oState.m_acNick, strlen(g_oState.m_acNick)+1 );
 	
 	return true;
 }
@@ -344,6 +348,7 @@ void CMortalNetworkImpl::Update()
 			case 'A': ReceiveRemoteFighterAvailable( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'Q': ReceiveRemoteFighterQuery( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'P': ReceiveGameParams( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'U': ReceiveRemoteUserName( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			default:
 			{
 				debug( "Bad ID: %c (%d)\n", m_acIncomingBuffer[iOffset], m_acIncomingBuffer[iOffset] );
@@ -379,9 +384,20 @@ bool CMortalNetworkImpl::IsMaster()
 }
 
 
+
+void CMortalNetworkImpl::ReceiveRemoteUserName( void* a_pData, int a_iLength )
+{
+	if ( a_iLength < 1 || a_iLength > MAXSTRINGLENGTH ) DISCONNECTONCOMMUNICATIONERROR;
+
+	char* acData = (char*) a_pData;
+	acData[ a_iLength-1 ] = 0;	// Last char should be 0, just making sure..
+
+	m_sRemoteUserName = acData;
+}
+
 const char* CMortalNetworkImpl::GetRemoteUsername()
 {
-	return "upi";
+	return m_sRemoteUserName.c_str();
 }
 
 
@@ -420,7 +436,6 @@ void CMortalNetworkImpl::SendRawData( char a_cID, const void* a_pData, int a_iLe
 }
 
 
-#define MAXSTRINGLENGTH 900
 
 
 
@@ -443,10 +458,12 @@ void CMortalNetworkImpl::ReceiveMsg( void* a_pData, int a_iLength )
 {
 	if ( a_iLength < 1 || a_iLength > MAXSTRINGLENGTH ) DISCONNECTONCOMMUNICATIONERROR;
 	
-	char* acData = (char*) a_pData;
-	acData[ a_iLength-1 ] = 0;	// Last char should be 0, just making sure..
+	char* pcData = (char*) a_pData;
+	pcData[ a_iLength-1 ] = 0;	// Last char should be 0, just making sure..
 
-	m_asMsgs.push_back( acData );
+	std::string sMsg = "<" + m_sRemoteUserName + "> " + pcData;
+	
+	m_asMsgs.push_back( sMsg );
 }
 
 

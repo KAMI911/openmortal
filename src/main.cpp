@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
 			
 			debug ( "iGameResult = %d\n", iGameResult );
 			
-			if ( iGameResult >= 0 && bNetworkGame )
+			if ( iGameResult >= 0 && !bNetworkGame )
 			{
 				GameOver( iGameResult );
 				FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );

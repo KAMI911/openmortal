@@ -13,6 +13,7 @@
 
 #include <string>
 #include <fstream>
+#include <unistd.h>
 
 #include "Backend.h"
 #include "MszPerl.h"
@@ -110,6 +111,17 @@ SState::SState()
 	}
 
 	strcpy( m_acLatestServer, "apocalypse.rulez.org" );
+	int iResult = getlogin_r( m_acNick, 127 );
+	if ( iResult )
+	{
+		debug( "getlogin_r failed: %d\n", iResult );
+		strcpy( m_acNick, getenv("USER") );
+		if ( !m_acNick[0] )
+		{
+			strcpy( m_acNick, "Mortal");	// Last-ditch default..
+		}
+	}
+	
 	m_bServer = false;
 };
 
@@ -201,8 +213,9 @@ void SState::Load()
 	poSv = get_sv("MUSICVOLUME", FALSE); if (poSv) m_iMusicVolume = SvIV( poSv );
 	poSv = get_sv("SOUNDVOLUME", FALSE); if (poSv) m_iSoundVolume = SvIV( poSv );
 	poSv = get_sv("LANGUAGE", FALSE); if (poSv) { strncpy( m_acLanguage, SvPV_nolen( poSv ), 9 ); m_acLanguage[9] = 0; }
-	poSv = get_sv("LATESTSERVER", FALSE); if (poSv) { strncpy( m_acLatestServer, SvPV_nolen( poSv ), 255 ); m_acLanguage[255] = 0; }
+	poSv = get_sv("LATESTSERVER", FALSE); if (poSv) { strncpy( m_acLatestServer, SvPV_nolen( poSv ), 255 ); m_acLatestServer[255] = 0; }
 	poSv = get_sv("SERVER", FALSE); if (poSv) m_bServer = SvIV( poSv );
+	poSv = get_sv("NICK", FALSE); if (poSv) { strncpy( m_acNick, SvPV_nolen( poSv ), 127 ); m_acNick[127] = 0; }
 	
 	char pcBuffer[1024];
 	for ( int i=0; i<2; ++i )
@@ -239,6 +252,7 @@ void SState::Save()
 	oStream << "LANGUAGE=" << m_acLanguage << '\n';
 	oStream << "LATESTSERVER=" << m_acLatestServer << '\n';
 	oStream << "SERVER=" << m_bServer << '\n';
+	oStream << "NICK=" << m_acNick << '\n';
 	
 	for ( int i=0; i<2; ++i )
 	{

@@ -52,23 +52,6 @@ The "server" is always appears as player 1, the "client" is always player 2.
 However, they both use the "Player 1" keys.
 
 
-SUMMARY OF MESSAGES:
-
-I <version> <username> - Introduction sent both ways on connection.
-M <text>			- Incoming Msg text.
-
-S					- Ready for the next round (synch).
-G <text>			- Update on the game backend data.
-T <number> <number>	- Update the game time and game phase.
-K <number> <bool>	- Key # up/down
-H <number>			- Hurryup and other special messages
-O <number> <bool>	- The round is over (who won, are there more rounds).
-
-F <number>			- I have switched to fighter X.
-R					- I have chosen a fighter.
-Q <number>			- Is fighter X available?
-A <number>			- Fighter A is available.
-P <number> x3		- Game parameters
 
 */
 

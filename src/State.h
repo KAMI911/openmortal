@@ -44,8 +44,9 @@ struct SState
 	char	m_acLanguage[10];	// Language ID (en,hu,fr,es,..)
 	int		m_iLanguageCode;	// Non-persistend language code (set by backend based on the language)
 	
-	char	m_acLatestServer[256];
-	bool	m_bServer;
+	char	m_acLatestServer[256];	// Last server
+	bool	m_bServer;			// We were server in the last network game
+	char	m_acNick[128];		// The user name on the last server.
 	
 	SState();
 	

@@ -19,6 +19,29 @@
 typedef std::list<int> TIntList;
 typedef std::list<std::string> TStringList;
 
+/**
+Implementation of the CMortalNetwork interface.
+
+SUMMARY OF MESSAGES:
+
+I <version> <username> - Introduction sent both ways on connection.
+U <text>			- Remote user's name
+M <text>			- Incoming Msg text.
+
+S					- Ready for the next round (synch).
+G <text>			- Update on the game backend data.
+T <number> <number>	- Update the game time and game phase.
+K <number> <bool>	- Key # up/down
+H <number>			- Hurryup and other special messages
+O <number> <bool>	- The round is over (who won, are there more rounds).
+
+F <number>			- I have switched to fighter X.
+R					- I have chosen a fighter.
+Q <number>			- Is fighter X available?
+A <number>			- Fighter A is available.
+P <number> x3		- Game parameters
+
+*/
  
 class CMortalNetworkImpl: public CMortalNetwork
 {
@@ -77,6 +100,7 @@ protected:
 	void		SendRawData( char a_cID, const void* a_pData, int a_iLength );
 	
 	void		ReceiveMsg( void* a_pData, int a_iLength );
+	void		ReceiveRemoteUserName( void* a_pData, int a_iLength );
 	void		ReceiveGameData( void* a_pData, int a_iLength );
 	void		ReceiveKeystroke( void* a_pData, int a_iLength );
 	void		ReceiveFighter( void* a_pData, int a_iLength );
@@ -89,7 +113,6 @@ protected:
 	void		ReceiveGameParams( void* a_pData, int a_iLength );
 	
 protected:
-	bool		m_bNetworkAvailable;
 	
 	enum TNetworkState
 	{
@@ -97,22 +120,25 @@ protected:
 		NS_CHARACTER_SELECTION,
 		NS_IN_GAME,
 	};
-	
-	TNetworkState			m_enState;
-	bool					m_bServer;
-	bool					m_bMaster;
-	TCPsocket				m_poSocket;
-	SDLNet_SocketSet		m_poSocketSet;
 
-	char					m_acIncomingBuffer[2048];
-	int						m_iIncomingBufferSize;
+	// Network METADATA
 	
-	std::string				m_sLastError;
+	bool					m_bNetworkAvailable;		///< Is the networking API initialized correctly?
+	TNetworkState			m_enState;					///< The current state
+	bool					m_bServer;					///< We are the server side.
+	bool					m_bMaster;					///< We are the master side. (Initially the server side)
+	TCPsocket				m_poSocket;					///< The TCP/IP network socket.
+	SDLNet_SocketSet		m_poSocketSet;				///< SDLNet construct for watching the socket.
+
+	char					m_acIncomingBuffer[2048];	///< Received data goes here.
+	int						m_iIncomingBufferSize;		///< How much of the buffer is filled?
 	
-	TStringList				m_asMsgs;
+	std::string				m_sLastError;				///< The last error message from SDLNet
+	TStringList				m_asMsgs;					///< Incoming chatlines
 	
 	// GAME DATA
-	
+
+	std::string				m_sRemoteUserName;
 	TIntList				m_aiAvailableRemoteFighters;
 	FighterEnum				m_enRemoteFighter;
 	bool					m_bRemoteReady;

@@ -37,6 +37,7 @@ MENU_UNKNOWN,
 	MENU_NETWORK_GAME,
 		MENU_SERVER,
 		MENU_HOSTNAME,
+		MENU_NICK,
 		MENU_CONNECT,
 		MENU_CANCEL,
 	MENU_OPTIONS,
@@ -171,7 +172,7 @@ void MortalNetworkResetMessages( bool a_bClear )
 	}
 	else
 	{
-		g_iMessageY = 260;
+		g_iMessageY = 185;
 	}
 }
 
@@ -258,12 +259,14 @@ public:
 		m_bOK = false;
 		m_bServer = g_oState.m_bServer;
 		m_sHostname = g_oState.m_acLatestServer;
+		m_sNick = g_oState.m_acNick;
 		
 		AddMenuItem( "START NETWORK GAME!", SDLK_UNKNOWN, MENU_CONNECT );
+		m_poNickMenuItem = AddTextMenuItem( "Nickname: ", m_sNick.c_str(), MENU_NICK );
 		AddEnumMenuItem( "Network mode: ", m_bServer ? 1 : 0, g_ppcServer, g_piServer, MENU_SERVER );
 		m_poServerMenuItem = AddTextMenuItem( "Connect to: ", m_sHostname.c_str(), MENU_HOSTNAME );
 		m_poServerMenuItem->SetEnabled(!m_bServer);
-
+		
 		MenuItem* poItem = AddMenuItem( "Cancel", SDLK_UNKNOWN, MENU_CANCEL );
 		SDL_Rect oRect;
 		oRect.x = gamescreen->w - 150; oRect.w = 150;
@@ -276,9 +279,10 @@ public:
 	void Connect()
 	{
 		Clear();
-		Draw();
-
+		SDL_Flip( gamescreen );
+		
 		MortalNetworkResetMessages( false );
+		strcpy( g_oState.m_acNick, m_sNick.c_str() );
 		m_bOK = g_poNetwork->Start( m_bServer ? NULL : m_sHostname.c_str() );
 
 		if ( m_bOK )
@@ -321,22 +325,22 @@ public:
 		}
 	}
 
-	void EnterHostname()
+	void EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuItem* a_poMenuItem, int a_iMaxlen )
 	{
 		Clear();
 		Draw();
 
+		if ( a_iMaxlen > 255 ) a_iMaxlen = 255;
 		char acBuffer[256];
-		strncpy( acBuffer, m_sHostname.c_str(), 255 );
+		strncpy( acBuffer, a_rsTarget.c_str(), 255 );
 		acBuffer[255] = 0;
 
-		int x = DrawTextMSZ( "Server name: ", impactFont, 20, 270, 0, C_WHITE, gamescreen );
+		int x = DrawTextMSZ( a_pcTitle, impactFont, 20, 305, 0, C_WHITE, gamescreen );
 
 		int iRetval;
 		{
-			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-			CReadline oReadline( gamescreen, impactFont, acBuffer, strlen(acBuffer), 255,
-				20+x, 270 + sge_TTF_FontAscent(impactFont), 600, C_LIGHTCYAN, C_BLACK, 255 );
+			CReadline oReadline( gamescreen, impactFont, acBuffer, strlen(acBuffer), a_iMaxlen,
+				20+x, 305 + sge_TTF_FontAscent(impactFont), 600, C_LIGHTCYAN, C_BLACK, 255 );
 			iRetval = oReadline.Execute();
 		}
 
@@ -348,8 +352,8 @@ public:
 		}
 		if ( iRetval > 0 )
 		{
-			m_sHostname = acBuffer;
-			m_poServerMenuItem->SetValue( acBuffer );
+			a_rsTarget = acBuffer;
+			a_poMenuItem->SetValue( acBuffer );
 		}
 		Clear();
 		Draw();
@@ -384,7 +388,11 @@ public:
 			break;
 
 		case MENU_HOSTNAME:
-			EnterHostname();
+			EnterName( "Server name: ", m_sHostname, m_poServerMenuItem,128 );
+			break;
+
+		case MENU_NICK:
+			EnterName( "Nickname: ", m_sNick, m_poNickMenuItem, 12 );
 			break;
 		}
 	}
@@ -405,8 +413,10 @@ protected:
 	bool			m_bOK;
 	bool			m_bServer;
 	std::string		m_sHostname;
+	std::string		m_sNick;
 
 	TextMenuItem*	m_poServerMenuItem;
+	TextMenuItem*	m_poNickMenuItem;
 };
 
 
@@ -1016,6 +1026,7 @@ int Menu::Run()
 	
 	return m_iReturnCode;
 }
+
 
 
 void Menu::Draw()
