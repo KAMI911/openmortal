@@ -111,7 +111,6 @@ $p2h = 100;		# Player 2 HP
 
 $bgx = 0;		# Background X position
 $bgy = 0;		# Background Y position
-$time = 0;		# Current game time
 $over = 0;		# Is the game over?
 $ko = 0;		# Is one fighter knocked down?
 
@@ -145,7 +144,6 @@ sub JudgementStart
 	($JudgementWinner) = @_;
 	ResetEarthquake();
 	
-	$time = 0;
 	$over = 0;
 	
 	$Fighter1->Reset();
@@ -183,7 +181,6 @@ sub SelectStart
 	$Debug = 0;
 	ResetEarthquake();
 	
-	$time = 0;
 	$over = 0;
 
 	if ( $Fighter1->{OK} )
@@ -220,7 +217,8 @@ sub SetPlayerNumber
 	$f->{NEXTST} = 'Stand';
 	$f->Update();
 	
-	$::PlayerName = $::FighterStats[$fighterenum]->{NAME};
+	GetFighterStats($fighterenum);
+	$::PlayerName = $::Name
 }
 
 
@@ -312,7 +310,6 @@ sub GameStart
 	$Debug = $debug;
 	ResetEarthquake();
 	
-	$time = 0;
 	$Fighter1->Reset();
 	$Fighter1->{HP} = $MaxHP;
 	$Input1->Reset();
@@ -472,12 +469,8 @@ sub DoFighterEvents
 
 sub GameAdvance
 {
-	# $::adv += 1;
-	# return if ( $::adv % 3 );
-
 	my ($hit1, $hit2);
 	
-	$time += 4/1000;
 	$NextDoodad = 0;
 	$NextSound = 0;
 	
