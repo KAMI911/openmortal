@@ -7,9 +7,7 @@
  ***************************************************************************/
 
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include "config.h"
 
 #include "PlayerSelect.h"
 
@@ -52,6 +50,9 @@ sge_bmpFont* fastFont;
 sge_bmpFont* creditsFont;
 sge_bmpFont* storyFont;
 bool bDebug = false;
+
+Uint32 C_BLACK, C_BLUE, C_GREEN, C_CYAN, C_RED, C_MAGENTA, C_ORANGE, C_LIGHTGRAY,
+	C_DARKGRAY, C_LIGHTBLUE, C_LIGHTGREEN, C_LIGHTCYAN, C_LIGHTRED, C_LIGHTMAGENTA, C_YELLOW, C_WHITE;
 
 SDL_Color Colors[] =
 {
@@ -98,7 +99,7 @@ sge_bmpFont* LoadBMPFont( const char* a_pcFilename )
 }
 
 
-int init( int iFlags )
+int init()
 {
 	if (SDL_Init(SDL_INIT_VIDEO /*| SDL_INIT_AUDIO*/) < 0)
 	{
@@ -107,14 +108,7 @@ int init( int iFlags )
 	}
 	atexit(SDL_Quit);
 	
-	int d = SDL_VideoModeOK(640, 480, 8, iFlags);
-	if (d == 0)
-	{
-		fprintf(stderr, "requested video mode not available\n");
-//		return -1;
-	}
-	
-	gamescreen = SDL_SetVideoMode(640, 480, 8, iFlags);
+	SetVideoMode( false, g_oState.m_bFullscreen );
 	if (gamescreen == NULL)
 	{
 		fprintf(stderr, "failed to set video mode: %s\n", SDL_GetError());
@@ -126,8 +120,57 @@ int init( int iFlags )
 	SDL_WM_SetIcon(IMG_Load(sPath.c_str()), NULL);
 	SDL_ShowCursor( SDL_DISABLE );
 
-	for ( int i=0; i<16; ++i ) { Colors[i].r *=4; Colors[i].g *=4; Colors[i].b *=4; }
-	SDL_SetColors( gamescreen, Colors, 256-16, 16 );
+	int i;
+	for ( i=0; i<16; ++i ) 
+	{ 
+		Colors[i].r *=4; Colors[i].g *=4; Colors[i].b *=4;
+	}
+	if ( gamescreen->format->BitsPerPixel > 8 )
+	{
+		i = 0;
+		C_BLACK			= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_BLUE			= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_GREEN			= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_CYAN			= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+
+		C_RED			= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_MAGENTA		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_ORANGE		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_LIGHTGRAY		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+
+		C_DARKGRAY		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_LIGHTBLUE		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_LIGHTGREEN	= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_LIGHTCYAN		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+
+		C_LIGHTRED		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_LIGHTMAGENTA	= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_YELLOW		= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+		C_WHITE			= SDL_MapRGB( gamescreen->format, Colors[i].r, Colors[i].g, Colors[i].b ); ++i;
+	}
+	else
+	{
+		SDL_SetColors( gamescreen, Colors, 256-16, 16 );
+		C_BLACK			= 240;
+		C_BLUE			= 241;
+		C_GREEN			= 242;
+		C_CYAN			= 243;
+
+		C_RED			= 244;
+		C_MAGENTA		= 245;
+		C_ORANGE		= 246;
+		C_LIGHTGRAY		= 247;
+
+		C_DARKGRAY		= 248;
+		C_LIGHTBLUE		= 249;
+		C_LIGHTGREEN	= 250;
+		C_LIGHTCYAN		= 251;
+
+		C_LIGHTRED		= 252;
+		C_LIGHTMAGENTA	= 253;
+		C_YELLOW		= 254;
+		C_WHITE			= 255;
+	}
 
 	if ( sge_TTF_Init() )
 	{
@@ -174,7 +217,7 @@ int init2()
 
 int DrawMainScreen()
 {
-	SDL_Surface* background = LoadBackground( "Mortal.png", 240 );
+	SDL_Surface* background = LoadBackground( "Mortal.jpg", 240 );
 	
 	DrawTextMSZ( "Version " VERSION "  © 2003-2004 by UPi", inkFont, 320, 430, UseShadow | AlignHCenter, C_WHITE, background, false );
 	SDL_Rect r;
@@ -182,24 +225,24 @@ int DrawMainScreen()
 	
 	std::string sStaffFilename = DATADIR;
 	sStaffFilename += "/characters/STAFF.DAT";
-	RlePack pack( sStaffFilename.c_str(), 240 );
+	RlePack pack( sStaffFilename.c_str(), 255 );
 	pack.ApplyPalette();
-	//SDL_SetColors( gamescreen, pack.getPalette(), 0, 240 );
 	SDL_BlitSurface( background, NULL, gamescreen, &r );
 	SDL_Flip( gamescreen );
 
-	char* filename[15] = {
+/*	char* filename[15] = {
 		"Jacint.pl", "Jozsi.pl", "Agent.pl", "Mrsmith.pl",
 		"Sleepy.pl", "Tejszin.pl",
 		"UPi.pl", "Zoli.pl", "Ulmar.pl", "Bence.pl",
-		"Descant.pl", "Grizli.pl", "Sirpi.pl", "Macy.pl", "Cumi.pl" };
+		"Descant.pl", "Grizli.pl", "Sirpi.pl", "Macy.pl", "Cumi.pl" };*/
 	int x[14] = {
 		0, 26, 67, 125, 159, 209,
 		249, 289, 358, 397, 451, 489, 532, 161 };
 	int y[14] = {
 		5, 4, 5, 5, 5, 7, 
 		4, 0, 7, 5, 5, 6, 5, 243 };
-		
+
+	/*
 	int i;
 
 	g_oBackend.PerlEvalF( "eval( \"require '%s/characters/Kinga.pl';\" )", DATADIR );
@@ -214,14 +257,32 @@ int DrawMainScreen()
 		{
 			debug( "Loading fighter %s", filename[i] );
 			g_oBackend.PerlEvalF( "eval( \"require '%s/characters/%s';\" )", DATADIR, filename[i] );
+
+
 		}
 	}
 	
 	int retval = 0;
 	i = 0;
+	*/
+
+	int iNumFighterFiles, i;
+
+	g_oBackend.PerlEvalF( "$CppRetval = GetNumberOfFighterFiles('%s')", DATADIR "/characters" );
+	iNumFighterFiles = g_oBackend.GetPerlInt( "CppRetval" );
+	
+	for ( i=0; i<iNumFighterFiles; ++i )
+	{
+		g_oBackend.PerlEvalF( "LoadFighterFile(%d);", i );
+		
+		if ( i < 15 ) {
+			pack.Draw( i, x[i], y[i], false );
+			SDL_Flip( gamescreen );
+		}
+	}
 	
     SDL_FreeSurface( background );
-	return retval;
+	return 0;
 	
 }
 
@@ -257,7 +318,43 @@ void GameLoop()
 
 	while ( IS_GAME_MODE )
 	{
-		g_oPlayerSelect.DoPlayerSelect();
+		if ( SState::Team_GOOD_VS_EVIL == g_oState.m_enTeamMode )
+		{
+			std::vector<FighterEnum>& roTeam0 = g_oPlayerSelect.EditPlayerInfo(0).m_aenTeam;
+			std::vector<FighterEnum>& roTeam1 = g_oPlayerSelect.EditPlayerInfo(1).m_aenTeam;
+			roTeam0.clear();
+			roTeam1.clear();
+
+			roTeam0.push_back( SIRPI );
+			roTeam0.push_back( MACI );
+			roTeam0.push_back( GRIZLI );
+			roTeam0.push_back( DANI );
+			roTeam0.push_back( KINGA );
+			roTeam0.push_back( CUMI );
+
+			roTeam1.push_back( ZOLI );
+			roTeam1.push_back( ULMAR );
+			roTeam1.push_back( BENCE );
+			roTeam1.push_back( AMBRUS );
+			roTeam1.push_back( DESCANT );	// Temporary assignment
+			roTeam1.push_back( UPI );
+
+			for ( int i=0; i<10; ++i )
+			{
+				int j = rand() % ( roTeam0.size() -1 );
+				int k = rand() % ( roTeam0.size() -1 );
+				FighterEnum enTemp;
+				enTemp = roTeam0[j]; roTeam0[j] = roTeam0[k]; roTeam0[k] = enTemp;
+
+				j = rand() % ( roTeam1.size() -1 );
+				k = rand() % ( roTeam1.size() -1 );
+				enTemp = roTeam1[j]; roTeam1[j] = roTeam1[k]; roTeam1[k] = enTemp;
+			}
+		}
+		else
+		{
+			g_oPlayerSelect.DoPlayerSelect();
+		}
 		if ( !IS_GAME_MODE ) break;
 
 		//sprintf( acReplayFile, "/tmp/msz%d.replay", ++iGameNumber );
@@ -347,14 +444,6 @@ int main(int argc, char *argv[])
 	
 	bDebug = false;
 
-	int iFlags = SDL_SWSURFACE | SDL_HWPALETTE;
-
-
-	if ( g_oState.m_bFullscreen )
-	{
-		iFlags |= SDL_FULLSCREEN;
-	}
-	
 	int i;
 	for ( i=1; i<argc; ++i )
 	{
@@ -362,6 +451,7 @@ int main(int argc, char *argv[])
 		{
 			bDebug = true;
 		}
+/*
 		else if ( !strcmp(argv[i], "-fullscreen") )
 		{
 			iFlags |= SDL_FULLSCREEN;
@@ -378,14 +468,18 @@ int main(int argc, char *argv[])
 		{
 			iFlags |= SDL_ANYFORMAT;
 		}
+
+*/
 		else
+
 		{
-			printf( "Usage: %s [-debug] [-fullscreen] [-hwsurface] [-doublebuf] [-anyformat]\n", argv[0] );
+//			printf( "Usage: %s [-debug] [-fullscreen] [-hwsurface] [-doublebuf] [-anyformat]\n", argv[0] );
+			printf( "Usage: %s [-debug]\n", argv[0] );
 			return 0;
 		}
 	}
 
-	if (init( iFlags )<0)
+	if (init()<0)
 	{
 		return -1;
 	}
@@ -402,25 +496,8 @@ int main(int argc, char *argv[])
 	
 	DrawMainScreen();
 	
-
 	g_oPlayerSelect.SetPlayer( 0, ZOLI );
-	g_oPlayerSelect.SetPlayer( 1, SIRPI );
-
-	/*
-	int nextFighter = 0;
-	int describeOrder[ (int)LASTFIGHTER ];
-	
-	for ( i=0; i<(int)LASTFIGHTER; ++i ) describeOrder[i] = i;
-	for ( i=0; i<100; ++i )
-	{
-		int j = rand() % (int)LASTFIGHTER;
-		int k = rand() % (int)LASTFIGHTER;
-		int l;
-		l = describeOrder[j];
-		describeOrder[j] = describeOrder[k];
-		describeOrder[k] = l;
-	}
-	*/
+	g_oPlayerSelect.SetPlayer( 1, ZOLI );
 
 	/*
 	{
@@ -438,6 +515,29 @@ int main(int argc, char *argv[])
 	}
 
 	*/
+
+/*	while ( !g_oState.m_bQuitFlag )
+	{
+		g_oState.m_enGameMode = SState::IN_MULTI;
+		g_oState.m_bTeamMultiselect = false;
+		g_oState.m_iTeamSize = 3;
+		g_oState.m_enTeamMode = SState::Team_CUSTOM;
+		
+		std::vector<FighterEnum>& roTeam0 = g_oPlayerSelect.EditPlayerInfo(0).m_aenTeam;
+		std::vector<FighterEnum>& roTeam1 = g_oPlayerSelect.EditPlayerInfo(1).m_aenTeam;
+		
+		roTeam0.clear();
+		roTeam0.push_back( ZOLI );
+		roTeam0.push_back( SIRPI );
+		roTeam0.push_back( MACI );
+		roTeam1.clear();
+		roTeam1.push_back( UPI );
+		roTeam1.push_back( ZOLI );
+		roTeam1.push_back( ULMAR );
+		
+		DoGame( NULL, false, false );
+	}
+*/	
 	while ( 1 )
 	{
 		if ( g_oState.m_bQuitFlag ) break;

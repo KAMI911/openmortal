@@ -13,6 +13,8 @@
 
 struct _sge_TTFont;
 
+#include "SDL.h"
+
 enum GFX_Constants {
 	AlignHCenter	= 1,
 	AlignVCenter	= 2,
@@ -30,7 +32,40 @@ void			DrawGradientText( const char* text, _sge_TTFont* font, int y,
 SDL_Color		MakeColor( Uint8 r, Uint8 g, Uint8 b );
 
 SDLKey			GetKey( bool a_bTranslate );
-SDL_Surface*	LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset=0 );
+
+SDL_Surface*	LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset=0, bool a_bTransparent = false );
+
+bool			SetVideoMode( bool a_bLarge, bool a_bFullscreen, int a_iAdditionalFlags=0 );
+
+extern SDL_Surface* gamescreen;
+
+class CSurfaceLocker
+{
+public:
+	inline CSurfaceLocker()
+	{
+		if ( 0 == m_giLockCount )
+		{
+			if (SDL_MUSTLOCK(gamescreen)) { 
+				SDL_LockSurface( gamescreen );
+			}
+		}
+		++m_giLockCount;
+	}
+	inline ~CSurfaceLocker()
+	{
+		--m_giLockCount;
+		if ( 0 == m_giLockCount )
+		{
+			if (SDL_MUSTLOCK(gamescreen)) {
+				SDL_UnlockSurface( gamescreen );
+			}
+		}
+	}
+
+protected:
+	static int m_giLockCount;
+};
 
 extern _sge_TTFont* titleFont;		// Largest font, for titles
 extern _sge_TTFont* inkFont;		// Medium-size front, headings

@@ -168,9 +168,10 @@ void CKeyQueue::DequeueKeys( int a_iToTime )
                      GAME PUBLIC METHODS
 ***************************************************************************/
 
-Game::Game( bool a_bIsReplay, bool a_bDebug)
+Game::Game( bool a_bIsReplay, bool a_bWide, bool a_bDebug)
 {
 	m_bIsReplay = a_bIsReplay;
+	m_bWide = a_bWide;
 	m_bDebug = a_bDebug;
 	m_enInitialGameMode = g_oState.m_enGameMode;
 
@@ -187,13 +188,22 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 		mg_iBackgroundNumber = 1;
 	}
 	
-	m_poDoodads = LoadBackground( "Doodads.png", 48, 64 );
+	m_poDoodads = LoadBackground( "Doodads.png", 48, 64, true );
 	
-	m_aiRoundsWonByPlayer[0] = m_aiRoundsWonByPlayer[1] = 0;
+	int i;
+	for ( i=0; i<g_oState.m_iNumPlayers; ++i )
+	{
+		m_aiRoundsWonByPlayer[i] = 0;
+		m_aiHitPointDisplayX[i] = 4 + ((i%2) * 396) + (m_bWide ? 130 : 0);
+		m_aiHitPointDisplayY[i] = 10 + (i/2) * 45;
+		m_abHitPointDisplayLeft[i] = ! (i%2);
+	}
+
 	m_iNumberOfRounds = 0;
 
 	SDL_EnableUNICODE( 0 );
 	m_iEnqueueDelay = 10;
+
 }
 
 
@@ -214,8 +224,11 @@ Game::~Game()
 */
 int Game::Run()
 {
-	do
+	while (1)
 	{
+		// 1. START A ROUND
+		// This will update m_iNumberOfRounds and m_aiRoundsWonByPlayer[]
+
 		m_sReplayString = "";
 		m_aReplayOffsets.clear();
 		DoOneRound();
@@ -225,13 +238,22 @@ int Game::Run()
 		{
 			return -1;
 		}
-	} while ( m_aiRoundsWonByPlayer[0] < 2
-		&& m_aiRoundsWonByPlayer[1] < 2
-		&& m_iNumberOfRounds < 3 );
-	
-	if ( m_aiRoundsWonByPlayer[1] > m_aiRoundsWonByPlayer[0] ) return 1;
-	if ( m_aiRoundsWonByPlayer[1] < m_aiRoundsWonByPlayer[0] ) return 0;
-	return -1;
+
+		// 2. CHECK FOR END-OF-MATCH CONDITIONS
+		
+		int i;
+		for ( i=0; i<g_oState.m_iNumPlayers; ++i ) 
+		{
+			if ( m_aiRoundsWonByPlayer[i] >= 2 ) {
+				return i;
+			}
+		}
+
+		if ( m_iNumberOfRounds > g_oState.m_iNumPlayers )
+		{
+			return -1;
+		}
+	} 
 }
 
 
@@ -248,6 +270,59 @@ std::string& Game::GetReplay()
 ***************************************************************************/
 
 
+
+
+void Game::DrawHitPointDisplay( int a_iPlayer )
+{
+	int iX = m_aiHitPointDisplayX[a_iPlayer];
+	int iY = m_aiHitPointDisplayY[a_iPlayer];
+	bool bLeft = m_abHitPointDisplayLeft[a_iPlayer];
+	int iHp = g_oBackend.m_aoPlayers[a_iPlayer].m_iHitPoints;
+	
+	SDL_Rect oSrcRect, oDstRect;
+	
+	// The green part
+	oSrcRect.x = bLeft ? 0 : (100-iHp)*2;
+	oSrcRect.y = 154;
+	oSrcRect.h = 20;
+	oSrcRect.w = iHp * 2;
+
+	oDstRect.y = iY + m_iYOffset;
+	oDstRect.x = iX + oSrcRect.x + (bLeft ? 36 : 0 );
+
+	SDL_BlitSurface( m_poDoodads, &oSrcRect, gamescreen, &oDstRect );
+	
+	// The red part
+	if ( bLeft ) 
+		oDstRect.x += iHp * 2;
+	else 
+		oDstRect.x = iX;
+	oSrcRect.x = (100+iHp) * 2;
+	oSrcRect.w = (100-iHp) * 2;
+	SDL_BlitSurface( m_poDoodads, &oSrcRect, gamescreen, &oDstRect );
+
+	// The "won" icon
+	
+	oSrcRect.x = 0; 
+	oSrcRect.y = 276; 
+	oSrcRect.w = 32; 
+	oSrcRect.h = 32;
+	if ( m_aiRoundsWonByPlayer[a_iPlayer] > 0 )
+	{
+		oDstRect.x = iX + (bLeft ? 0 : 204);
+		oDstRect.y = iY-4 + m_iYOffset;
+		SDL_BlitSurface( m_poDoodads, &oSrcRect , gamescreen, &oDstRect );
+	}
+	
+	int iTextW = g_oPlayerSelect.GetFighterNameWidth(a_iPlayer);
+	int iTextX = bLeft ? iX + 230 - iTextW : iX + 10 ;
+	if ( iTextX + iTextW + 5 > gamescreen->w ) iTextX = gamescreen->w - iTextW - 5;
+	if ( iTextX < iX + 5 ) iTextX = iX + 5;
+	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(a_iPlayer),
+		iTextX, iY/*+ 38*/ + m_iYOffset );
+
+}
+
 /** Draws the hitpoint bars that are displayed on the top of the screen.
 Also draws the fighter names below the bars.
 
@@ -255,15 +330,20 @@ Input variables:
 \li g_oBackend.m_aoPlayers[x].m_iHitPoints
 \li g_oPlayerSelect.GetFighterName
 */
-void Game::DrawHitPointDisplay()
+void Game::DrawHitPointDisplays()
 {
+	for ( int i=0; i<g_oState.m_iNumPlayers; ++i )
+	{
+		DrawHitPointDisplay(i);
+	}
+/*
 	int hp1 = g_oBackend.m_aoPlayers[0].m_iHitPoints;// * 100 / g_oState.m_iHitPoints;
 	int hp2 = g_oBackend.m_aoPlayers[1].m_iHitPoints;// * 100 / g_oState.m_iHitPoints;
 	SDL_Rect src, dst;
 
 	src.y = 154;
 	src.h = 20;
-	dst.y = 15;
+	dst.y = 15 + m_iYOffset;
 	
 	// Player 1, green part.
 	dst.x = 40;
@@ -293,23 +373,24 @@ void Game::DrawHitPointDisplay()
 	src.x = 0; src.y = 276; src.w = 32; src.h = 32;
 	if ( m_aiRoundsWonByPlayer[0] > 0 )
 	{
-		dst.x = 4; dst.y = 11;
+		dst.x = 4; dst.y = 11 + m_iYOffset;
 		SDL_BlitSurface( m_poDoodads, &src, gamescreen, &dst );
 	}
 	if ( m_aiRoundsWonByPlayer[1] > 0 )
 	{
-		dst.x = 604; dst.y = 11;
+		dst.x = 604; dst.y = 11 + m_iYOffset;
 		SDL_BlitSurface( m_poDoodads, &src, gamescreen, &dst );
 	}
 
 	int iTextX = 230 - g_oPlayerSelect.GetFighterNameWidth(0);
 	if ( iTextX < 5 ) iTextX = 5;
 	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(0),
-		iTextX, 38 );
+		iTextX, 38 + m_iYOffset );
 	iTextX = g_oPlayerSelect.GetFighterNameWidth(1);
 	iTextX = iTextX < (635-410) ? 410 : 635-iTextX;
 	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(1),
-		iTextX, 38 );
+		iTextX, 38 + m_iYOffset );
+*/
 }
 
 
@@ -318,7 +399,23 @@ void Game::DrawHitPointDisplay()
 */
 void Game::DrawBackground()
 {
-	m_poBackground->Draw( g_oBackend.m_iBgX, g_oBackend.m_iBgY );
+	m_poBackground->Draw( g_oBackend.m_iBgX, g_oBackend.m_iBgY, m_iYOffset );
+}
+
+
+void Game::AddBodyToBackground( int a_iPlayer )
+{
+	Backend::SPlayer& roPlayer = g_oBackend.m_aoPlayers[a_iPlayer];
+	BackgroundLayer oLayer;
+
+	RlePack* poPack = g_oPlayerSelect.GetPlayerInfo(a_iPlayer).m_poPack;
+
+	oLayer.m_iXOffset = roPlayer.m_iX + g_oBackend.m_iBgX;
+	oLayer.m_iYOffset = roPlayer.m_iY;
+	oLayer.m_dDistance = 1.0;
+	oLayer.m_poSurface = poPack->CreateSurface( ABS(roPlayer.m_iFrame)-1, roPlayer.m_iFrame<0 );
+
+	m_poBackground->AddExtraLayer( oLayer );
 }
 
 
@@ -354,7 +451,7 @@ void Game::DrawPoly( const char* a_pcName, int a_iColor )
 		int x2 = SvIV( *av_fetch( poList, j, false) );
 		int y2 = SvIV( *av_fetch( poList, j+1, false) );
 
-		sge_Line( gamescreen, x1, y1, x2, y2, a_iColor ) ;
+		sge_Line( gamescreen, x1, y1 + m_iYOffset, x2, y2 + m_iYOffset, a_iColor ) ;
 	}
 }
 
@@ -375,28 +472,40 @@ void Game::DrawDoodads()
 			
 			int iWidth = sge_BF_TextSize(fastFont, s).w;
 			int iDoodadX = roDoodad.m_iX - iWidth/2;
-			if ( iDoodadX + iWidth > 640 ) iDoodadX = 640 - iWidth;
+			if ( iDoodadX + iWidth > gamescreen->w ) iDoodadX = gamescreen->w - iWidth;
 			if ( iDoodadX < 0 ) iDoodadX = 0;
 			int iDoodadY = roDoodad.m_iY;
 			
-			sge_BF_textout( gamescreen, fastFont, s, iDoodadX, iDoodadY );
+			sge_BF_textout( gamescreen, fastFont, s, iDoodadX, iDoodadY + m_iYOffset );
 			continue;
 		}
 		
-		if ( roDoodad.m_iGfxOwner < 2 )
+		if ( roDoodad.m_iGfxOwner >= 0 )
 		{
 			g_oPlayerSelect.GetPlayerInfo(roDoodad.m_iGfxOwner).m_poPack->Draw( 
-				roDoodad.m_iFrame, roDoodad.m_iX, roDoodad.m_iY, roDoodad.m_iDir < 1 );
+				roDoodad.m_iFrame, roDoodad.m_iX, roDoodad.m_iY + m_iYOffset, roDoodad.m_iDir < 1 );
 			continue;
 		}
 
+
 		SDL_Rect rsrc, rdst;
+		int w, h, y0;
 		rdst.x = roDoodad.m_iX;
-		rdst.y = roDoodad.m_iY;
-		rsrc.x = 64 * roDoodad.m_iFrame;
-		rsrc.y = 0;
-		rsrc.w = 64;
-		rsrc.h = 64;
+		rdst.y = roDoodad.m_iY + m_iYOffset;
+		if ( 5 == roDoodad.m_iType )
+		{
+			y0 = 308;
+			w = h = 24;
+		}
+		else
+		{
+			y0 = 0;
+			w = h = 64;
+		}
+		rsrc.x = w * roDoodad.m_iFrame;
+		rsrc.y = y0;
+		rsrc.w = w;
+		rsrc.h = h;
 		
 		SDL_BlitSurface( m_poDoodads, &rsrc, gamescreen, &rdst );
 		//debug( "Doodad x: %d, y: %d, t: %d, f: %d\n", dx, dy, dt, df );
@@ -423,7 +532,23 @@ Input:
 */
 void Game::Draw()
 {
-	#define GROUNDZERO 440
+	#define GROUNDZERO (440 + m_iYOffset)
+
+	m_iYOffset = ( gamescreen->h - 480 ) / 2;
+
+	if ( m_iYOffset )
+	{
+		SDL_Rect oRect;
+		oRect.x = 0;
+		oRect.w = gamescreen->w;
+		oRect.y = m_iYOffset;
+		oRect.h = 480;
+		SDL_SetClipRect( gamescreen, &oRect );
+	}
+	else
+	{
+		SDL_SetClipRect( gamescreen, NULL );
+	}
 	
 	DrawBackground();
 
@@ -431,7 +556,7 @@ void Game::Draw()
 
 	int i;
 
-	for ( i=0; i<2; ++i )
+	for ( i=0; i<g_oState.m_iNumPlayers; ++i )
 	{
 		Backend::SPlayer& roPlayer = g_oBackend.m_aoPlayers[i];
 		int iFrame = roPlayer.m_iFrame;
@@ -449,12 +574,19 @@ void Game::Draw()
 		int h2 = 15 * h / 500;
 		h = ( w / 2 ) * h / 500;
 
-		sge_FilledEllipse( gamescreen,
-			g_oBackend.m_aoPlayers[i].m_iX + w/2, GROUNDZERO,
-			h, h2, C_BLACK );
+		if ( gamescreen->format->BitsPerPixel <= 8 )
+		{
+			sge_FilledEllipse( gamescreen, g_oBackend.m_aoPlayers[i].m_iX + w/2, GROUNDZERO,
+				h, h2, C_BLACK );
+		}
+		else
+		{
+			sge_FilledEllipseAlpha( gamescreen, g_oBackend.m_aoPlayers[i].m_iX + w/2, GROUNDZERO,
+				h, h2, C_BLACK, 128 );
+		}
 	}
 
-	for ( i=0; i<2; ++i )
+	for ( i=0; i<g_oState.m_iNumPlayers; ++i )
 	{
 		Backend::SPlayer& roPlayer = g_oBackend.m_aoPlayers[i];
 		int iFrame = roPlayer.m_iFrame;
@@ -462,7 +594,7 @@ void Game::Draw()
 			continue;
 
 		RlePack* poPack = g_oPlayerSelect.GetPlayerInfo(i).m_poPack;
-		poPack->Draw( ABS(iFrame)-1, roPlayer.m_iX, roPlayer.m_iY, iFrame<0 );
+		poPack->Draw( ABS(iFrame)-1, roPlayer.m_iX, roPlayer.m_iY + m_iYOffset, iFrame<0 );
 	}
 	
 	if ( m_bDebug )
@@ -478,39 +610,39 @@ void Game::Draw()
 	}
 
 	DrawDoodads();
-	DrawHitPointDisplay();
+	DrawHitPointDisplays();
 
 	if ( Ph_NORMAL == m_enGamePhase )
 	{
 		char s[100];
 		sprintf( s, "%d", m_iGameTime );	// m_iGameTime is maintained by DoGame
-		DrawTextMSZ( s, inkFont, 320, 10, AlignHCenter, C_LIGHTCYAN, gamescreen, false );
+		DrawTextMSZ( s, inkFont, 320, 10 + m_iYOffset, AlignHCenter, C_LIGHTCYAN, gamescreen, false );
 	}
 	else if ( Ph_START == m_enGamePhase )
 	{
 		char s[100];
 		const char* format = Translate( "Round %d" );
 		sprintf( s, format, m_iNumberOfRounds+1 );
-		DrawTextMSZ( s, inkFont, 320, 200, AlignHCenter, C_WHITE, gamescreen, false );
+		DrawTextMSZ( s, inkFont, 320, 200 + m_iYOffset, AlignHCenter, C_WHITE, gamescreen, false );
 	}
 	else if ( Ph_REWIND == m_enGamePhase )
 	{
-		DrawTextMSZ( "REW", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
-		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 );
+		DrawTextMSZ( "REW", inkFont, 320, 10 + m_iYOffset, AlignHCenter, C_WHITE, gamescreen );
+		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 + m_iYOffset );
 	}
 	else if ( Ph_SLOWFORWARD == m_enGamePhase )
 	{
-		DrawTextMSZ( "REPLAY", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
-		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 );
+		DrawTextMSZ( "REPLAY", inkFont, 320, 10 + m_iYOffset, AlignHCenter, C_WHITE, gamescreen );
+		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 + m_iYOffset );
 	}
 	else if ( Ph_REPLAY == m_enGamePhase )
 	{
-		DrawTextMSZ( "DEMO", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
+		DrawTextMSZ( "DEMO", inkFont, 320, 10 + m_iYOffset, AlignHCenter, C_WHITE, gamescreen );
 	}
 	
 	if ( oFpsCounter.m_iFps > 0 )
 	{
-		sge_BF_textoutf( gamescreen, fastFont, 2, 2, "%d fps", oFpsCounter.m_iFps );
+		sge_BF_textoutf( gamescreen, fastFont, 2, 455 + m_iYOffset, "%d fps", oFpsCounter.m_iFps );
 	}
 	
 	SDL_Flip( gamescreen );
@@ -522,6 +654,12 @@ void Game::Draw()
                      GAME PROTECTED METHODS
 ***************************************************************************/
 
+
+
+bool Game::IsTeamMode()
+{
+	return SState::Team_ONE_VS_ONE != g_oState.m_enTeamMode;
+}
 
 
 bool Game::IsNetworkGame()
@@ -704,6 +842,11 @@ int Game::ProcessEvents()
 }
 
 
+void Game::HandleKO()
+{
+}
+
+
 
 void Game::HurryUp()
 {
@@ -805,9 +948,30 @@ outcome. m_iNumberOfRounds will also increase by 1.
 void Game::DoOneRound()
 {
 	m_enGamePhase = Ph_START;
+	m_poBackground->DeleteExtraLayers();
+
+	int iTeamSize = (SState::Team_ONE_VS_ONE==g_oState.m_enTeamMode) ? 
+		1 : g_oPlayerSelect.GetPlayerInfo(0).m_aenTeam.size();
+	int aiTeamNumber[MAXPLAYERS];
+
+	for ( int i=0; i<g_oState.m_iNumPlayers; ++i )
+	{
+		aiTeamNumber[i] = 0;
+	}
 	
-	g_oBackend.PerlEvalF( "GameStart(%d,%d);",
+	if ( IsTeamMode() )
+	{
+		for ( int i=0; i<g_oState.m_iNumPlayers; ++i )
+		{
+			g_oPlayerSelect.SetPlayer( i, g_oPlayerSelect.GetPlayerInfo(i).m_aenTeam[aiTeamNumber[i]] );
+		}
+	}
+	
+	g_oBackend.PerlEvalF( "GameStart(%d,%d,%d,%d,%d);",
 		IsMaster() ? g_oState.m_iHitPoints : g_poNetwork->GetGameParams().iHitPoints,
+		g_oState.m_iNumPlayers,
+		iTeamSize,
+		m_bWide,
 		m_bDebug );
 	g_oBackend.ReadFromPerl();
 
@@ -913,6 +1077,28 @@ void Game::DoOneRound()
 
 		// 4. Check 'end of round' condition.
 
+		for ( int i=0; i<g_oState.m_iNumPlayers; ++i )
+		{
+			if ( g_oBackend.m_aoPlayers[i].m_iRealHitPoints <= -10000 ) 
+			{
+				// We have a dead player here.
+				if ( aiTeamNumber[i] < iTeamSize-1 ) 
+				{
+					++aiTeamNumber[i];
+					AddBodyToBackground( i );
+					FighterEnum enFighter = g_oPlayerSelect.GetPlayerInfo(i).m_aenTeam[ aiTeamNumber[i] ];
+
+					g_oPlayerSelect.SetPlayer( i, enFighter );
+					g_oBackend.PerlEvalF( "NextTeamMember(%d,%d);", i, enFighter );
+				}
+			}
+		}
+
+		if ( g_oBackend.m_iGameOver )
+		{
+			break;
+		}
+
 		if ( !IsMaster() )
 		{
 			if ( g_poNetwork->IsRoundOver() )
@@ -920,14 +1106,10 @@ void Game::DoOneRound()
 				break;
 			}
 		}
-		else if ( g_oBackend.m_iGameOver )
-		{
-			break;
-		}
 	}
 	
-	int p1h = g_oBackend.m_aoPlayers[0].m_iHitPoints;
-	int p2h = g_oBackend.m_aoPlayers[1].m_iHitPoints;
+	int p1h = g_oBackend.m_aoPlayers[0].m_iRealHitPoints;
+	int p2h = g_oBackend.m_aoPlayers[1].m_iRealHitPoints;
 	
 	// 3. DO THE REPLAY (IF THERE WAS A KO)
 	
@@ -1038,6 +1220,22 @@ int Game::GetBackgroundNumber()		//static
 
 
 
+class CVideoModeChange
+{
+public:
+	CVideoModeChange( bool a_bWide )
+	{
+		m_bWide = a_bWide;
+		if ( m_bWide ) SetVideoMode( true, g_oState.m_bFullscreen );
+	}
+	~CVideoModeChange()
+	{
+		if ( m_bWide ) SetVideoMode( false, g_oState.m_bFullscreen );
+	}
+	bool m_bWide;
+};
+
+
 /** Public static function.
 
 Other parts of OpenMortal need not include "Game.h" so long as they have
@@ -1050,7 +1248,9 @@ In normal mode, Run() is called. The replay file is recorded, if it is not NULL.
 
 int DoGame( char* a_pcReplayFile, bool a_bIsReplay, bool a_bDebug )
 {
-	Game oGame( a_bIsReplay, a_bDebug );
+	bool bWide = g_oState.m_iNumPlayers > 2;
+	CVideoModeChange oVideoMode( bWide );
+	Game oGame( a_bIsReplay, bWide, a_bDebug );
 	
 	if ( a_bIsReplay )
 	{

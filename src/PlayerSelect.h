@@ -17,7 +17,10 @@
 
 
 #include "FighterEnum.h"
+#include "common.h"
+
 #include <string>
+#include <vector>
 
 class RlePack;
 struct SDL_Surface;
@@ -39,6 +42,8 @@ struct PlayerInfo
 	TintEnum		m_enTint;
 	RlePack*		m_poPack;
 	std::string		m_sFighterName;
+
+	std::vector<FighterEnum> m_aenTeam;
 };
 
 
@@ -55,6 +60,7 @@ public:
 	PlayerSelect();
 	
 	const PlayerInfo& GetPlayerInfo( int a_iPlayer );
+	PlayerInfo& EditPlayerInfo( int a_iPlayer );
 	const char* GetFighterName( int a_iPlayer );
 	int GetFighterNameWidth( int a_iPlayer );
 	
@@ -63,32 +69,22 @@ public:
 	void SetTint( int a_iPlayer, TintEnum a_enFighter );
 	bool IsFighterAvailable( FighterEnum a_enFighter );
 	bool IsLocalFighterAvailable( FighterEnum a_enFighter );
+	bool IsFighterInTeam( FighterEnum a_enFighter );
+
 
 protected:
 
-	void HandleKey( int a_iPlayer, int a_iKey );
-	void HandleNetwork();
-	void DrawRect( int a_iPos, int a_iColor );
-	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor );
+//	void HandleKey( int a_iPlayer, int a_iKey );
+//	void HandleNetwork();
+//	void DrawRect( int a_iPos, int a_iColor );
+//	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor );
 	static RlePack* LoadFighter( FighterEnum m_enFighter );
-	bool IsNetworkGame();
-	FighterEnum GetFighterCell( int a_iIndex );
+//	bool IsNetworkGame();
+//	FighterEnum GetFighterCell( int a_iIndex );
 
 protected:
-	PlayerInfo	m_aoPlayers[2];
-	int			m_iP1, m_iP2;			// Chooser cells for player 1 and 2
-	bool		m_bDone1, m_bDone2;		// Has player n chosen a player?
-	int			m_aiFighterNameWidth[2];
-
-	int			m_iChooserLeft;
-	int			m_iChooserTop;
-	int			m_iChooserWidth;
-	int			m_iChooserHeight;
-	int			m_iChooserRows;
-	int			m_iChooserCols;
-
-	CTextArea*	m_poTextArea;
-	CReadline*	m_poReadline;
+	PlayerInfo	m_aoPlayers[MAXPLAYERS];
+	int			m_aiFighterNameWidth[MAXPLAYERS];
 };
 
 

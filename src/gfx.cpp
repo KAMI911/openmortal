@@ -17,6 +17,7 @@
 
 
 
+
 #include "sge_tt_text.h"
 #include "sge_surface.h"
 
@@ -28,6 +29,10 @@
 #endif
 #include "State.h"
 #include "Event.h"
+
+
+int CSurfaceLocker::m_giLockCount = 0;
+
 
 
 Uint16 *UTF8_to_UNICODE(Uint16 *unicode, const char *utf8, int len);
@@ -151,12 +156,14 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 	dest.y = flags & AlignVCenter ? y-dest.h/2 : y;
 
 	//debug( "X: %d, Y: %d, W: %d, H: %d\n", dest.x, dest.y, dest.w, dest.h );
+
+	CSurfaceLocker oLock;
+
 	if ( flags & UseShadow )
 	{
 #ifdef MSZ_USES_UTF8
 		sge_tt_textout_UTF8( target, font, string, dest.x+2, dest.y+2+sge_TTF_FontAscent(font), C_BLACK, C_BLACK, 255 );
 #else
-
 		sge_tt_textout( target, font, string, dest.x+2, dest.y+2+sge_TTF_FontAscent(font), C_BLACK, C_BLACK, 255 );
 #endif
 	}
@@ -193,6 +200,7 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 	size.y = y;
 	SDL_Surface* surface = SDL_CreateRGBSurface( SDL_SRCCOLORKEY, size.w, size.h, 8, 0,0,0,0 );
 
+
 	if ( NULL == surface )
 	{
 		debug( "DrawGradientText: Couldn't allocate %d by %d surface!\n", size.w, size.h );
@@ -225,7 +233,7 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 		1, y1, 255, 0, 255);
 
 
-
+	if ( SDL_MUSTLOCK(surface) ) SDL_LockSurface(surface);
 	for ( y=1; y<size.h-1; ++y )
 	{
 		int color = 254 * y / (size.h-1) + 1;
@@ -250,6 +258,7 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 			}
 		}
 	}
+	if ( SDL_MUSTLOCK(surface) ) SDL_UnlockSurface(surface);
 
 	// 4. FINALLY
 
@@ -287,6 +296,7 @@ SDLKey GetKey( bool a_bTranslate )
 			return oSdlEvent.key.keysym.sym;
 		}
 		if ( SDL_QUIT == oSdlEvent.type )
+
 		{
 			g_oState.m_bQuitFlag = true;
 			return SDLK_ESCAPE;
@@ -330,7 +340,7 @@ SDLKey GetKey( bool a_bTranslate )
 
 
 
-SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset )
+SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_iPaletteOffset, bool a_bTransparent )
 {
 	char filepath[FILENAME_MAX+1];
 	strcpy( filepath, DATADIR );
@@ -345,7 +355,7 @@ SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_i
 	}
 	
 	SDL_Palette* pal = poBackground->format->palette;
-	if ( pal )
+	if ( pal && gamescreen->format->palette )
 	{
 		int ncolors = pal->ncolors;
 		if (ncolors>a_iNumColors) ncolors = a_iNumColors;
@@ -356,7 +366,62 @@ SDL_Surface* LoadBackground( const char* a_pcFilename, int a_iNumColors, int a_i
 	SDL_Surface* poRetval = SDL_DisplayFormat( poBackground );
 	SDL_FreeSurface( poBackground );
 
+/*	if ( !a_bTransparent && poRetval )
+	{
+		SDL_SetColorKey( poRetval, 0, 0 );
+	}
+	else
+	{
+		SDL_SetColorKey( poRetval, SDL_SRCCOLORKEY, 0 );
+	}
+*/
 	return poRetval;
 }
 
+
+bool SetVideoMode( bool a_bLarge, bool a_bFullScreen, int a_iAdditionalFlags )
+{
+	// SET THE PARAMETERS FOR THE VIDEO MODE
+
+	int iBpp = 16;		// Try the display's BPP first.
+	if ( NULL != gamescreen )
+	{
+		iBpp = gamescreen->format->BitsPerPixel;
+	}
+
+	int iFlags = a_iAdditionalFlags;
+	if ( a_bFullScreen )
+	{
+		iFlags |= SDL_FULLSCREEN;
+	}
+
+	// CALL SDL_SetVideoMode
+
+	int iWidth = a_bLarge ? 800 : 640;
+	int iHeight = a_bLarge ? 600 : 480;
+//	if ( !a_bFullScreen ) iHeight = 480;
+
+	gamescreen = SDL_SetVideoMode( iWidth, iHeight, iBpp, iFlags );
+	if ( NULL == gamescreen ) 
+	{
+		debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed.\n", iWidth, iHeight, iBpp, iFlags );
+		return false;
+	}
+
+	// IF THE DISPLAY IS 24BPP OR 8 BPP OR LESS, EMULATE 16 BPP INSTEAD
+	// (because we are lazy and won't write 8bpp and 24bpp code anymore)
+
+	if ( gamescreen->format->BytesPerPixel != 2
+		&& gamescreen->format->BytesPerPixel != 4 )
+	{
+		gamescreen = SDL_SetVideoMode( iWidth, iHeight, 16, iFlags );
+		if ( NULL == gamescreen )
+		{
+			debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed.\n", iWidth, iHeight, 16, iFlags );
+			return false;
+		}
+	}
+	
+	return true;
+}
 

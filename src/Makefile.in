@@ -79,10 +79,10 @@ perl_embed_ccflags = @perl_embed_ccflags@
 perl_embed_ldflags = @perl_embed_ldflags@
 
 bin_PROGRAMS = openmortal
-openmortal_SOURCES = Audio.cpp Backend.cpp common.cpp 	Demo.cpp FighterStats.cpp FlyingChars.cpp Game.cpp gfx.cpp main.cpp 	menu.cpp PlayerSelect.cpp RlePack.cpp sge_bm_text.cpp 	sge_primitives.cpp sge_surface.cpp sge_tt_text.cpp State.cpp 	GameOver.cpp Background.cpp MortalNetworkImpl.cpp Chooser.cpp 	TextArea.cpp OnlineChat.cpp Joystick.cpp
+openmortal_SOURCES =  	Audio.cpp         FlyingChars.cpp  MortalNetworkImpl.cpp       sge_primitives.cpp 	Backend.cpp       Game.cpp         OnlineChat.cpp              sge_surface.cpp 	Background.cpp    GameOver.cpp     PlayerSelectController.cpp  sge_tt_text.cpp 	Chooser.cpp       gfx.cpp          PlayerSelect.cpp            State.cpp 	common.cpp        Joystick.cpp     PlayerSelectView.cpp        TextArea.cpp 	Demo.cpp          main.cpp         RlePack.cpp 	FighterStats.cpp  menu.cpp         sge_bm_text.cpp
 
 
-EXTRA_DIST = Audio.h Backend.h common.h Demo.h FlyingChars.h gfx.h 	menu.h RlePack.h sge_bm_text.h sge_config.h sge_internal.h 	sge_primitives.h sge_surface.h sge_tt_text.h State.h 	Game.h FighterEnum.h PlayerSelect.h MszPerl.h 	Audio.cpp Backend.cpp common.cpp 	Demo.cpp FighterStats.cpp FlyingChars.cpp Game.cpp gfx.cpp main.cpp 	menu.cpp PlayerSelect.cpp RlePack.cpp sge_bm_text.cpp 	sge_primitives.cpp sge_surface.cpp sge_tt_text.cpp State.cpp 	GameOver.cpp Background.h MortalNetwork.h MortalNetworkImpl.h 	FighterStats.h Chooser.h TextArea.h OnlineChat.h Joystick.h Event.h
+EXTRA_DIST = $(openmortal_SOURCES) 	Audio.h       Event.h         menu.h                    PlayerSelectView.h  sge_tt_text.h 	Backend.h     FighterEnum.h   MortalNetwork.h           RlePack.h           State.h 	Background.h  FighterStats.h  MortalNetworkImpl.h       sge_bm_text.h       TextArea.h 	Chooser.h     FlyingChars.h   MszPerl.h                 sge_config.h 	common.h      Game.h          OnlineChat.h              sge_internal.h 	Demo.h        gfx.h           PlayerSelectController.h  sge_primitives.h 	DrawRle.h     Joystick.h      PlayerSelect.h            sge_surface.h
 
 
 CXXFLAGS = @CXXFLAGS@ -DDATADIR=\"${pkgdatadir}\" -Wall
@@ -96,11 +96,12 @@ DEFS = @DEFS@ -I. -I$(srcdir) -I..
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-openmortal_OBJECTS =  Audio.o Backend.o common.o Demo.o FighterStats.o \
-FlyingChars.o Game.o gfx.o main.o menu.o PlayerSelect.o RlePack.o \
-sge_bm_text.o sge_primitives.o sge_surface.o sge_tt_text.o State.o \
-GameOver.o Background.o MortalNetworkImpl.o Chooser.o TextArea.o \
-OnlineChat.o Joystick.o
+openmortal_OBJECTS =  Audio.o FlyingChars.o MortalNetworkImpl.o \
+sge_primitives.o Backend.o Game.o OnlineChat.o sge_surface.o \
+Background.o GameOver.o PlayerSelectController.o sge_tt_text.o \
+Chooser.o gfx.o PlayerSelect.o State.o common.o Joystick.o \
+PlayerSelectView.o TextArea.o Demo.o main.o RlePack.o FighterStats.o \
+menu.o sge_bm_text.o
 openmortal_LDADD = $(LDADD)
 openmortal_DEPENDENCIES = 
 openmortal_LDFLAGS = 
@@ -118,9 +119,10 @@ DEP_FILES =  .deps/Audio.P .deps/Backend.P .deps/Background.P \
 .deps/Chooser.P .deps/Demo.P .deps/FighterStats.P .deps/FlyingChars.P \
 .deps/Game.P .deps/GameOver.P .deps/Joystick.P \
 .deps/MortalNetworkImpl.P .deps/OnlineChat.P .deps/PlayerSelect.P \
-.deps/RlePack.P .deps/State.P .deps/TextArea.P .deps/common.P \
-.deps/gfx.P .deps/main.P .deps/menu.P .deps/sge_bm_text.P \
-.deps/sge_primitives.P .deps/sge_surface.P .deps/sge_tt_text.P
+.deps/PlayerSelectController.P .deps/PlayerSelectView.P .deps/RlePack.P \
+.deps/State.P .deps/TextArea.P .deps/common.P .deps/gfx.P .deps/main.P \
+.deps/menu.P .deps/sge_bm_text.P .deps/sge_primitives.P \
+.deps/sge_surface.P .deps/sge_tt_text.P
 SOURCES = $(openmortal_SOURCES)
 OBJECTS = $(openmortal_OBJECTS)
 

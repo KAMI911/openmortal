@@ -39,10 +39,10 @@ void DrawPlayer( int i )
 
 void GameOver( int a_iPlayerWon )
 {
-	SDL_Surface* poBackground = LoadBackground( "GameOver.png", 112 );
+	SDL_Surface* poBackground = LoadBackground( "GameOver.jpg", 112 );
 	DrawGradientText( "Final Judgement", titleFont, 20, poBackground );
 	DrawTextMSZ( "Continue?", inkFont, 320, 100, AlignHCenter, C_LIGHTCYAN, poBackground );
-	SDL_Surface* poFoot = LoadBackground( "Foot.png", 112 );
+	SDL_Surface* poFoot = LoadBackground( "Foot.png", 112, 0, true );
 	
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	

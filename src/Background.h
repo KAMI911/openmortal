@@ -33,11 +33,15 @@ public:
 
 	void		Clear();
 	void		Load( int a_iBackgroundNumber );
+	void		AddExtraLayer( const BackgroundLayer& a_roLayer );
+	void		DeleteExtraLayers();
+
 	bool		IsOK();
-	void		Draw( int a_iXPosition, int a_iYPosition );
+	void		Draw( int a_iXPosition, int a_iYPosition, int a_iYOffset );
 
 protected:
 	int			m_iNumber;
+	int			m_iFirstExtraLayer;
 	bool		m_bOK;
 	LayerVector	m_aLayers;
 };

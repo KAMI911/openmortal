@@ -10,20 +10,24 @@
 #define __COMMON_H
 
 
+#ifndef _SDL_types_h
+#include "SDL_types.h"
+#endif
 
 struct SDL_Surface;
+#define MAXPLAYERS 4
 
-#define SCREENWIDTH 640
-#define SCREENHEIGHT 480
-#define GAMEBITS 3
-#define GAMEBITS2 (1<<GAMEBITS)
 
 void debug( const char* format, ... );
+#ifndef ABS
 #define ABS(A) ( (A>=0) ? (A) : -(A) )
-
-#ifdef _SDL_video_h
-
-extern SDL_Surface* gamescreen;
+#endif
+#ifndef MAX
+#define MAX(A,B) ( (A) > (B) ? (A) : (B) )
+#endif
+#ifndef MIN
+#define MIN(A,B) ( (A) < (B) ? (A) : (B) )
+#endif
 
 
 void DoMenu();
@@ -35,27 +39,27 @@ bool Connect( const char* a_pcHostname );
 const char* Translate( const char* a_pcText );
 const char* TranslateUTF8( const char* a_pcText );
 
-#define C_BLACK			240
-#define C_BLUE			241
-#define C_GREEN			242
-#define C_CYAN			243
+extern SDL_Surface* gamescreen;
 
-#define C_RED			244
-#define C_MAGENTA		245
-#define C_ORANGE		246
-#define C_LIGHTGRAY		247
+extern Uint32 C_BLACK;
+extern Uint32 C_BLUE;
+extern Uint32 C_GREEN;
+extern Uint32 C_CYAN;
 
-#define C_DARKGRAY		248
-#define C_LIGHTBLUE		249
-#define C_LIGHTGREEN	250
-#define C_LIGHTCYAN		251
+extern Uint32 C_RED;
+extern Uint32 C_MAGENTA;
+extern Uint32 C_ORANGE;
+extern Uint32 C_LIGHTGRAY;
 
-#define C_LIGHTRED		252
-#define C_LIGHTMAGENTA	253
-#define C_YELLOW		254
-#define C_WHITE			255
+extern Uint32 C_DARKGRAY;
+extern Uint32 C_LIGHTBLUE;
+extern Uint32 C_LIGHTGREEN;
+extern Uint32 C_LIGHTCYAN;
 
+extern Uint32 C_LIGHTRED;
+extern Uint32 C_LIGHTMAGENTA;
+extern Uint32 C_YELLOW;
+extern Uint32 C_WHITE;
 
-#endif
 
 #endif

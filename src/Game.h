@@ -70,7 +70,7 @@ file or the backend), handling the keystrokes and network, etc.
 class Game
 {
 public:
-	Game( bool a_bIsReplay, bool a_bDebug );
+	Game( bool a_bIsReplay, bool m_bWide, bool a_bDebug );
 	~Game();
 	int Run();
 	std::string& GetReplay();
@@ -79,21 +79,25 @@ public:
 	
 protected:
 	void Draw();
-	void DrawHitPointDisplay();
+	void DrawHitPointDisplay( int a_iPlayer);
+	void DrawHitPointDisplays();
 	void DrawBackground();
 	void DrawDoodads();
 	void DrawPoly( const char* a_pcName, int a_iColor );
+	void AddBodyToBackground( int a_iPlayer );
 	
 	void DoOneRound();
 	
 	void Advance( int a_iNumFrames );
 	int ProcessEvents();
 	void HandleKey( int a_iPlayer, int a_iKey, bool a_bDown );
+	void HandleKO();
 	
 	void HurryUp();
 	void TimeUp();
 	void InstantReplay( int a_iKoAt );
 
+	bool IsTeamMode();
 	bool IsNetworkGame();
 	bool IsMaster();
 	void ReadKeysFromNetwork();
@@ -103,11 +107,17 @@ protected:
 	static int			mg_iBackgroundNumber;
 
 	bool				m_bIsReplay;
+	bool				m_bWide;		///< 800 or 640 pixel width.
+	int					m_iYOffset;		///< For wide mode.
 	bool				m_bDebug;
 	Background*			m_poBackground;
 	SDL_Surface*		m_poDoodads;
+
+	int					m_aiHitPointDisplayX[MAXPLAYERS];
+	int					m_aiHitPointDisplayY[MAXPLAYERS];
+	bool				m_abHitPointDisplayLeft[MAXPLAYERS];
 	
-	int					m_aiRoundsWonByPlayer[2];
+	int					m_aiRoundsWonByPlayer[MAXPLAYERS];
 	int					m_iNumberOfRounds;
 	int					m_iFrame;
 	int					m_iGameTime;
@@ -128,7 +138,7 @@ protected:
 		
 		Ph_REPLAY,			// Replay mode
 	}					m_enGamePhase;
-
+	
 	SState::TGameMode	m_enInitialGameMode;	// must make sure it's still the same.
 };
 

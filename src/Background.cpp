@@ -37,6 +37,7 @@ Background::Background()
 {
 	m_bOK = false;
 	m_iNumber = 0;
+	m_iFirstExtraLayer = 0;
 }
 
 
@@ -61,6 +62,7 @@ void Background::Clear()
 	m_aLayers.clear();
 	m_bOK = false;
 	m_iNumber = 0;
+	m_iFirstExtraLayer = 0;
 }
 
 
@@ -91,6 +93,7 @@ void Background::Load( int a_iBackgroundNumber )
 		m_aLayers.push_back( oLayer );
 		
 		m_iNumber = a_iBackgroundNumber;
+		m_iFirstExtraLayer = m_aLayers.size();
 		m_bOK = true;
 		return;
 	}
@@ -114,8 +117,31 @@ void Background::Load( int a_iBackgroundNumber )
 		m_aLayers.push_back( oLayer );
 	}
 	
+	m_iFirstExtraLayer = m_aLayers.size();
 	m_bOK = m_aLayers.size() > 0;
 	m_iNumber = m_bOK ? a_iBackgroundNumber : 0;
+}
+
+
+/** Adds a layer to the background.
+
+The background object will assume ownership of the given structure, including
+the surface within.
+*/
+
+void Background::AddExtraLayer( const BackgroundLayer& a_roLayer )
+{
+	m_aLayers.push_back( a_roLayer );
+}
+
+
+void Background::DeleteExtraLayers()
+{
+	while ( m_aLayers.size() > m_iFirstExtraLayer )
+	{
+		SDL_FreeSurface( m_aLayers.back().m_poSurface );
+		m_aLayers.pop_back();
+	}
 }
 
 
@@ -125,7 +151,7 @@ bool Background::IsOK()
 }
 
 
-void Background::Draw( int a_iXPosition, int a_iYPosition )
+void Background::Draw( int a_iXPosition, int a_iYPosition, int a_iYOffset )
 {
 	for ( LayerIterator it = m_aLayers.begin(); it != m_aLayers.end(); ++it )
 	{
@@ -133,8 +159,8 @@ void Background::Draw( int a_iXPosition, int a_iYPosition )
 		sge_Blit( roLayer.m_poSurface, gamescreen,
 			0, 0,	// source position
 			roLayer.m_iXOffset - (int)( ((double)a_iXPosition) * roLayer.m_dDistance ),
-			roLayer.m_iYOffset - (int)( ((double)a_iYPosition) * roLayer.m_dDistance ),
-			SCREENWIDTH*3 + 100, SCREENHEIGHT + 100 );
+			roLayer.m_iYOffset - (int)( ((double)a_iYPosition) * roLayer.m_dDistance ) + a_iYOffset,
+			gamescreen->w*3 + 100, gamescreen->h + 100 );
 	}
 }
 

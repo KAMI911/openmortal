@@ -40,11 +40,13 @@ public:
 	
 	int GetNumberOfFighters();
 	FighterEnum GetFighterID( int a_iIndex );
+	int GetNumberOfAvailableFighters();
 	
 	// Game data
 	
 	void AdvancePerl();
 	void ReadFromPerl();
+	bool IsDead( int a_iPlayer );
 	void PlaySounds();
 	void WriteToString( std::string& a_rsOutString );
 	void ReadFromString( const std::string& a_rsString );
@@ -61,8 +63,8 @@ public:
 	
 	struct SPlayer
 	{
-		int m_iX, m_iY, m_iFrame, m_iHitPoints;
-	}				m_aoPlayers[2];
+		int m_iX, m_iY, m_iFrame, m_iHitPoints, m_iRealHitPoints;
+	}				m_aoPlayers[MAXPLAYERS];
 	
 	struct SDoodad
 	{

@@ -7,7 +7,7 @@
  ***************************************************************************/
 
 
-#include "SDL/SDL.h"
+#include "SDL.h"
 #include "Event.h"
 #include "common.h"
 #include "Joystick.h"

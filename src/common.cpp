@@ -12,7 +12,7 @@
 #include "common.h"
 #include "State.h"
 #include "Joystick.h"
-#include "SDL/SDL.h"
+#include "SDL.h"
 #include "Event.h"
 
 
@@ -30,7 +30,7 @@ void debug( const char* format, ... )
 
 bool FindPlayerKey( SDLKey a_enKey, int& a_riOutPlayer, int& a_riOutKey )
 {
-	for (int i=0; i<2; i++)
+	for (int i=0; i<MAXPLAYERS; i++)
 	{
 		for (int j=0; j<9; j++ )
 		{

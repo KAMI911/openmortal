@@ -79,7 +79,7 @@ FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 	m_iTimeLeft = 500;
 	m_poStaff = NULL;
 	
-	m_poBackground = LoadBackground( "FighterStats.png", 64 );
+	m_poBackground = LoadBackground( "FighterStats.jpg", 64 );
 	DrawGradientText( "Fighter Stats", titleFont, 10, m_poBackground );
 
 	SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
@@ -118,13 +118,13 @@ FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 	if ( g_oPlayerSelect.IsFighterAvailable( m_enFighter ) )
 	{
 		g_oPlayerSelect.SetPlayer( 0, m_enFighter );
-		g_oBackend.PerlEvalF( "SelectStart();" );
+		g_oBackend.PerlEvalF( "SelectStart(%d);", 2 );
 	}
 	else
 	{
 		std::string sStaffFilename = DATADIR;
 		sStaffFilename += "/characters/STAFF.DAT";
-		m_poStaff = new RlePack( sStaffFilename.c_str(), 240 );
+		m_poStaff = new RlePack( sStaffFilename.c_str(), 255 );
 	}
 
 	g_oBackend.PerlEvalF("GetFighterStats(%d);", m_enFighter );

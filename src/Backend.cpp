@@ -10,6 +10,7 @@
 #include "common.h"
 #include "Backend.h"
 #include "Audio.h"
+#include "State.h"
 
 #include <string>
 #include <stdarg.h>
@@ -30,8 +31,8 @@ Backend				g_oBackend;
 
 SV
 	*perl_bgx, *perl_bgy,
-	*perl_p1x, *perl_p1y, *perl_p1f, *perl_p1h,
-	*perl_p2x, *perl_p2y, *perl_p2f, *perl_p2h,
+	*perl_px[MAXPLAYERS], *perl_py[MAXPLAYERS], *perl_pf[MAXPLAYERS], 
+	*perl_ph[MAXPLAYERS], *perl_phreal[MAXPLAYERS],
 	*perl_gametick, *perl_over, *perl_ko;
 
 SV
@@ -122,7 +123,7 @@ Backend::Backend()
 {
 	m_iBgX = m_iBgY = 0;
 	m_iNumDoodads = m_iNumSounds = 0;
-	for ( int i=0; i<2; ++i )
+	for ( int i=0; i<MAXPLAYERS; ++i )
 	{
 		m_aoPlayers[i].m_iX = m_aoPlayers[i].m_iY = 0;
 		m_aoPlayers[i].m_iFrame = 0;
@@ -160,7 +161,10 @@ bool Backend::Construct()
 	chdir( sFileName.c_str() );
 #endif
 	
+//	char *perl_argv[] = {"", "-d:Trace", "Backend.pl"};
+//	int perl_argc = 3;
 	char *perl_argv[] = {"", "Backend.pl"};
+	int perl_argc = 2;
 	my_perl = perl_alloc();
 	if ( my_perl == NULL )
 	{
@@ -168,7 +172,7 @@ bool Backend::Construct()
 	}
 	
 	perl_construct( my_perl );
-	if ( perl_parse( my_perl, NULL, 2, perl_argv, (char**)NULL ) )
+	if ( perl_parse( my_perl, NULL, perl_argc, perl_argv, (char**)NULL ) )
 	{
 		char *error = SvPV_nolen(get_sv("@", FALSE));
 		fprintf( stderr, "%s", error );
@@ -194,12 +198,13 @@ const char* Backend::PerlEvalF( const char* a_pcFormat, ... )
 	char acBuffer[1024];
 	vsnprintf( acBuffer, 1023, a_pcFormat, ap );
 	acBuffer[1023] = 0;
-	PERLEVAL(acBuffer);
+	eval_pv(acBuffer,FALSE);
 	
 	const char *pcError = SvPV_nolen(get_sv("@", FALSE));
-	if ( pcError )
+	if ( pcError && *pcError )
 	{
-		fprintf( stderr, "%s", pcError );
+		debug( "eval '%s': '%s'\n", acBuffer, pcError );
+		exit(0);
 	}
 	
 	va_end( ap );
@@ -238,12 +243,14 @@ This may be more than the actual number of playable characters, as
 some or many characters may not be ready or installed.
 
 \see GetFighterID
+\see GetNumberOfAvailableFighters
 */
 int Backend::GetNumberOfFighters()
 {
 	PerlEvalF( "$::CppNumberOfFighters = scalar keys %::FighterStats;" );
 	return GetPerlInt( "CppNumberOfFighters" );
 }
+
 
 /** Returns the ID of a fighter. The index parameter should start from
 zero, and be less than the value returned by GetNumberOfFighters().
@@ -257,47 +264,72 @@ FighterEnum Backend::GetFighterID( int a_iIndex )
 }
 
 
+/** Returns the number of fighters that are locally availaible for play.
+This number is smaller or equal to the value returned by GetNumberOfFighters().
+
+Note that the method GetFighterID() returns ID's of non-available
+fighters as well, so it can only be used in conjunction with GetNumberOfFighters()
+
+\see GetNumberOfFighters
+*/
+int Backend::GetNumberOfAvailableFighters()
+{
+	PerlEvalF( "GetNumberOfAvailableFighters();" );	// Defined in FighterStats.pl
+	return GetPerlInt( "CppNumberOfAvailableFighters" );
+}
+
 
 
 void Backend::AdvancePerl()
 {
-	PERLEVAL("GameAdvance();");
+	PerlEvalF("GameAdvance();");
 }
 
 
 
 void Backend::ReadFromPerl()
 {
+	int i;
+
 	if ( perl_bgx == NULL )
 	{
 		perl_gametick = get_sv("gametick", TRUE);
 		perl_bgx = get_sv("bgx", TRUE);
 		perl_bgy = get_sv("bgy", TRUE);
-		perl_p1x = get_sv("p1x", TRUE);
-		perl_p1y = get_sv("p1y", TRUE);
-		perl_p1f = get_sv("p1f", TRUE);
-		perl_p1h = get_sv("p1h", TRUE);
-		perl_p2x = get_sv("p2x", TRUE);
-		perl_p2y = get_sv("p2y", TRUE);
-		perl_p2f = get_sv("p2f", TRUE);
-		perl_p2h = get_sv("p2h", TRUE);
 		perl_over= get_sv("over", TRUE);
 		perl_ko = get_sv("ko", TRUE);
+
+		char acVarName[128];
+
+		for ( i=0; i<MAXPLAYERS; ++i )
+		{
+			sprintf( acVarName, "p%dx", i+1 );
+			perl_px[i] = get_sv(acVarName, TRUE);
+			sprintf( acVarName, "p%dy", i+1 );
+			perl_py[i] = get_sv(acVarName, TRUE);
+			sprintf( acVarName, "p%df", i+1 );
+			perl_pf[i] = get_sv(acVarName, TRUE);
+			sprintf( acVarName, "p%dh", i+1 );
+			perl_ph[i] = get_sv(acVarName, TRUE);
+			sprintf( acVarName, "p%dhreal", i+1 );
+			perl_phreal[i] = get_sv(acVarName, TRUE);
+		}
 	}
 
 	m_iGameTick = SvIV( perl_gametick );
 	m_iBgX = SvIV( perl_bgx );
 	m_iBgY = SvIV( perl_bgy );
-	m_aoPlayers[0].m_iX = SvIV( perl_p1x );
-	m_aoPlayers[0].m_iY = SvIV( perl_p1y );
-	m_aoPlayers[0].m_iFrame = SvIV( perl_p1f );
-	m_aoPlayers[0].m_iHitPoints = SvIV( perl_p1h ) / 10;
-	m_aoPlayers[1].m_iX = SvIV( perl_p2x );
-	m_aoPlayers[1].m_iY = SvIV( perl_p2y );
-	m_aoPlayers[1].m_iFrame = SvIV( perl_p2f );
-	m_aoPlayers[1].m_iHitPoints = SvIV( perl_p2h ) / 10;
 	m_iGameOver = SvIV( perl_over );
 	m_bKO = SvIV( perl_ko );
+
+	for ( i=0; i<g_oState.m_iNumPlayers; ++i )
+	{
+		m_aoPlayers[i].m_iX = SvIV( perl_px[i] );
+		m_aoPlayers[i].m_iY = SvIV( perl_py[i] );
+		m_aoPlayers[i].m_iFrame = SvIV( perl_pf[i] );
+		m_aoPlayers[i].m_iHitPoints = SvIV( perl_ph[i] ) / 10;
+		m_aoPlayers[i].m_iRealHitPoints = SvIV( perl_phreal[i] );
+	}
 	
 	// READ DOODAD DATA
 	
@@ -363,6 +395,12 @@ void Backend::ReadFromPerl()
 		m_asSounds[ m_iNumSounds ] = pcSound;
 		//Audio->PlaySample( pcSound );
 	}
+}
+
+
+bool Backend::IsDead( int a_iPlayer )
+{
+	return m_aoPlayers[ a_iPlayer ].m_iRealHitPoints <= 0;
 }
 
 

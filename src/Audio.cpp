@@ -29,7 +29,7 @@ class MszAudioPriv
 {
 public:
 	bool		m_bAudioOk;
-	int		m_iNumChannels;
+	int			m_iNumChannels;
 	SampleMap	m_oSamples;
 	MusicMap	m_oMusics;
 };
@@ -67,7 +67,7 @@ MszAudio::MszAudio()
 		SELF.m_bAudioOk = true;
 	}
 
-	m_poPriv->m_iNumChannels = Mix_AllocateChannels(8);
+	m_poPriv->m_iNumChannels = Mix_AllocateChannels(10);
 }
 
 

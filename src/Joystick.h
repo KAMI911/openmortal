@@ -10,7 +10,7 @@
 #ifndef JOYSTICK_H
 #define JOYSTICK_H
 
-#include "SDL/SDL.h"
+#include "SDL.h"
 
 struct SMortalEvent;
  

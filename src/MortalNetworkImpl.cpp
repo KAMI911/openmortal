@@ -435,6 +435,8 @@ void CMortalNetworkImpl::SendRawData( char a_cID, const void* a_pData, int a_iLe
 	
 	int iRetval = SDLNet_TCP_Send( m_poSocket, pcBuffer, iPacketLength );
 	if ( iRetval != iPacketLength ) DISCONNECTONCOMMUNICATIONERROR;
+
+	delete [] pcBuffer;
 }
 
 

@@ -10,8 +10,9 @@
 #ifndef STATE_H
 #define STATE_H
 
-#include "SDL_mixer.h"
-#include "SDL_keysym.h"
+
+#define MAXPLAYERS 4
+
 
 struct SState
 {
@@ -22,12 +23,21 @@ struct SState
 		IN_NETWORK,
 		IN_CHAT,
 	} m_enGameMode;
-	
+
 	bool	m_bQuitFlag;		// true if quit event came
 	const char* m_pcArgv0;		// Set by main to argv[0]
 	
 
 	// CONFIGURATION VARIABLES
+	
+	int		m_iNumPlayers;		// The number of players =2
+	enum TTeamModeEnum {
+		Team_ONE_VS_ONE,
+		Team_GOOD_VS_EVIL,
+		Team_CUSTOM,
+	} m_enTeamMode;				// Team mode
+	int		m_iTeamSize;		// The size of each team.
+	int		m_bTeamMultiselect;	// Can the same player be selected twice?
 	
 	int		m_iGameTime;		// Time of rounds in seconds.
 	int		m_iHitPoints;		// The initial number of hit points.
@@ -41,7 +51,7 @@ struct SState
 	int		m_iMusicVolume;		// Volume of music; 0: off, 100: max
 	int		m_iSoundVolume;		// Volume of sound effects; 0: off, 100: max
 	
-	int		m_aiPlayerKeys[2][9];	// Player keysyms
+	int		m_aiPlayerKeys[MAXPLAYERS][9];	// Player keysyms
 	char	m_acLanguage[10];	// Language ID (en,hu,fr,es,..)
 	int		m_iLanguageCode;	// Non-persistend language code (set by backend based on the language)
 	

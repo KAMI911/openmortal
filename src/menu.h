@@ -31,6 +31,11 @@ MENU_UNKNOWN,
 		MENU_MEDIUM,
 		MENU_HARD,
 	MENU_MULTI_PLAYER,
+		MENU_MULTI_PLAYER_START,
+		MENU_NUM_PLAYERS,		// 2-4
+		MENU_TEAM_MODE,			// 1 vs 1, good vs evil, evil vs good, custom
+		MENU_TEAM_SIZE,			// 2-10
+		MENU_TEAM_MULTISELECT,	// yes / no
 	MENU_NETWORK_GAME,
 		MENU_SERVER,
 		MENU_HOSTNAME,
@@ -63,39 +68,42 @@ MENU_UNKNOWN,
 class Menu
 {
 
+
 public:
 	Menu( const char* a_pcTitle );
 	virtual ~Menu();
 
-	virtual MenuItem* AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut = SDLK_UNKNOWN, int a_iCode = 0 );
-	virtual EnumMenuItem* AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
-		const char** a_ppcNames, const int* a_piValues, int a_iCode = 0 );
-	virtual TextMenuItem* AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode = 0 );
-	virtual MenuItem* AddMenuItem( MenuItem* a_poItem );
-	virtual void AddOkCancel( int a_iOkCode = 0 );
-	virtual void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
-	virtual void ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
-	virtual int Run();
+	virtual MenuItem*		AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut = SDLK_UNKNOWN, int a_iCode = 0 );
+	virtual EnumMenuItem*	AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
+								const char** a_ppcNames, const int* a_piValues, int a_iCode = 0 );
+	virtual TextMenuItem*	AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode = 0 );
+	virtual MenuItem*		AddMenuItem( MenuItem* a_poItem );
+	virtual void			AddOkCancel( int a_iOkCode = 0 );
+	virtual MenuItem*		GetMenuItem( int a_iCode ) const;
 
-	virtual void Draw();
-	virtual void Clear();
-	virtual void EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuItem* a_poMenuItem, int a_iMaxlen );
+	virtual void			ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
+	virtual void			ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
+	virtual int				Run();
+
+	virtual void			Draw();
+	virtual void			Clear();
+	virtual void			EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuItem* a_poMenuItem, int a_iMaxlen );
 
 protected:
 
-	virtual void FocusNext();
-	virtual void FocusPrev();
-	virtual void InvokeSubmenu( Menu* a_poSubmenu );
+	virtual void			FocusNext();
+	virtual void			FocusPrev();
+	virtual void			InvokeSubmenu( Menu* a_poSubmenu );
 
 	typedef std::vector<MenuItem*> ItemList;
 	typedef ItemList::iterator ItemIterator;
 
 	
-	std::string			m_sTitle;
-	ItemList			m_oItems;
-	int					m_iCurrentItem;
-	int					m_iReturnCode;
-	bool				m_bDone;
+	std::string				m_sTitle;
+	ItemList				m_oItems;
+	int						m_iCurrentItem;
+	int						m_iReturnCode;
+	bool					m_bDone;
 };
 
 
@@ -117,7 +125,8 @@ public:
 	virtual void SetActive( bool a_bActive );
 	virtual void SetEnabled( bool a_bEnabled );
 	
-	virtual bool GetEnabled() { return m_bEnabled; }
+	virtual bool GetEnabled() const { return m_bEnabled; }
+	virtual int  GetCode() const { return m_iCode; }
 	
 protected:
 	Menu*			m_poMenu;
@@ -152,6 +161,7 @@ public:
 	virtual void Decrement();
 	
 	virtual void SetEnumValues( const char ** a_ppcNames, const int * a_piValues );
+	virtual void SetMaxValue( int a_iMaxValue );
 	
 protected:
 	int				m_iValue;
@@ -184,7 +194,7 @@ class CNetworkMenu: public Menu
 {
 public:
 	CNetworkMenu();
-	~CNetworkMenu();
+	virtual ~CNetworkMenu();
 	
 	void Connect();
 	

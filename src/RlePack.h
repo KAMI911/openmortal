@@ -12,7 +12,7 @@
 #include "FighterEnum.h"
 
 struct RlePack_P;
-
+struct SDL_Surface;
 
 /** 
 \class RlePack
@@ -51,6 +51,7 @@ public:
 	int			GetWidth( int a_iIndex );
 	int			GetHeight( int a_iIndex );
 	void		Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped=false );
+	SDL_Surface* CreateSurface( int a_iIndex, bool a_bFlipped=false );
 	
 private:
 	RlePack_P*	p;

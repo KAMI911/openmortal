@@ -8,6 +8,7 @@
 
 #include "SDL.h"
 #include "SDL_video.h"
+#include "sge_primitives.h"
 
 #include "menu.h"
 #include "gfx.h"
@@ -50,6 +51,15 @@ const char* g_ppcLanguageCodes[] = { "en", "es", "fr", "hu", "pt" };
 const char* g_ppcServer[] = { "Connect to game", "Create game", NULL };
 int g_piServer[] = { 0, 1 };
 
+const char* g_ppcTeamMode[] = { "1 VS 1", "Good VS Evil", "Custom teams", NULL };
+int g_piTeamMode[] = { SState::Team_ONE_VS_ONE, SState::Team_GOOD_VS_EVIL, SState::Team_CUSTOM };
+const char* g_ppcTeamSize[] = { "2", "3", "4", "5", "6", "7", "8", "9", "10", NULL };
+int g_piTeamSize[] = { 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+const char* g_ppcNumPlayers[] = { "2", "3", "4", NULL };
+int g_piNumPlayers[] = { 2, 3, 4 };
+
+const char* g_ppcYesNo[] = { "Yes", "No", NULL };
+int g_piYesNo[] = { 1, 0 };
 
 SDL_Surface* poBackground = NULL;
 
@@ -73,11 +83,12 @@ void InputKeys( int a_iPlayerNumber )
 	const char* pcJoyName = g_oJoystick.GetJoystickName( a_iPlayerNumber );
 	if ( NULL != pcJoyName )
 	{
-		DrawTextMSZ( pcJoyName, inkFont, 320, iY, AlignHCenter|UseShadow, C_LIGHTCYAN, gamescreen );
+		DrawTextMSZ( pcJoyName, inkFont, gamescreen->w/2, iY, AlignHCenter|UseShadow, C_LIGHTCYAN, gamescreen );
 		iY += iYIncrement + 10;
 	}
 	
-	DrawTextMSZ( "Press Escape to abort", inkFont, 320, 470-iYIncrement, AlignHCenter|UseShadow, C_LIGHTGRAY, gamescreen );
+	DrawTextMSZ( "Press Escape to abort", inkFont, gamescreen->w/2, gamescreen->h-10-iYIncrement, 
+		AlignHCenter|UseShadow, C_LIGHTGRAY, gamescreen );
 
 	strcpy( acSide, Translate(a_iPlayerNumber ? "Left" : "Right") );
 	strcpy( acFormat, Translate("%s player-'%s'?") );
@@ -108,23 +119,19 @@ void InputKeys( int a_iPlayerNumber )
 		g_oState.m_aiPlayerKeys[a_iPlayerNumber][i] = enKey;
 		
 		g_oBackend.PerlEvalF( "GetKeysym(%d);", enKey );
-		sge_Blit( poBackground, gamescreen, w+10, iY, w+10, iY, 640, 50 );
+		sge_Blit( poBackground, gamescreen, w+10, iY, w+10, iY, gamescreen->w, 50 );
 		DrawTextMSZ( g_oBackend.GetPerlString("keysym"), inkFont, w+30, iY, UseShadow, C_WHITE, gamescreen );
-		sge_UpdateRect( gamescreen, w+10, iY, 640, 50 );
+		sge_UpdateRect( gamescreen, w+10, iY, gamescreen->w, 50 );
 		iY += iYIncrement;
 	}
 	
-	sge_Blit( poBackground, gamescreen, 0, 470-iYIncrement, 0, 470-iYIncrement, 640, 480 );
-	sge_UpdateRect( gamescreen, 0, 470-iYIncrement, 640, 480 );
-	DrawTextMSZ( "Thanks!", inkFont, 320, iY + 20, UseShadow | AlignCenter, C_WHITE, gamescreen );
+	sge_Blit( poBackground, gamescreen, 0, 470-iYIncrement, 0, 470-iYIncrement, gamescreen->w, gamescreen->h );
+	sge_UpdateRect( gamescreen, 0, 470-iYIncrement, gamescreen->w, gamescreen->h );
+	DrawTextMSZ( "Thanks!", inkFont, gamescreen->w/2, iY + 20, UseShadow | AlignCenter, C_WHITE, gamescreen );
 	GetKey( true );
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	SDL_Flip( gamescreen );
 }
-
-
-
-
 
 
 
@@ -156,7 +163,7 @@ void MortalNetworkMessage( const char* format, ... )
 	char acBuffer[1024];
 	va_list ap;
 	va_start( ap, format );
-	vsnprintf( acBuffer, 1023, format, ap );
+	vsprintf( acBuffer, format, ap );
 	va_end( ap );
 	DrawTextMSZ( acBuffer, impactFont, 20, g_iMessageY, 0, C_LIGHTGRAY, gamescreen );
 	g_iMessageY += 25;
@@ -201,8 +208,8 @@ bool Connect( const char* a_pcHostname )
 	{
 		// Print error message
 		const char* acError = g_poNetwork->GetLastError();
-		DrawTextMSZ( "Couldn't connect", inkFont, 320, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
-		DrawTextMSZ( acError, impactFont, 320, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
+		DrawTextMSZ( "Couldn't connect", inkFont, gamescreen->w/2, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
+		DrawTextMSZ( acError, impactFont, gamescreen->w/2, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
 	}
 
 	// Wait for a key, unless Quit was issued.
@@ -330,7 +337,7 @@ void Menu::EnterName( const char* a_pcTitle, std::string& a_rsTarget, TextMenuIt
 	int iRetval;
 	{
 		CReadline oReadline( gamescreen, impactFont, acBuffer, strlen(acBuffer), a_iMaxlen,
-			20+x, y + sge_TTF_FontAscent(impactFont), 600, C_LIGHTCYAN, C_BLACK, 255 );
+			20+x, y + sge_TTF_FontAscent(impactFont), gamescreen->w-40, C_LIGHTCYAN, C_BLACK, 255 );
 		iRetval = oReadline.Execute();
 	}
 
@@ -641,6 +648,22 @@ void EnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValu
 
 
 
+void EnumMenuItem::SetMaxValue( int a_iMaxValue )
+{
+	for ( int i=0; NULL != m_ppcNames[i]; ++i )
+	{
+		if ( m_piValues[i] == a_iMaxValue )
+		{
+			m_iMax = i;
+			break;
+		}
+	}
+
+	debug( "EnumMenuItem::SetMaxValue: value %d not found\n", a_iMaxValue );
+}
+
+
+
 
 
 
@@ -773,6 +796,23 @@ void Menu::AddOkCancel( int a_iOkCode )
 }
 
 
+
+MenuItem* Menu::GetMenuItem( int a_iCode ) const
+{
+	ItemList::const_iterator it;
+	for ( it = m_oItems.begin(); it != m_oItems.end(); ++it )
+	{
+		if ( *it && (*it)->GetCode() == a_iCode )
+		{
+			return *it;
+		}
+	}
+	debug( "Couldn't find menu item %d\n", a_iCode );
+	return NULL;
+}
+
+
+
 void Menu::InvokeSubmenu( Menu* a_poMenu )
 {
 	Audio->PlaySample( "strange_button.voc" );
@@ -828,8 +868,23 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 			delete poMenu;
 			break;
 		}
-			
+
 		case MENU_MULTI_PLAYER:
+		{
+			Menu* poMenu = new Menu( "Multi Player" );
+			poMenu->AddMenuItem( "START GAME", SDLK_UNKNOWN, MENU_MULTI_PLAYER_START );
+			//poMenu->AddEnumMenuItem( "Number of Players: ", g_oState.m_iNumPlayers, g_ppcNumPlayers, g_piNumPlayers, MENU_NUM_PLAYERS );
+			poMenu->AddEnumMenuItem( "Team mode: ", g_oState.m_enTeamMode, g_ppcTeamMode, g_piTeamMode, MENU_TEAM_MODE );
+			poMenu->AddEnumMenuItem( "Team size: ", g_oState.m_iTeamSize, g_ppcTeamSize, g_piTeamSize, MENU_TEAM_SIZE )
+				->SetEnabled( SState::Team_CUSTOM == g_oState.m_enTeamMode );
+			poMenu->AddEnumMenuItem( "Cloning allowed: ", g_oState.m_bTeamMultiselect, g_ppcYesNo, g_piYesNo, MENU_TEAM_MULTISELECT )
+				->SetEnabled( SState::Team_CUSTOM == g_oState.m_enTeamMode );
+			InvokeSubmenu( poMenu );
+			delete poMenu;
+			break;
+		}
+			
+		case MENU_MULTI_PLAYER_START:
 			m_bDone = true;
 			m_iReturnCode = 100;
 			g_oState.m_enGameMode = SState::IN_MULTI;
@@ -919,6 +974,29 @@ void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
 	
 	switch ( a_iItemCode )
 	{
+		case MENU_NUM_PLAYERS:
+			g_oState.m_iNumPlayers = a_iValue;
+			break;
+
+		case MENU_TEAM_MODE:
+		{
+			g_oState.m_enTeamMode = (SState::TTeamModeEnum) a_iValue;
+			MenuItem* poItem;
+			poItem = GetMenuItem( MENU_TEAM_SIZE );
+			if ( poItem ) poItem->SetEnabled( SState::Team_CUSTOM==g_oState.m_enTeamMode );
+			poItem = GetMenuItem( MENU_TEAM_MULTISELECT );
+			if ( poItem ) poItem->SetEnabled( SState::Team_CUSTOM==g_oState.m_enTeamMode );
+			break;
+		}
+
+		case MENU_TEAM_SIZE:
+			g_oState.m_iTeamSize = a_iValue;
+			break;
+
+		case MENU_TEAM_MULTISELECT:
+			g_oState.m_bTeamMultiselect = a_iValue;
+			break;
+
 		case MENU_MUSIC_VOLUME:
 			g_oState.m_iMusicVolume = a_iValue;
 			Audio->SetMusicVolume( a_iValue );
@@ -1135,8 +1213,10 @@ void MakeMenuBackground()
 	if ( NULL == poBackground )
 	{
 		debug( "DoMenu: Couldn't allocate background.\n" );
+		return;
 	}
-	else
+
+	if ( gamescreen->format->BitsPerPixel <= 8 )
 	{
 		int i;
 		SDL_Rect oRect;
@@ -1156,10 +1236,15 @@ void MakeMenuBackground()
 			oRect.x = i;
 			SDL_FillRect(poBackground, &oRect, C_BLACK );
 		}
-
-		SDL_BlitSurface( poBackground, 0, gamescreen, 0 );
-		SDL_Flip( gamescreen );
 	}
+	else
+	{
+		sge_FilledRectAlpha( poBackground, 0, 0, poBackground->w, poBackground->h, C_BLACK, 128 );
+		sge_FilledRectAlpha( poBackground, 0, 0, poBackground->w, poBackground->h, C_BLUE, 64 );
+	}
+
+	SDL_BlitSurface( poBackground, 0, gamescreen, 0 );
+	SDL_Flip( gamescreen );
 }
 
 

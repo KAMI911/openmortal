@@ -11,7 +11,7 @@
 #define MORTALNETWORK_H
 
 #include "FighterEnum.h"
-#include "SDL/SDL_types.h"
+#include "SDL_types.h"
 
 
 /** Mortal Network messages:

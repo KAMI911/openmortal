@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "PlayerSelect.h"
+#include "PlayerSelectController.h"
  
 #include "SDL.h"
 #include "SDL_video.h"
@@ -43,63 +44,49 @@
 PlayerSelect g_oPlayerSelect;
 
 
-/***************************************************************************
-                     PRIVATE VARIABLES (perl variable space)
-***************************************************************************/
-
-
-FighterEnum ChooserCells[5][4] = {
-	{ ZOLI, UPI, CUMI, SIRPI },
-	{ ULMAR, MACI, GRIZLI, DESCANT },
-	{ DANI, AMBRUS, BENCE, SURBA },
-	{ (FighterEnum)100, (FighterEnum)101, (FighterEnum)102, (FighterEnum)103 },
-	{ (FighterEnum)104, (FighterEnum)105, KINGA, MISI }
-};
-
-FighterEnum ChooserCellsChat[4][5] = {
-	{ ZOLI, UPI, CUMI, SIRPI, ULMAR },
-	{ MACI, BENCE, GRIZLI, DESCANT, SURBA },
-	{ DANI, AMBRUS, (FighterEnum)100, (FighterEnum)102, KINGA },
-	{ (FighterEnum)104, (FighterEnum)105, (FighterEnum)103, (FighterEnum)101, MISI },
-};
 
 
 
-
-
-int GetBackgroundNumber();		// defined in Game.cpp
 
 
 
 PlayerSelect::PlayerSelect()
 {
-	for ( int i=0; i<2; ++i )
+	for ( int i=0; i<MAXPLAYERS; ++i )
 	{
 		m_aoPlayers[i].m_enFighter = UNKNOWN;
 		m_aoPlayers[i].m_enTint = NO_TINT;
 		m_aoPlayers[i].m_poPack = NULL;
 	}
-
-	m_iP1 = 0;
-	m_iP2 = 3;
 }
 
 
+
+/*************************************************************************
+							GENERAL PLAYER INFO
+*************************************************************************/
+
 const PlayerInfo& PlayerSelect::GetPlayerInfo( int a_iPlayer )
 {
-	return m_aoPlayers[ a_iPlayer ? 1 : 0 ];
+	return m_aoPlayers[ a_iPlayer ];
+}
+
+
+PlayerInfo& PlayerSelect::EditPlayerInfo( int a_iPlayer )
+{
+	return m_aoPlayers[ a_iPlayer ];
 }
 
 
 const char* PlayerSelect::GetFighterName( int a_iPlayer )
 {
-	return m_aoPlayers[ a_iPlayer ? 1 : 0 ].m_sFighterName.c_str();
+	return m_aoPlayers[ a_iPlayer ].m_sFighterName.c_str();
 }
 
 
 int PlayerSelect::GetFighterNameWidth( int a_iPlayer )
 {
-	return m_aiFighterNameWidth[ a_iPlayer ? 1 : 0 ];
+	return m_aiFighterNameWidth[ a_iPlayer ];
 }
 
 
@@ -112,7 +99,7 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 	
 	bool bLocalAvailable = IsLocalFighterAvailable( a_enFighter );
 
-	if ( !IsNetworkGame() || !bLocalAvailable )
+	if ( SState::IN_NETWORK != g_oState.m_enGameMode || !bLocalAvailable )
 	{
 		return bLocalAvailable;
 	}
@@ -132,6 +119,26 @@ bool PlayerSelect::IsLocalFighterAvailable( FighterEnum a_enFighter )
 	g_oBackend.PerlEvalF("GetFighterStats(%d);", a_enFighter);
 	const char* pcDatafile = g_oBackend.GetPerlString("Datafile");
 	return pcDatafile && *pcDatafile;
+}
+
+
+
+bool PlayerSelect::IsFighterInTeam( FighterEnum a_enFighter )
+{
+	std::vector<FighterEnum>::const_iterator it;
+	for ( int i=0; i<g_oState.m_iNumPlayers; ++i )
+	{
+		std::vector<FighterEnum>& roTeam = m_aoPlayers[i].m_aenTeam;
+		for ( it=roTeam.begin(); it!=roTeam.end(); ++it )
+		{
+			if ( a_enFighter == *it )
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 
@@ -174,8 +181,6 @@ set too. The tint and palette of both players are set. */
 
 void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 {
-	if ( a_iPlayer ) a_iPlayer = 1;		// It's 0 or 1.
-
 	if ( m_aoPlayers[a_iPlayer].m_enFighter == a_enFighter )
 	{
 		if ( m_aoPlayers[a_iPlayer].m_poPack )
@@ -189,7 +194,7 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 		return;
 	}
 
-	int iOffset = a_iPlayer ? COLOROFFSETPLAYER2 : COLOROFFSETPLAYER1;
+	int iOffset = COLOROFFSETPLAYER1 + a_iPlayer*64;
 	RlePack* poPack = LoadFighter( a_enFighter );
 	poPack->OffsetSprites( iOffset );
 
@@ -209,6 +214,7 @@ void PlayerSelect::SetPlayer( int a_iPlayer, FighterEnum a_enFighter )
 
 	TintEnum enTint = NO_TINT;
 
+	//@ CLASHES WITH OTHER PLAYERS NEED TO BE HANDLED
 	if ( m_aoPlayers[0].m_enFighter == m_aoPlayers[1].m_enFighter )
 	{
 		enTint = TintEnum( (rand() % 4) + 1 );
@@ -230,7 +236,12 @@ void PlayerSelect::SetTint( int a_iPlayer, TintEnum a_enTint )
 }
 
 
+/*************************************************************************
+			METHODS RELATED TO THE FIGHTER SELECTION PROCESS
+*************************************************************************/
 
+
+/*
 bool PlayerSelect::IsNetworkGame()
 {
 	return SState::IN_NETWORK == g_oState.m_enGameMode;
@@ -424,7 +435,11 @@ void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_i
 	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, a_iColor);
 	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, a_iColor);
 }
+*/
 
+
+
+#if 0
 
 void PlayerSelect::DoPlayerSelect()
 {
@@ -506,7 +521,7 @@ void PlayerSelect::DoPlayerSelect()
 
 	// 2. Run selection screen
 
-	g_oBackend.PerlEvalF( "SelectStart();" );
+	g_oBackend.PerlEvalF( "SelectStart(%d);", g_oState.m_iNumPlayers );
 
 	m_bDone1 = m_bDone2 = false;
 
@@ -619,6 +634,7 @@ void PlayerSelect::DoPlayerSelect()
 					m_poTextArea->ScrollDown();
 					continue;
 				}
+
 			}
 			
 			// HANDLE CHATTING
@@ -686,8 +702,8 @@ void PlayerSelect::DoPlayerSelect()
 					break;
 					
 				case Me_PLAYERKEYDOWN:
-					DrawRect( m_iP1, 240 );
-					DrawRect( m_iP2, 240 );
+					DrawRect( m_iP1, C_BLACK );
+					DrawRect( m_iP2, C_BLACK );
 					HandleKey( oEvent.m_iPlayer, oEvent.m_iKey );
 					break;
 
@@ -708,8 +724,8 @@ void PlayerSelect::DoPlayerSelect()
 		over = g_oBackend.m_iGameOver;
 
 		SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
-		if ( !m_bDone1) DrawRect( m_iP1, 250 );
-		if ( !m_bDone2) DrawRect( m_iP2, 253 );
+		if ( !m_bDone1) DrawRect( m_iP1, C_LIGHTGREEN );
+		if ( !m_bDone2) DrawRect( m_iP2, C_LIGHTMAGENTA );
 
 		for ( i=0; i<2; ++i )
 		{
@@ -741,3 +757,12 @@ void PlayerSelect::DoPlayerSelect()
 	return;
 }
 
+#else
+
+void PlayerSelect::DoPlayerSelect()
+{
+	CPlayerSelectController oController( SState::IN_NETWORK == g_oState.m_enGameMode );
+	oController.DoPlayerSelect();
+}
+
+#endif

@@ -134,10 +134,12 @@ int Demo::Run()
 		
 		// 3. Handle events.
 
+		SDL_Event oSdlEvent;
 		SMortalEvent oEvent;
 		
-		while ( MortalPollEvent(oEvent) )
+		while ( SDL_PollEvent(&oSdlEvent) )
 		{
+			TranslateEvent( &oSdlEvent, &oEvent );
 			switch (oEvent.m_enType)
 			{
 				case Me_QUIT:
@@ -166,6 +168,14 @@ int Demo::Run()
 					return 0;
 
 				case Me_NOTHING:
+					if ( SDL_KEYDOWN == oSdlEvent.type && SState::IN_DEMO == g_oState.m_enGameMode )
+					{
+						OnMenu();
+						continue;
+					}
+
+					break;
+
 				case Me_PLAYERKEYUP:
 					break;
 
@@ -197,7 +207,7 @@ class CreditsDemo: public Demo
 public:
 	CreditsDemo()
 	{
-		m_poBackground = LoadBackground( "Credits.png", 240 );
+		m_poBackground = LoadBackground( "Credits.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
 		DrawGradientText( "Credits", titleFont, 20, m_poBackground );
 		SDL_Flip( m_poBackground );
@@ -231,7 +241,7 @@ class Story1Demo: public Demo
 public:
 	Story1Demo()
 	{
-		m_poBackground = LoadBackground( "Story1.png", 240 );
+		m_poBackground = LoadBackground( "Story1.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
 		
 		SDL_Rect oRect;
@@ -252,7 +262,7 @@ class Story2Demo: public Demo
 public:
 	Story2Demo()
 	{
-		m_poBackground = LoadBackground( "Story2.png", 240 );
+		m_poBackground = LoadBackground( "Story2.jpg", 240 );
 		SDL_UnlockSurface( m_poBackground );
 
 		SDL_Rect oRect;
@@ -276,13 +286,13 @@ public:
 	{
 		i = 0;
 		m_iTimeLeft = 50;
-		m_poBackground = LoadBackground( "Mortal.png", 240 );
+		m_poBackground = LoadBackground( "Mortal.jpg", 240 );
 		
 		DrawTextMSZ( "Version " VERSION "  © 2003-2004 by UPi", inkFont, 320, 430, UseShadow | AlignHCenter, C_WHITE, m_poBackground, false );
 		
 		std::string sStaffFilename = DATADIR;
 		sStaffFilename += "/characters/STAFF.DAT";
-		m_poPack = new RlePack( sStaffFilename.c_str(), 240 );
+		m_poPack = new RlePack( sStaffFilename.c_str(), 255 );
 		m_poPack->ApplyPalette();
 		SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
 		SDL_Flip( gamescreen );

@@ -7,9 +7,12 @@
  ***************************************************************************/
 
 #include "../config.h"
-#include "SDL.h"
+#include "gfx.h"
 #include "common.h"
 #include "State.h"
+
+#include "SDL_keysym.h"
+#include "SDL_mixer.h"
 
 #include <string>
 #include <fstream>
@@ -59,6 +62,11 @@ SState::SState()
 	m_bQuitFlag = false;
 	m_pcArgv0 = NULL;
 
+	m_iNumPlayers = 2;
+	m_enTeamMode = Team_ONE_VS_ONE;
+	m_iTeamSize = 5;
+	m_bTeamMultiselect = false;
+
 	m_iGameTime = 60;
 	m_iHitPoints = 100;
 	m_iGameSpeed = 12;
@@ -79,14 +87,18 @@ SState::SState()
 	m_iMusicVolume = 50;
 	m_iSoundVolume = 100;
 
-	static const int aiDefaultKeys[2][9] = {
+	static const int aiDefaultKeys[MAXPLAYERS][9] = {
   		{ SDLK_UP, SDLK_DOWN, SDLK_LEFT, SDLK_RIGHT, SDLK_PAGEDOWN,
             SDLK_DELETE, SDLK_INSERT, SDLK_END, SDLK_HOME },
   		{ SDLK_w, SDLK_s, SDLK_a, SDLK_d, SDLK_x,
-            SDLK_f, SDLK_r, SDLK_g, SDLK_t }
+            SDLK_f, SDLK_r, SDLK_g, SDLK_t },
+		{ SDLK_u, SDLK_j, SDLK_h, SDLK_k, SDLK_i,
+			SDLK_b, SDLK_n, SDLK_m, SDLK_COMMA },
+		{ SDLK_F2, SDLK_F3, SDLK_F4, SDLK_F5, SDLK_F6,
+			SDLK_F7, SDLK_F8, SDLK_F9, SDLK_F10 },
 	};
 
-	for ( int i=0; i<2; ++i )
+	for ( int i=0; i<MAXPLAYERS; ++i )
 		for ( int j=0; j<9; ++j )
 			m_aiPlayerKeys[i][j] = aiDefaultKeys[i][j];
 
@@ -190,9 +202,7 @@ void SState::ToggleFullscreen()
 		}
 	}
 
-	gamescreen = SDL_SetVideoMode( gamescreen->w, gamescreen->h,
-		gamescreen->format->BitsPerPixel,
-		m_bFullscreen ? SDL_FULLSCREEN : SDL_SWSURFACE );
+	SetVideoMode( gamescreen->w > 640, m_bFullscreen );
 
 	if ( bPaletted )
 	{
@@ -244,9 +254,18 @@ void SState::Load()
 	g_oBackend.PerlEvalF( "ParseConfig('%s');", sFilename.c_str() );
 	
 	SV* poSv;
+
+//	poSv = get_sv("", FALSE); if (poSv) m_ = SvIV( poSv );
+
+	poSv = get_sv("NUMPLAYERS", FALSE); if (poSv) m_iNumPlayers = SvIV( poSv );
+	poSv = get_sv("TEAMMODE", FALSE); if (poSv) m_enTeamMode = (TTeamModeEnum) SvIV( poSv );
+	poSv = get_sv("TEAMSIZE", FALSE); if (poSv) m_iTeamSize = SvIV( poSv );
+	poSv = get_sv("TEAMMULTISELECT", FALSE); if (poSv) m_bTeamMultiselect = SvIV( poSv );
+
 	poSv = get_sv("GAMETIME", FALSE); if (poSv) m_iGameTime = SvIV( poSv );
 	poSv = get_sv("HITPOINTS", FALSE); if (poSv) m_iHitPoints = SvIV( poSv );
 	poSv = get_sv("GAMESPEED", FALSE); if (poSv) m_iGameSpeed = SvIV( poSv );
+
 	poSv = get_sv("FULLSCREEN", FALSE); if (poSv) m_bFullscreen = SvIV( poSv );
 	poSv = get_sv("CHANNELS", FALSE); if (poSv) m_iChannels = SvIV( poSv );
 	poSv = get_sv("MIXINGRATE", FALSE); if (poSv) m_iMixingRate = SvIV( poSv );
@@ -254,12 +273,13 @@ void SState::Load()
 	poSv = get_sv("MUSICVOLUME", FALSE); if (poSv) m_iMusicVolume = SvIV( poSv );
 	poSv = get_sv("SOUNDVOLUME", FALSE); if (poSv) m_iSoundVolume = SvIV( poSv );
 	poSv = get_sv("LANGUAGE", FALSE); if (poSv) { strncpy( m_acLanguage, SvPV_nolen( poSv ), 9 ); m_acLanguage[9] = 0; }
+
 	poSv = get_sv("LATESTSERVER", FALSE); if (poSv) { strncpy( m_acLatestServer, SvPV_nolen( poSv ), 255 ); m_acLatestServer[255] = 0; }
 	poSv = get_sv("SERVER", FALSE); if (poSv) m_bServer = SvIV( poSv );
 	poSv = get_sv("NICK", FALSE); if (poSv) { strncpy( m_acNick, SvPV_nolen( poSv ), 127 ); m_acNick[127] = 0; }
 	
 	char pcBuffer[1024];
-	for ( int i=0; i<2; ++i )
+	for ( int i=0; i<MAXPLAYERS; ++i )
 	{
 		for ( int j=0; j<9; ++j )
 		{
@@ -281,9 +301,18 @@ void SState::Save()
 	}
 	
 	oStream << GetConfigHeader() << '\n';
+
+//	oStream << "=" << m_ << '\n';
+
+	oStream << "NUMPLAYERS=" << m_iNumPlayers << '\n';
+	oStream << "TEAMMODE=" << m_enTeamMode << '\n';
+	oStream << "TEAMSIZE=" << m_iTeamSize << '\n';
+	oStream << "TEAMMULTISELECT=" << m_bTeamMultiselect << '\n';
+
 	oStream << "GAMETIME=" << m_iGameTime << '\n';
 	oStream << "HITPOINTS=" << m_iHitPoints << '\n';
 	oStream << "GAMESPEED=" << m_iGameSpeed << '\n';
+
 	oStream << "FULLSCREEN=" << m_bFullscreen << '\n';
 	oStream << "CHANNELS=" << m_iChannels << '\n';
 	oStream << "MIXINGRATE=" << m_iMixingRate << '\n';
@@ -291,11 +320,12 @@ void SState::Save()
 	oStream << "MUSICVOLUME=" << m_iMusicVolume << '\n';
 	oStream << "SOUNDVOLUME=" << m_iSoundVolume << '\n';
 	oStream << "LANGUAGE=" << m_acLanguage << '\n';
+
 	oStream << "LATESTSERVER=" << m_acLatestServer << '\n';
 	oStream << "SERVER=" << m_bServer << '\n';
 	oStream << "NICK=" << m_acNick << '\n';
 	
-	for ( int i=0; i<2; ++i )
+	for ( int i=0; i<MAXPLAYERS; ++i )
 	{
 		for ( int j=0; j<9; ++j )
 		{

@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "SDL.h"
+#include "gfx.h"
 #include "common.h"
 
 
@@ -87,6 +88,16 @@ struct RlePack_P
 	
 	int				m_iColorCount;
 	int				m_iColorOffset;
+	Uint32			m_aiRGBPalette[256];
+
+	void			draw_rle_sprite8( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip8( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite16( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip16( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite24( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip24( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite32( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
+	void			draw_rle_sprite_v_flip32( RLE_SPRITE* a_poSprite, int a_dx, int a_dy );
 };
 
 
@@ -356,6 +367,8 @@ int RlePack::Count()
 }
 
 
+/** Worker method of RlePack::OffsetSprites() .*/
+
 void OffsetRLESprite( RLE_SPRITE* spr, int offset ) // Static method
 {
 	if (!spr || !offset) return;
@@ -381,9 +394,26 @@ void OffsetRLESprite( RLE_SPRITE* spr, int offset ) // Static method
 	}
 }
 
+
+/** Offsets the sprites "logical" palette values by the given offset.
+This is only relevant in 8BPP mode; in other color depths this is a
+no-op.
+
+Explanation: RlePacks have an internal palette which contains up to 256
+colors. These colors are always indexed from 0 up. However, if you load
+two RlePacks with different palettes, the palettes will collide, and one
+RlePack will be displayed with an incorrect palette.
+
+To work around this, you can offset one of the sprites palette. For example,
+you might load an RlePack with 16 colors, and another with 64 colors. You
+can offset the second RlePack by 16 colors; the total effect is that the
+two RlePacks now use 80 colors of the available 256 colors, the first using
+colors 0-15, the second using colors 16-79.
+*/
+
 void RlePack::OffsetSprites( int a_iOffset )
 {
-	if ( (a_iOffset<=0) || (a_iOffset>255) )
+	if ( (a_iOffset<=0) || (a_iOffset>255) || (8!=gamescreen->format->BitsPerPixel) )
 		return;
 
 	p->m_iColorOffset = a_iOffset;
@@ -466,11 +496,33 @@ void RlePack::SetTint( TintEnum a_enTint )
 }
 
 
+/** Loads the palette of the RlePack to the gamescreen.
+This only works in 8BPP mode; in other modes the palette is always considered
+to be loaded, and this is a no-operation.
+*/
+
 void RlePack::ApplyPalette()
 {
-	SDL_SetColors( gamescreen, p->m_aoTintedPalette, p->m_iColorOffset, p->m_iColorCount );
+	if ( 8 == gamescreen->format->BitsPerPixel )
+	{
+		SDL_SetColors( gamescreen, p->m_aoTintedPalette, p->m_iColorOffset, p->m_iColorCount );
+	}
+	else
+	{
+		// Now is the time to compile m_aiRGBPalette
+		for ( int i=0; i<p->m_iColorCount; ++i )
+		{
+			SDL_Color& roColor = p->m_aoTintedPalette[i];
+			p->m_aiRGBPalette[i] = SDL_MapRGB( gamescreen->format, roColor.r, roColor.g, roColor.b );
+		}
+	}
 }
 
+
+/** Returns the width of a given sprite in pixels.
+
+\param a_iIndex The index of the sprite, 0 <= a_iIndex < Count()
+*/
 
 int RlePack::GetWidth( int a_iIndex )
 {
@@ -484,6 +536,11 @@ int RlePack::GetWidth( int a_iIndex )
 	return poSprite->w;
 }
 
+
+/** Returns the height of a given sprite in pixels.
+
+\param a_iIndex The index of the sprite, 0 <= a_iIndex < Count()
+*/
 
 int RlePack::GetHeight( int a_iIndex )
 {
@@ -499,325 +556,40 @@ int RlePack::GetHeight( int a_iIndex )
 
 
 
-void draw_rle_sprite_v_flip( RLE_SPRITE* src, int dx, int dy )	// static method
-{
-#define RLE_PTR					signed char*
-#define RLE_IS_EOL(c)			((c) == 0)
+#define METHODNAME				RlePack_P::draw_rle_sprite8
+#define METHODNAME_FLIP			RlePack_P::draw_rle_sprite_v_flip8
 #define PIXEL_PTR				unsigned char*
-#define OFFSET_PIXEL_PTR(p,x)	((PIXEL_PTR) (p) + (x))
-#define INC_PIXEL_PTR(p)		((p)++)
-#define DEC_PIXEL_PTR(p)		((p)--)
 #define PUT_PIXEL(p,c)			(*((unsigned char *)(p)) = (c))
-//#define PUT_PIXEL(p,c)         bmp_write8((unsigned long) (p), (c))
+#define PITCH					(dst->pitch)
+#include "DrawRle.h"
+#undef METHODNAME
+#undef METHODNAME_FLIP
+#undef PIXEL_PTR
+#undef PUT_PIXEL
+#undef PITCH
 
-   int x, y, w, h;		// width and height of visible area
-   int dxbeg, dybeg;	// beginning in destination
-   int sxbeg, sybeg;	// beginning in source
-   RLE_PTR s;
+#define METHODNAME				RlePack_P::draw_rle_sprite16
+#define METHODNAME_FLIP			RlePack_P::draw_rle_sprite_v_flip16
+#define PIXEL_PTR				Uint16*
+#define PUT_PIXEL(p,c)			(*((PIXEL_PTR )(p)) = (m_aiRGBPalette[c]))
+#define PITCH					(dst->pitch / 2)
+#include "DrawRle.h"
 
-   SDL_Surface* dst = gamescreen;
-   // Clip to dst->clip_rect
-   int dst_cl = dst->clip_rect.x;
-   int dst_cr = dst->clip_rect.w + dst_cl - 1;
-   int dst_ct = dst->clip_rect.y;
-   int dst_cb = dst->clip_rect.h + dst_ct;
+#undef METHODNAME
+#undef METHODNAME_FLIP
+#undef PIXEL_PTR
+#undef PUT_PIXEL
+#undef PITCH
 
-// if (dst->clip)
-   if (1)
-   {
+#define METHODNAME				RlePack_P::draw_rle_sprite32
+#define METHODNAME_FLIP			RlePack_P::draw_rle_sprite_v_flip32
+#define PIXEL_PTR				Uint32*
+#define PUT_PIXEL(p,c)			(*((PIXEL_PTR )(p)) = (m_aiRGBPalette[c]))
+#define PITCH					(dst->pitch / 4)
+#include "DrawRle.h"
 
-      int tmp;
 
-      dxbeg = dx;
-      if ( dst_cl > dx ) dxbeg = dst_cl;
 
-      tmp = dx + src->w - dst_cr;
-      sxbeg = ((tmp < 0) ? 0 : tmp);
-
-      tmp = dx + src->w;
-      if (tmp > dst_cr ) tmp = dst_cr;
-      w = tmp - dxbeg;
-      if (w <= 0)
-	 return;
-	
-      tmp = dst_ct - dy;
-      sybeg = ((tmp < 0) ? 0 : tmp);
-      dybeg = sybeg + dy;
-
-      tmp = dst_cb - dy;
-      h = ((tmp > src->h) ? src->h : tmp) - sybeg;
-      if (h <= 0)
-	 return;
-   }
-   else {
-      w = src->w;
-      h = src->h;
-      sxbeg = 0;
-      sybeg = 0;
-      dxbeg = dx;
-      dybeg = dy;
-   }
-
-   s = (RLE_PTR) (src->dat);
-   dxbeg += w;
-
-   /* Clip top.  */
-   for (y = sybeg - 1; y >= 0; y--) {
-      long c = *s++;
-
-      while (!RLE_IS_EOL(c)) {
-	 if (c > 0)
-	    s += c;
-	 c = *s++;
-      }
-   }
-
-   //@@@ bmp_select(dst);
-
-   /* Visible part.  */
-   for (y = 0; y < h; y++) {
-      //@@@ PIXEL_PTR d = OFFSET_PIXEL_PTR(bmp_write_line(dst, dybeg + y), dxbeg);
-      PIXEL_PTR d = (PIXEL_PTR) dst->pixels;
-      d += (dybeg+y)*dst->pitch;
-      d = OFFSET_PIXEL_PTR( d, dxbeg );
-      long c = *s++;
-
-      /* Clip left.  */
-      for (x = sxbeg; x > 0; ) {
-	 if (RLE_IS_EOL(c))
-	    goto next_line;
-	 else if (c > 0) {
-	    /* Run of solid pixels.  */
-	    if ((x - c) >= 0) {
-	       /* Fully clipped.  */
-	       x -= c;
-	       s += c;
-	    }
-	    else {
-	       /* Visible on the right.  */
-	       c -= x;
-	       s += x;
-	       break;
-	    }
-	 }
-	 else {
-	    /* Run of transparent pixels.  */
-	    if ((x + c) >= 0) {
-	       /* Fully clipped.  */
-	       x += c;
-	    }
-	    else {
-	       /* Visible on the right.  */
-	       c += x;
-	       break;
-	    }
-	 }
-
-	 c = *s++;
-      }
-
-      /* Visible part.  */
-      for (x = w; x > 0; ) {
-	 if (RLE_IS_EOL(c))
-	    goto next_line;
-	 else if (c > 0) {
-	    /* Run of solid pixels.  */
-	    if ((x - c) >= 0) {
-	       /* Fully visible.  */
-	       x -= c;
-	       for (c--; c >= 0; s++, DEC_PIXEL_PTR(d), c--) {
-		  unsigned long col = *s;
-		  PUT_PIXEL(d, col);
-	       }
-	    }
-	    else {
-	       /* Clipped on the right.  */
-	       c -= x;
-	       for (x--; x >= 0; s++, DEC_PIXEL_PTR(d), x--) {
-		  unsigned long col = *s;
-		  PUT_PIXEL(d, col);
-	       }
-	       break;
-	    }
-	 }
-	 else {
-	    /* Run of transparent pixels.  */
-	    x += c;
-	    d = OFFSET_PIXEL_PTR(d, c);
-	 }
-
-	 c = *s++;
-      }
-
-      /* Clip right.  */
-      while (!RLE_IS_EOL(c)) {
-	 if (c > 0)
-	    s += c;
-	 c = *s++;
-      }
-
-   next_line: ;
-   }
-
-   //@@@bmp_unwrite_line(dst);
-}
-
-void draw_rle_sprite( RLE_SPRITE* src, int dx, int dy )		// static method
-{
-#define RLE_PTR					signed char*
-#define RLE_IS_EOL(c)			((c) == 0)
-#define PIXEL_PTR				unsigned char*
-#define OFFSET_PIXEL_PTR(p,x)	((PIXEL_PTR) (p) + (x))
-#define INC_PIXEL_PTR(p)		((p)++)
-#define DEC_PIXEL_PTR(p)		((p)--)
-#define PUT_PIXEL(p,c)			(*((unsigned char *)(p)) = (c))
-//#define PUT_PIXEL(p,c)         bmp_write8((unsigned long) (p), (c))
-
-   int x, y, w, h;		// width and height of visible area
-   int dxbeg, dybeg;	// beginning in destination
-   int sxbeg, sybeg;	// beginning in source
-   RLE_PTR s;
-
-   SDL_Surface* dst = gamescreen;
-   // Clip to dst->clip_rect
-   int dst_cl = dst->clip_rect.x;
-   int dst_cr = dst->clip_rect.w + dst_cl;
-   int dst_ct = dst->clip_rect.y;
-   int dst_cb = dst->clip_rect.h + dst_ct;
-
-// if (dst->clip)
-   if (1)
-   {
-
-      int tmp;
-
-      tmp = dst_cl - dx;
-      sxbeg = ((tmp < 0) ? 0 : tmp);
-      dxbeg = sxbeg + dx;
-
-      tmp = dst_cr - dx;
-      w = ((tmp > src->w) ? src->w : tmp) - sxbeg;
-      if ( w<=0 ) return;
-
-      tmp = dst_ct - dy;
-      sybeg = ((tmp < 0) ? 0 : tmp);
-      dybeg = sybeg + dy;
-
-      tmp = dst_cb - dy;
-      h = ((tmp > src->h) ? src->h : tmp) - sybeg;
-      if ( h<=0 ) return;
-   }
-   else {
-      w = src->w;
-      h = src->h;
-      sxbeg = 0;
-      sybeg = 0;
-      dxbeg = dx;
-      dybeg = dy;
-   }
-
-   s = (RLE_PTR) (src->dat);
-
-   /* Clip top.  */
-   for (y = sybeg - 1; y >= 0; y--) {
-      long c = *s++;
-
-      while (!RLE_IS_EOL(c)) {
-	 if (c > 0)
-	    s += c;
-	 c = *s++;
-      }
-   }
-
-   //@@@ bmp_select(dst);
-
-   /* Visible part.  */
-   for (y = 0; y < h; y++) {
-      //@@@ PIXEL_PTR d = OFFSET_PIXEL_PTR(bmp_write_line(dst, dybeg + y), dxbeg);
-      PIXEL_PTR d = (PIXEL_PTR) dst->pixels;
-      d += (dybeg+y)*dst->pitch;
-      d = OFFSET_PIXEL_PTR( d, dxbeg );
-      long c = *s++;
-
-      /* Clip left.  */
-      for (x = sxbeg; x > 0; ) {
-	 if (RLE_IS_EOL(c))
-	    goto next_line;
-	 else if (c > 0) {
-	    /* Run of solid pixels.  */
-	    if ((x - c) >= 0) {
-	       /* Fully clipped.  */
-	       x -= c;
-	       s += c;
-	    }
-	    else {
-	       /* Visible on the right.  */
-	       c -= x;
-	       s += x;
-	       break;
-	    }
-	 }
-	 else {
-	    /* Run of transparent pixels.  */
-	    if ((x + c) >= 0) {
-	       /* Fully clipped.  */
-	       x += c;
-	    }
-	    else {
-	       /* Visible on the right.  */
-	       c += x;
-	       break;
-	    }
-	 }
-
-	 c = *s++;
-      }
-
-      /* Visible part.  */
-      for (x = w; x > 0; ) {
-	 if (RLE_IS_EOL(c))
-	    goto next_line;
-	 else if (c > 0) {
-	    /* Run of solid pixels.  */
-	    if ((x - c) >= 0) {
-	       /* Fully visible.  */
-	       x -= c;
-	       for (c--; c >= 0; s++, INC_PIXEL_PTR(d), c--) {
-		  unsigned long col = *s;
-		  PUT_PIXEL(d, col);
-	       }
-	    }
-	    else {
-	       /* Clipped on the right.  */
-	       c -= x;
-	       for (x--; x >= 0; s++, INC_PIXEL_PTR(d), x--) {
-		  unsigned long col = *s;
-		  PUT_PIXEL(d, col);
-	       }
-	       break;
-	    }
-	 }
-	 else {
-	    /* Run of transparent pixels.  */
-	    x += c;
-	    d = OFFSET_PIXEL_PTR(d, -c);
-	 }
-
-	 c = *s++;
-      }
-
-      /* Clip right.  */
-      while (!RLE_IS_EOL(c)) {
-	 if (c > 0)
-	    s += c;
-	 c = *s++;
-      }
-
-   next_line: ;
-   }
-
-   //@@@bmp_unwrite_line(dst);
-}
 
 void RlePack::Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped )
 {
@@ -828,10 +600,66 @@ void RlePack::Draw( int a_iIndex, int a_iX, int a_iY, bool a_bFlipped )
 	if (!poSprite)
 		return;
 	
+	CSurfaceLocker oLock;
+
 	if ( a_bFlipped )
-		draw_rle_sprite_v_flip( poSprite, a_iX, a_iY );
+	{
+		switch (gamescreen->format->BitsPerPixel)
+		{
+		case 8: 
+			p->draw_rle_sprite_v_flip8( poSprite, a_iX, a_iY ); break;
+		case 15: 
+		case 16:
+			p->draw_rle_sprite_v_flip16( poSprite, a_iX, a_iY ); break;
+		case 32:
+			p->draw_rle_sprite_v_flip32( poSprite, a_iX, a_iY ); break;
+		}
+	}
 	else
-		draw_rle_sprite( poSprite, a_iX, a_iY );
-	
+	{
+		switch (gamescreen->format->BitsPerPixel)
+		{
+		case 8:
+			p->draw_rle_sprite8( poSprite, a_iX, a_iY ); break;
+		case 15: 
+		case 16:
+			p->draw_rle_sprite16( poSprite, a_iX, a_iY ); break;
+		case 32:
+			p->draw_rle_sprite32( poSprite, a_iX, a_iY ); break;
+		}
+	}
 }
 
+
+SDL_Surface* RlePack::CreateSurface( int a_iIndex, bool a_bFlipped )
+{
+	if ( (a_iIndex<0) || (a_iIndex>=p->m_iCount) )
+		return NULL;
+	
+	RLE_SPRITE* poSprite = p->m_pSprites[a_iIndex];
+	if (!poSprite)
+		return NULL;
+
+	SDL_Surface* poSurface = SDL_CreateRGBSurface( SDL_SWSURFACE, poSprite->w, poSprite->h, gamescreen->format->BitsPerPixel,
+		gamescreen->format->Rmask, gamescreen->format->Gmask, gamescreen->format->Bmask, gamescreen->format->Amask );
+
+	if ( NULL == poSurface )
+	{
+		return NULL;
+	}
+	
+	if ( gamescreen->format->BitsPerPixel <= 8 )
+	{
+		SDL_SetColors( poSurface, gamescreen->format->palette->colors, 0, gamescreen->format->palette->ncolors );
+	}
+
+	SDL_FillRect( poSurface, NULL, 0 );// C_LIGHTGREEN );
+	SDL_SetColorKey( poSurface, SDL_SRCCOLORKEY, 0 ); //C_LIGHTGREEN );
+	
+	SDL_Surface* poTemp = gamescreen;
+	gamescreen = poSurface;
+	Draw( a_iIndex, 0, 0, a_bFlipped );
+	gamescreen = poTemp;
+
+	return poSurface;
+}
