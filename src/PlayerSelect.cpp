@@ -102,10 +102,29 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 	{
 		return false;
 	}
+	
+	bool bLocalAvailable = IsLocalFighterAvailable( a_enFighter );
+
+	if ( !IsNetworkGame() || !bLocalAvailable )
+	{
+		return bLocalAvailable;
+	}
+	
+	// Check the remote site
+	return g_poNetwork->IsRemoteFighterAvailable( a_enFighter );
+}
+
+
+bool PlayerSelect::IsLocalFighterAvailable( FighterEnum a_enFighter )
+{
+	if ( a_enFighter <= UNKNOWN )
+	{
+		return false;
+	}
 
 	g_oBackend.PerlEvalF("GetFighterStats(%d);", a_enFighter);
 	const char* pcDatafile = g_oBackend.GetPerlString("Datafile");
-	return ( pcDatafile && *pcDatafile );
+	return pcDatafile && *pcDatafile;
 }
 
 
@@ -296,6 +315,7 @@ void PlayerSelect::HandleNetwork()
 	}
 	if ( bUpdateText )
 	{
+		Audio->PlaySample("pop.wav");
 		m_poTextArea->Redraw();
 	}
 
@@ -371,24 +391,24 @@ void PlayerSelect::DrawRect( int a_iPos, int a_iColor )
 }
 
 
-void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol )
+void PlayerSelect::CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor )
 {
 	int x1, y1;
 
 	x1 = m_iChooserLeft + a_iCol * m_iChooserWidth +5;
 	y1 = m_iChooserTop  + a_iRow * m_iChooserHeight +5;
 
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
-	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, a_iColor);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, a_iColor);
 	x1++;
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
-	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, a_iColor);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, a_iColor);
 	y1++;
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
-	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, a_iColor);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, a_iColor);
 	x1--;
-	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, 252);
-	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, 252);
+	sge_Line(a_poBackground, x1+5, y1+5, x1 + m_iChooserWidth-10, y1 + m_iChooserHeight-10, a_iColor);
+	sge_Line(a_poBackground, x1 + m_iChooserWidth-10, y1+5, x1+5, y1 + m_iChooserHeight-10, a_iColor);
 }
 
 
@@ -424,7 +444,7 @@ void PlayerSelect::DoPlayerSelect()
 
 	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, poBackground );
 	//g_oChooser.Draw( poBackground );
-
+	
 	int i, j;
 	for ( i=0; i<m_iChooserRows; ++i )
 	{
@@ -432,10 +452,15 @@ void PlayerSelect::DoPlayerSelect()
 		{
 			if ( IsNetworkGame() )
 			{
-				if ( !IsFighterAvailable(ChooserCellsChat[i][j]) &&
+				if ( !IsLocalFighterAvailable(ChooserCellsChat[i][j]) &&
 					UNKNOWN != ChooserCellsChat[i][j] )
 				{
-					CheckPlayer( poBackground, i, j );
+					CheckPlayer( poBackground, i, j, C_LIGHTRED );
+				}
+				else if ( !IsFighterAvailable(ChooserCellsChat[i][j]) &&
+					UNKNOWN != ChooserCellsChat[i][j] )
+				{
+					CheckPlayer( poBackground, i, j, C_LIGHTBLUE );
 				}
 			}
 			else
@@ -443,7 +468,7 @@ void PlayerSelect::DoPlayerSelect()
 				if ( !IsFighterAvailable(ChooserCells[i][j]) &&
 					UNKNOWN != ChooserCells[i][j] )
 				{
-					CheckPlayer( poBackground, i, j );
+					CheckPlayer( poBackground, i, j, C_LIGHTRED );
 				}
 			}
 		}
@@ -456,6 +481,11 @@ void PlayerSelect::DoPlayerSelect()
 
 	SetPlayer( 0, GetFighterCell(m_iP1) );
 	SetPlayer( 1, GetFighterCell(m_iP2) );
+
+	if ( IsNetworkGame() && g_poNetwork->IsMaster() )
+	{
+		g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
+	}
 
 	// 2. Run selection screen
 
@@ -595,6 +625,10 @@ void PlayerSelect::DoPlayerSelect()
 					if ( event.key.keysym.sym == SDLK_ESCAPE )
 					{
 						DoMenu( false );
+						if ( IsNetworkGame() && g_poNetwork->IsMaster() )
+						{
+							g_poNetwork->SendGameParams( g_oState.m_iGameSpeed, g_oState.m_iGameTime, g_oState.m_iHitPoints );
+						}
 						break;
 					}
 					if ( IsNetworkGame() && bDoingChat == false &&
@@ -638,7 +672,7 @@ void PlayerSelect::DoPlayerSelect()
 
 		for ( i=0; i<2; ++i )
 		{
-			int iYOffset = bNetworkMode ? -120 : 0;
+			int iYOffset = bNetworkMode ? -130 : 0;
 			if ( g_oBackend.m_aoPlayers[i].m_iFrame )
 			{
 				m_aoPlayers[i].m_poPack->Draw(
@@ -651,11 +685,11 @@ void PlayerSelect::DoPlayerSelect()
 			if ( i ) x = gamescreen->w - x - m_aiFighterNameWidth[i];
 			
 			sge_BF_textout( gamescreen, fastFont, GetFighterName(i),
-				x, IsNetworkGame() ? 10 : gamescreen->h - 30 + iYOffset );
+				x, gamescreen->h - 30 + iYOffset );
 		}
-
+		
 		SDL_Flip( gamescreen );
-
+		
 		if (over || g_oState.m_bQuitFlag || SState::IN_DEMO == g_oState.m_enGameMode) break;
 	}
 

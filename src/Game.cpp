@@ -216,11 +216,15 @@ void Game::DrawHitPointDisplay()
 		dst.x = 604; dst.y = 11;
 		SDL_BlitSurface( m_poDoodads, &src, gamescreen, &dst );
 	}
-	
+
+	int iTextX = 230 - g_oPlayerSelect.GetFighterNameWidth(0);
+	if ( iTextX < 5 ) iTextX = 5;
 	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(0),
-		230 - g_oPlayerSelect.GetFighterNameWidth(0), 38 );
+		iTextX, 38 );
+	iTextX = g_oPlayerSelect.GetFighterNameWidth(1);
+	iTextX = iTextX < (635-410) ? 410 : 635-iTextX;
 	sge_BF_textout( gamescreen, fastFont, g_oPlayerSelect.GetFighterName(1),
-		410, 38 );
+		iTextX, 38 );
 }
 
 
@@ -531,7 +535,7 @@ int Game::ProcessEvents()
 				
 			case SDL_KEYDOWN:
 			{
-				if ( event.key.keysym.sym == SDLK_ESCAPE /*&& !IsNetworkGame()*/ )
+				if ( event.key.keysym.sym == SDLK_ESCAPE && !IsNetworkGame() )
 				{
 					SState::TGameMode enMode = g_oState.m_enGameMode;
 					::DoMenu( true );
@@ -746,8 +750,7 @@ void Game::DoOneRound()
 		// NORMAL -> TIMEUP
 		// bHurryUp flag can be set during NORMAL phase
 
-		if ( !IsNetworkGame()
-			|| (IsNetworkGame() && g_poNetwork->IsMaster()) )
+		if ( IsMaster() )
 		{
 			if ( Ph_START == m_enGamePhase )		// Check for the end of the START phase
 			{
@@ -763,6 +766,7 @@ void Game::DoOneRound()
 					&& !bHurryUp )
 				{
 					bHurryUp = true;
+					g_poNetwork->SendHurryup( 1 );
 					HurryUp();
 					iGameSpeed = iGameSpeed * 3 / 4;
 				}
@@ -775,6 +779,7 @@ void Game::DoOneRound()
 				else if ( dGameTime <= 0 )
 				{
 					m_enGamePhase = Ph_TIMEUP;
+					g_poNetwork->SendHurryup( 2 );
 					TimeUp();
 					break;
 				}
@@ -790,9 +795,13 @@ void Game::DoOneRound()
 		else
 		{
 			m_iGameTime = g_poNetwork->GetGameTime();
-			TGamePhaseEnum enOldPhase = m_enGamePhase;
 			m_enGamePhase = (TGamePhaseEnum) g_poNetwork->GetGamePhase();
 			dGameTime = 1000.0;	// ignored.
+			switch (g_poNetwork->GetHurryup() )
+			{
+				case 1: HurryUp(); break;
+				case 2: TimeUp(); break;
+			}
 		}
 		
 		iLastTick = iThisTick;

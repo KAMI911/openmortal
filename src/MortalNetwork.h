@@ -55,14 +55,20 @@ However, they both use the "Player 1" keys.
 SUMMARY OF MESSAGES:
 
 I <version> <username> - Introduction sent both ways on connection.
-G <text>			- Update on the game backend data.
-K <number> <bool>	- Key # up/down
 M <text>			- Incoming Msg text.
+
+S					- Ready for the next round (synch).
+G <text>			- Update on the game backend data.
+T <number> <number>	- Update the game time and game phase.
+K <number> <bool>	- Key # up/down
+H <number>			- Hurryup and other special messages
+O <number> <bool>	- The round is over (who won, are there more rounds).
+
 F <number>			- I have switched to fighter X.
 R					- I have chosen a fighter.
-S					- Ready for the next round (synch).
-O <number> <bool>	- The round is over (who won, are there more rounds).
-T <number> <number>	- Update the game time and game phase.
+Q <number>			- Is fighter X available?
+A <number>			- Fighter A is available.
+P <number> x3		- Game parameters
 
 */
 
@@ -101,18 +107,23 @@ public:
 	
 	virtual void		SendFighter( FighterEnum a_enFighter ) = 0;	// Let the other side know that I switched to fighter X.
 	virtual void		SendReady() = 0;			// Let the other side know that I am ready.
+	virtual void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints ) = 0;
 	
 	// Game methods
 
-	virtual void		SynchStartRound() = 0;
+	virtual bool		SynchStartRound() = 0;
 	virtual void		SendGameData( const char* a_pcGameData ) = 0;
 	virtual const char*	GetLatestGameData() = 0;
+	
 	virtual void		SendKeystroke( int a_iKey, bool a_bPressed ) = 0;
 	virtual bool		GetKeystroke( int& a_riOutKey, bool& a_rbPressed ) = 0;
+	
 	virtual void		SendGameTime( int a_iGameTime, int a_iGamePhase ) = 0;
 	virtual int			GetGameTime() = 0;
 	virtual int			GetGamePhase() = 0;
 
+	virtual void		SendHurryup( int a_iHurryUpCode ) = 0;
+	virtual int			GetHurryup() = 0;
 
 	virtual void		SendRoundOver( int a_iWhoWon, bool a_bGameOver ) = 0;
 	virtual bool		IsRoundOver() = 0;

@@ -15,6 +15,10 @@
 #include <string>
 #include <list>
 
+
+typedef std::list<int> TIntList;
+typedef std::list<std::string> TStringList;
+
  
 class CMortalNetworkImpl: public CMortalNetwork
 {
@@ -46,18 +50,23 @@ public:
 
 	void		SendFighter( FighterEnum a_enFighter );	// Let the other side know that I switched to fighter X.
 	void		SendReady();			// Let the other side know that I am ready.
+	void		SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints );
 
 	// Game methods
 
-	void		SynchStartRound();
+	bool		SynchStartRound();
 	void		SendGameData( const char* a_pcGameData );
 	const char*	GetLatestGameData();
+	
 	void		SendKeystroke( int a_iKey, bool a_bPressed );
 	bool		GetKeystroke( int& a_riOutKey, bool& a_rbPressed );
 
 	void		SendGameTime( int a_iGameTime, int a_iGamePhase );
 	int			GetGameTime();
 	int			GetGamePhase();
+
+	void		SendHurryup( int a_iHurryUpCode );
+	int			GetHurryup() ;
 
 	void		SendRoundOver( int a_iWhoWon, bool a_bGameOver );
 	int			GetWhoWon();
@@ -67,9 +76,6 @@ public:
 protected:
 	void		SendRawData( char a_cID, const void* a_pData, int a_iLength );
 	
-	//void		InternalSendString( const char* a_pcText, char a_cID );
-	//char*		InternalReceiveString( void* a_pData, int a_iLength, int& a_riOutLength );
-	
 	void		ReceiveMsg( void* a_pData, int a_iLength );
 	void		ReceiveGameData( void* a_pData, int a_iLength );
 	void		ReceiveKeystroke( void* a_pData, int a_iLength );
@@ -77,7 +83,11 @@ protected:
 	void		ReceiveReady( void* a_pData, int a_iLength );
 	void		ReceiveRoundOver( void* a_pData, int a_iLength );
 	void		ReceiveGameTime( void* a_pData, int a_iLength );
-
+	void		ReceiveHurryup( void* a_pData, int a_iLength );
+	void		ReceiveRemoteFighterAvailable( void* a_pData, int a_iLength );
+	void		ReceiveRemoteFighterQuery( void* a_pData, int a_iLength );
+	void		ReceiveGameParams( void* a_pData, int a_iLength );
+	
 protected:
 	bool		m_bNetworkAvailable;
 	
@@ -87,7 +97,7 @@ protected:
 		NS_CHARACTER_SELECTION,
 		NS_IN_GAME,
 	};
-
+	
 	TNetworkState			m_enState;
 	bool					m_bServer;
 	bool					m_bMaster;
@@ -99,22 +109,30 @@ protected:
 	
 	std::string				m_sLastError;
 	
-	std::list<std::string>	m_asMsgs;
+	TStringList				m_asMsgs;
 	
 	// GAME DATA
 	
+	TIntList				m_aiAvailableRemoteFighters;
 	FighterEnum				m_enRemoteFighter;
 	bool					m_bRemoteReady;
+	struct SGameParams
+	{
+		Uint32					iGameTime;
+		Uint32					iGameSpeed;
+		Uint32					iHitPoints;
+	}						m_oGameParams;
 	
 	std::string				m_sLatestGameData;
-	std::list<int>			m_aiKeystrokes;
-	std::list<int>			m_abKeystrokes;
+	TIntList				m_aiKeystrokes;
+	TIntList				m_abKeystrokes;
 
 	bool					m_bRoundOver;
 	int						m_iWhoWon;
 	bool					m_bGameOver;
 	int						m_iGameTime;
 	int						m_iGamePhase;
+	int						m_iHurryupCode;
 	
 	// REMOTE QUERY RESPONSES
 	

@@ -138,6 +138,22 @@ void InputKeys( int a_iPlayerNumber )
  ***************************************************************************/
 
 static int g_iMessageY;
+static char g_acMessageBuffer[1024];
+
+
+void MortalNetworkResetMessages( bool a_bClear )
+{
+	if ( a_bClear )
+	{
+		SDL_FillRect( gamescreen, NULL, C_BLACK );
+		SDL_Flip( gamescreen );
+		g_iMessageY = 185;
+	}
+	else
+	{
+		g_iMessageY = 260;
+	}
+}
 
 void MortalNetworkMessage( const char* format, ... )
 {
@@ -174,6 +190,44 @@ bool MortalNetworkCheckKey()
 }
 
 
+const char* FindString( const char* a_ppcNames[], const int a_piValues[], int a_iValue )
+{
+	for ( int i=0; NULL != a_ppcNames[i]; ++i )
+	{
+		if ( a_iValue == a_piValues[i] )
+		{
+			return a_ppcNames[i];
+		}
+	}
+	return "(unknown)";
+}
+
+
+
+const char* GetGameTimeString( int a_iValue )
+{
+	strcpy( g_acMessageBuffer, Translate("GAME TIME: ") );
+	strcat( g_acMessageBuffer, Translate(FindString( g_ppcGameTime, g_piGameTime, a_iValue)) );
+	return g_acMessageBuffer;
+}
+
+const char* GetGameSpeedString( int a_iValue )
+{
+	strcpy( g_acMessageBuffer, Translate("GAME SPEED: ") );
+	strcat( g_acMessageBuffer, Translate(FindString( g_ppcGameSpeed, g_piGameSpeed, a_iValue)) );
+	return g_acMessageBuffer;
+}
+
+const char* GetHitPointsString( int a_iValue )
+{
+	strcpy( g_acMessageBuffer, Translate("STAMINA: ") );
+	strcat( g_acMessageBuffer, Translate(FindString( g_ppcHitPoints, g_piHitPoints, a_iValue) ) );
+	return g_acMessageBuffer;
+}
+
+
+
+
 
 class CNetworkMenu: public Menu
 {
@@ -198,6 +252,88 @@ public:
 
 	~CNetworkMenu() {}
 
+	void Connect()
+	{
+		Clear();
+		Draw();
+
+		MortalNetworkResetMessages( false );
+		m_bOK = g_poNetwork->Start( m_bServer ? NULL : m_sHostname.c_str() );
+
+		if ( m_bOK )
+		{
+			g_oState.SetServer( m_bServer ? NULL : m_sHostname.c_str() );
+			g_oState.m_enGameMode = SState::IN_NETWORK;
+			m_bDone = true;
+			m_iReturnCode = 100;
+		}
+		else
+		{
+			const char* acError = g_poNetwork->GetLastError();
+			DrawTextMSZ( "Couldn't connect", inkFont, 320, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
+			DrawTextMSZ( acError, impactFont, 320, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
+		}
+
+		if ( !g_oState.m_bQuitFlag )
+		{
+			if ( m_bOK )
+			{
+				// Wait for 1 sec, or keystroke.
+				for ( int i=0; i<10; ++i )
+				{
+					if ( MortalNetworkCheckKey() ) break;
+					SDL_Delay( 100 );
+				}
+			}
+			else
+			{
+				GetKey();
+			}
+			Clear();
+			Draw();
+		}
+
+		if ( g_oState.m_bQuitFlag )
+		{
+			m_bDone = true;
+			m_iReturnCode = 100;
+		}
+	}
+
+	void EnterHostname()
+	{
+		Clear();
+		Draw();
+
+		char acBuffer[256];
+		strncpy( acBuffer, m_sHostname.c_str(), 255 );
+		acBuffer[255] = 0;
+
+		int x = DrawTextMSZ( "Server name: ", impactFont, 20, 270, 0, C_WHITE, gamescreen );
+
+		int iRetval;
+		{
+			SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
+			CReadline oReadline( gamescreen, impactFont, acBuffer, strlen(acBuffer), 255,
+				20+x, 270 + sge_TTF_FontAscent(impactFont), 600, C_LIGHTCYAN, C_BLACK, 255 );
+			iRetval = oReadline.Execute();
+		}
+
+		if ( iRetval == -1 )
+		{
+			m_bDone = true;
+			m_iReturnCode = 100;
+			g_oState.m_bQuitFlag = true;
+		}
+		if ( iRetval > 0 )
+		{
+			m_sHostname = acBuffer;
+			m_poServerMenuItem->SetValue( acBuffer );
+		}
+		Clear();
+		Draw();
+	}
+
 	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 	{
 		switch ( a_iItemCode )
@@ -217,48 +353,8 @@ public:
 		}
 			
 		case MENU_CONNECT:
-		{
-			Clear();
-			Draw();
-			
-			g_iMessageY = 260;
-			m_bOK = g_poNetwork->Start( m_bServer ? NULL : m_sHostname.c_str() );
-			
-			if ( m_bOK )
-			{
-				g_oState.SetServer( m_bServer ? NULL : m_sHostname.c_str() );
-				g_oState.m_enGameMode = SState::IN_NETWORK;
-				m_bDone = true;
-				m_iReturnCode = 100;
-			}
-			else
-			{
-				const char* acError = g_poNetwork->GetLastError();
-				DrawTextMSZ( "Couldn't connect", inkFont, 320, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
-				DrawTextMSZ( acError, impactFont, 320, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
-			}
-
-			if ( !g_oState.m_bQuitFlag )
-			{
-				if ( m_bOK )
-				{
-					for ( int i=0; i<10; ++i ) if ( MortalNetworkCheckKey() ) break;
-				}
-				else
-				{
-					GetKey();
-				}
-				Clear();
-				Draw();
-			}
-
-			if ( g_oState.m_bQuitFlag )
-			{
-				m_bDone = true;
-				m_iReturnCode = 100;
-			}
+			Connect();
 			break;
-		}
 
 		case MENU_CANCEL:
 			m_bOK = false;
@@ -267,36 +363,7 @@ public:
 			break;
 
 		case MENU_HOSTNAME:
-			Clear();
-			Draw();
-			
-			char acBuffer[256];
-			strncpy( acBuffer, m_sHostname.c_str(), 255 );
-			acBuffer[255] = 0;
-			
-			int x = DrawTextMSZ( "Server name: ", impactFont, 20, 270, 0, C_WHITE, gamescreen );
-
-			int iRetval;
-			{
-				SDL_EnableKeyRepeat( SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL );
-				CReadline oReadline( gamescreen, impactFont, acBuffer, strlen(acBuffer), 255,
-					20+x, 270 + sge_TTF_FontAscent(impactFont), 600, C_LIGHTCYAN, C_BLACK, 255 );
-				iRetval = oReadline.Execute();
-			}
-			
-			if ( iRetval == -1 )
-			{
-				m_bDone = true;
-				m_iReturnCode = 100;
-				g_oState.m_bQuitFlag = true;
-			}
-			if ( iRetval > 0 )
-			{
-				m_sHostname = acBuffer;
-				m_poServerMenuItem->SetValue( acBuffer );
-			}
-			Clear();
-			Draw();
+			EnterHostname();
 			break;
 		}
 	}
@@ -510,6 +577,8 @@ void EnumMenuItem::Decrement()
 }
 
 	
+
+
 void EnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValues )
 {
 	m_ppcNames = a_ppcNames;
@@ -703,6 +772,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 	{
 		case MENU_QUIT:
 			m_bDone = true;
+
 			m_iReturnCode = 100;
 			g_oState.m_bQuitFlag = true;
 			break;
@@ -710,6 +780,10 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		case MENU_SURRENDER:
 			m_bDone = true;
 			m_iReturnCode = 100;
+			if ( SState::IN_NETWORK == g_oState.m_enGameMode )
+			{
+				g_poNetwork->Stop();
+			}
 			g_oState.m_enGameMode = SState::IN_DEMO;
 			break;
 		
@@ -936,6 +1010,7 @@ void Menu::Draw()
 
 void Menu::FocusNext()
 {
+
 	MenuItem* poItem = NULL;
 	int iNextItem;
 	

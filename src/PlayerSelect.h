@@ -62,13 +62,14 @@ public:
 	void SetPlayer( int a_iPlayer, FighterEnum a_enFighter );
 	void SetTint( int a_iPlayer, TintEnum a_enFighter );
 	bool IsFighterAvailable( FighterEnum a_enFighter );
+	bool IsLocalFighterAvailable( FighterEnum a_enFighter );
 
 protected:
 
 	void HandleKey( int a_iPlayer, int a_iKey );
 	void HandleNetwork();
 	void DrawRect( int a_iPos, int a_iColor );
-	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol );
+	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol, int a_iColor );
 	static RlePack* LoadFighter( FighterEnum m_enFighter );
 	bool IsNetworkGame();
 	FighterEnum GetFighterCell( int a_iIndex );

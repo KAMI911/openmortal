@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
 	
 	new MszAudio;
 //	Audio->LoadMusic( "Last_Ninja_-_The_Wilderness.mid", "DemoMusic" );
-	Audio->LoadMusic( "VUJICS.IT", "DemoMusic" );
+	Audio->LoadMusic( "ride.mod", "DemoMusic" );
 	Audio->PlayMusic( "DemoMusic" );
 	Audio->LoadMusic( "2nd_pm.s3m", "GameMusic" );
 	
@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
 			
 			debug ( "iGameResult = %d\n", iGameResult );
 			
-			if ( iGameResult >= 0 )
+			if ( iGameResult >= 0 && bNetworkGame )
 			{
 				GameOver( iGameResult );
 				FighterStatsDemo oDemo( g_oPlayerSelect.GetPlayerInfo( iGameResult ).m_enFighter );

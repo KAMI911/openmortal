@@ -8,6 +8,7 @@
 
 #include "MortalNetworkImpl.h"
 #include "State.h"
+#include "PlayerSelect.h"
 #include "common.h"
 #include "config.h"
 
@@ -15,8 +16,14 @@
 #define MORTALNETWORKPORT 0x3A22
 
 
+// Some graphics routines, defined in menu.cpp
+
+void MortalNetworkResetMessages( bool a_bClear );
 void MortalNetworkMessage( const char* format, ... );
 bool MortalNetworkCheckKey();
+const char* GetGameTimeString( int a_iValue );
+const char* GetGameSpeedString( int a_iValue );
+const char* GetHitPointsString( int a_iValue );
 
 
 
@@ -50,6 +57,8 @@ CMortalNetworkImpl::CMortalNetworkImpl()
 	m_bGameOver = false;
 	m_iGameTime = 0;
 	m_iGamePhase = 0;
+	m_iHurryupCode = 0;
+	m_iIncomingBufferSize = 0;
 	
 	if(SDLNet_Init()==-1)
 	{
@@ -219,7 +228,10 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	m_abKeystrokes.clear();
 	m_iGameTime = 0;
 	m_iGamePhase = 0;
+	m_iHurryupCode = 0;
 	m_iIncomingBufferSize = 0;
+	m_aiAvailableRemoteFighters.clear();
+	m_oGameParams.iGameTime = m_oGameParams.iGameSpeed = m_oGameParams.iHitPoints = -1;
 	
 	m_poSocketSet = SDLNet_AllocSocketSet( 1 );
 	SDLNet_TCP_AddSocket( m_poSocketSet, m_poSocket );	// Check for errors?
@@ -328,6 +340,10 @@ void CMortalNetworkImpl::Update()
 			case 'K': ReceiveKeystroke( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'O': ReceiveRoundOver( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			case 'T': ReceiveGameTime( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'H': ReceiveHurryup( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'A': ReceiveRemoteFighterAvailable( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'Q': ReceiveRemoteFighterQuery( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
+			case 'P': ReceiveGameParams( m_acIncomingBuffer+iOffset+4, iLengthOfPackage ); break;
 			default:
 			{
 				debug( "Bad ID: %c (%d)\n", m_acIncomingBuffer[iOffset], m_acIncomingBuffer[iOffset] );
@@ -386,6 +402,8 @@ This is followed by as many bytes as the Length is.
 */
 void CMortalNetworkImpl::SendRawData( char a_cID, const void* a_pData, int a_iLength )
 {
+	CHECKCONNECTION;
+	
 	char acBuffer[4];
 	acBuffer[0] = a_cID;
 	*((Uint16*)(acBuffer+1)) = SDL_SwapBE16( a_iLength );
@@ -461,8 +479,71 @@ const char* CMortalNetworkImpl::GetMsg()
 
 bool CMortalNetworkImpl::IsRemoteFighterAvailable( FighterEnum a_enFighter )
 {
-	return true;
+	if ( 0 == a_enFighter )
+	{
+		return false;
+	}
+	
+	// Check if we already have it cached.
+	if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+	{
+		return true;
+	}
+	if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), -a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+	{
+		return false;
+	}
+	
+	Uint32 iFighter = SDL_SwapBE32( a_enFighter );
+	SendRawData( 'Q', &iFighter, sizeof(Uint32) );
+
+	for ( int i=0; i<100; ++i )
+	{
+		SDL_Delay(10);
+		Update();
+		if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+		{
+			return true;
+		}
+		if ( std::find( m_aiAvailableRemoteFighters.begin(), m_aiAvailableRemoteFighters.end(), -a_enFighter ) != m_aiAvailableRemoteFighters.end() )
+		{
+			return false;
+		}
+	}
+
+	m_aiAvailableRemoteFighters.push_front( -a_enFighter );
+	return false;
 }
+
+void CMortalNetworkImpl::ReceiveRemoteFighterQuery( void* a_pData, int a_iLength )
+{
+	if ( a_iLength != sizeof(Uint32) ) DISCONNECTONCOMMUNICATIONERROR;
+	FighterEnum iFighter = (FighterEnum) SDL_SwapBE32( *((Uint32*)a_pData) );
+
+	bool bAvailable = g_oPlayerSelect.IsLocalFighterAvailable( iFighter );
+	Uint32 iResponse = bAvailable ? iFighter : iFighter + 100000;
+	debug( "ReceiveRemoteFighterQuery: %d -> %d\n", iFighter, iResponse );
+	iResponse = SDL_SwapBE32( iResponse );
+
+	SendRawData( 'A', &iResponse, sizeof(Uint32) );
+}
+
+void CMortalNetworkImpl::ReceiveRemoteFighterAvailable( void* a_pData, int a_iLength )
+{
+	if ( a_iLength != sizeof(Uint32) ) DISCONNECTONCOMMUNICATIONERROR;
+	Uint32 iFighter = SDL_SwapBE32( *((Uint32*)a_pData) );
+	debug( "ReceiveRemoteFighterAvailable: %d\n", iFighter );
+	if ( iFighter >= 100000 )
+	{
+		m_aiAvailableRemoteFighters.push_front( -(iFighter-100000) );
+	}
+	else
+	{
+		m_aiAvailableRemoteFighters.push_front( iFighter );
+	}
+}
+
+
 
 
 
@@ -513,6 +594,52 @@ bool CMortalNetworkImpl::IsRemoteSideReady()
 
 
 
+void CMortalNetworkImpl::SendGameParams( int a_iGameSpeed, int a_iGameTime, int a_iHitPoints )
+{
+	CHECKCONNECTION;
+	if ( (int)m_oGameParams.iGameSpeed == a_iGameSpeed
+		&& (int)m_oGameParams.iGameTime == a_iGameTime
+		&& (int)m_oGameParams.iHitPoints == a_iHitPoints )
+	{
+		// Nothing to update.
+		return;
+	}
+	
+	m_oGameParams.iGameSpeed = a_iGameSpeed;
+	m_oGameParams.iGameTime = a_iGameTime;
+	m_oGameParams.iHitPoints = a_iHitPoints;
+
+	SGameParams oPackage;
+	oPackage.iGameSpeed = SDL_SwapBE32( a_iGameSpeed );
+	oPackage.iGameTime = SDL_SwapBE32( a_iGameTime );
+	oPackage.iHitPoints = SDL_SwapBE32( a_iHitPoints );
+	SendRawData( 'P', &oPackage, sizeof(SGameParams) );
+}
+
+void CMortalNetworkImpl::ReceiveGameParams( void* a_pData, int a_iLength )
+{
+	if ( a_iLength != sizeof(SGameParams) ) DISCONNECTONCOMMUNICATIONERROR;
+
+	SGameParams* poPackage = (SGameParams*) a_pData;
+	if ( m_oGameParams.iGameSpeed != SDL_SwapBE32( poPackage->iGameSpeed ) )
+	{
+		m_oGameParams.iGameSpeed = SDL_SwapBE32( poPackage->iGameSpeed );
+		m_asMsgs.push_back( GetGameSpeedString( m_oGameParams.iGameSpeed ) );
+	}
+	if ( m_oGameParams.iGameTime != SDL_SwapBE32( poPackage->iGameTime ) )
+	{
+		m_oGameParams.iGameTime = SDL_SwapBE32( poPackage->iGameTime );
+		m_asMsgs.push_back( GetGameTimeString( m_oGameParams.iGameTime) );
+	}
+	if ( m_oGameParams.iHitPoints != SDL_SwapBE32( poPackage->iHitPoints ) )
+	{
+		m_oGameParams.iHitPoints = SDL_SwapBE32( poPackage->iHitPoints );
+		m_asMsgs.push_back( GetHitPointsString( m_oGameParams.iHitPoints ) );
+	}
+}
+
+
+
 
 /*************************************************************************
 						GAME RELATED METHODS
@@ -522,7 +649,7 @@ bool CMortalNetworkImpl::IsRemoteSideReady()
 
 
 
-void CMortalNetworkImpl::SynchStartRound()
+bool CMortalNetworkImpl::SynchStartRound()
 {
 	debug( "SynchStartRound STARTED.\n" );
 	
@@ -530,14 +657,30 @@ void CMortalNetworkImpl::SynchStartRound()
 	
 	// run until both sides manage to get a SYNCH
 
+	int i=0;
+
 	while ( !m_bSynchQueryResponse )
 	{
-		CHECKCONNECTION;
 		SendRawData('S', NULL, 0);
 		if ( !IsConnectionAlive() ) break;
 		Update();
-		SDL_Delay(200);
+		SDL_Delay(100);
 		if ( !IsConnectionAlive() ) break;
+		++i;
+
+		if ( i == 10 )
+		{
+			debug( "Synch is slow...\n" );
+			MortalNetworkResetMessages( true );
+			MortalNetworkMessage( "Synching with remote side..." );
+			MortalNetworkMessage( "Press any key to disconnect." );
+		}
+		if ( i > 10
+			&& MortalNetworkCheckKey() )
+		{
+			Stop();
+			return false;
+		}
 	}
 
 	if ( IsConnectionAlive() )
@@ -547,7 +690,10 @@ void CMortalNetworkImpl::SynchStartRound()
 		m_bGameOver = false;
 		m_bRemoteReady = false;
 		m_bSynchQueryResponse = false;
+		m_iHurryupCode = -1;
 	}
+
+	return IsConnectionAlive();
 
 	debug( "SynchStartRound FINISHED.\n" );
 }
@@ -563,6 +709,8 @@ void CMortalNetworkImpl::SynchStartRound()
 
 void CMortalNetworkImpl::SendGameData( const char* a_pcGameData )
 {
+	CHECKCONNECTION;
+	
 	int iMsgLen = strlen( a_pcGameData ) + 1;
 	if ( iMsgLen > MAXSTRINGLENGTH )
 	{
@@ -601,6 +749,8 @@ struct SKeystrokePackage
 
 void CMortalNetworkImpl::SendKeystroke( int a_iKey, bool a_bPressed )
 {
+	CHECKCONNECTION;
+	
 	SKeystrokePackage oPackage;
 	oPackage.cKey = a_iKey;
 	oPackage.bPressed = a_bPressed;
@@ -642,6 +792,8 @@ struct SGameTimePackage
 
 void CMortalNetworkImpl::SendGameTime( int a_iGameTime, int a_iGamePhase )
 {
+	CHECKCONNECTION;
+	
 	if ( a_iGameTime == m_iGameTime
 		&& a_iGamePhase == m_iGamePhase )
 	{
@@ -679,6 +831,29 @@ int CMortalNetworkImpl::GetGamePhase()
 
 
 
+void CMortalNetworkImpl::SendHurryup( int a_iHurryUpCode )
+{
+	CHECKCONNECTION;
+	int iPackage = SDL_SwapBE32( a_iHurryUpCode );
+	SendRawData( 'H', &iPackage, sizeof(int) );
+}
+
+void CMortalNetworkImpl::ReceiveHurryup( void* a_pData, int a_iLength )
+{
+	if ( a_iLength != sizeof(int) ) DISCONNECTONCOMMUNICATIONERROR;
+	m_iHurryupCode = SDL_SwapBE32( *((int*)a_pData) );
+}
+
+int CMortalNetworkImpl::GetHurryup()
+{
+	int iRetval = m_iHurryupCode;
+	m_iHurryupCode = -1;
+	return iRetval;
+}
+
+
+
+
 struct SRoundOrder
 {
 	int iWhoWon;
@@ -687,6 +862,7 @@ struct SRoundOrder
 
 void CMortalNetworkImpl::SendRoundOver( int a_iWhoWon, bool a_bGameOver )
 {
+	CHECKCONNECTION;
 	SRoundOrder oPackage;
 
 	oPackage.iWhoWon = a_iWhoWon;
