@@ -96,7 +96,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	{
 		return false;
 	}
-	
+
 	debug( "CMortalNetworkImpl::Start( %s )\n", a_pcServerName ? a_pcServerName : "NULL" );
 	IPaddress oAddress;
 
@@ -105,7 +105,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 		MortalNetworkMessage( Translate("Resolving hostname (%s)..."), a_pcServerName );
 	}
 
-	int iResult = SDLNet_ResolveHost( &oAddress, a_pcServerName, MORTALNETWORKPORT );
+	int iResult = SDLNet_ResolveHost( &oAddress, (char*) a_pcServerName, MORTALNETWORKPORT );
 	if ( iResult )
 	{
 		m_sLastError = Translate( "Couldn't resolve host." );
@@ -195,14 +195,14 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	oIntroPackage.acVersion[9] = 0;
 
 	debug( "Sending intro package... " );
-	
+
 	int iRetval = SDLNet_TCP_Send( m_poSocket, &oIntroPackage, sizeof( oIntroPackage ) );
 
 	if ( iRetval < (int) sizeof( oIntroPackage ) )
 	{
 		RETURNWITHERROR;
 	}
-	
+
 	iRetval = SDLNet_TCP_Recv( m_poSocket, &oRemotePackage, sizeof( oRemotePackage ) );
 	if ( iRetval <= 0 )
 	{
