@@ -251,7 +251,7 @@ void FlyingChars::AddNextLine()
 		if ( !m_bScrolling )
 		{
 			m_bScrolling = true;
-			m_iTimeToNextLine = (m_iLastLineY - (m_oRect.y + m_oRect.h - m_poFont->CharHeight)) / m_dScrollupRate;
+			m_iTimeToNextLine = int( (m_iLastLineY - (m_oRect.y + m_oRect.h - m_poFont->CharHeight)) / m_dScrollupRate );
 			return;
 		}
 		m_iLastLineY = m_oRect.y + m_oRect.h - m_poFont->CharHeight;
