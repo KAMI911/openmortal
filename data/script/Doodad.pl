@@ -2,26 +2,34 @@
 
 Doodad members are:
 
+T		int			The Doodad's type. 0 means text.
+OWNER	int			The Doodad's owner (0 for player 1, 1 for player 2, other means no owner)
+HOSTILE	int			1 if the doodad can collision with players and damage them.
+LIFETIME int		The amount of time before this doodad dies. -1 means infinite.
+
 POS		(int,int)	The Doodad's logical position.
 SIZE	(int,int)	The Doodad's physical size.
 SPEED	(int,int)	The Doodad's logical speed.
 ACCEL	(int,int)	The Doodad's logical acceleration.
-T		int			The Doodad's type. 0 means text.
-F		int				The Doodad's frame.
-OWNER	int			The Doodad's owner (0 for player 1, 1 for player 2, other means no owner)
+DIR		int			1: heading right; -1: heading left (implies flipped state)
+
 GFXOWNER int		The Doodad's graphics owner (0 for player 1, 1 for player 2, other means global)
-SA		int			Animation speed
+FIRSTFRAME int		The first frame of the doodad (only meaningful if GFXOWNER is a player).
 FRAMES	int			The number of frames.
-LIFETIME int		The amount of time before this doodad dies. -1 means infinite.
+SA		int			Animation speed
+F		int			The Doodad's frame.
 TEXT	string		The text displayed in a text doodad.
-HOSTILE	int			1 if the doodad can collision with players and damage them.
+
+UPDATECODE sub		This will be ran instead of MoveDoodad if defined.
 
 
 
 Doodad types are:
 0		Text
 1		Zoli's shot
-
+2		UPi's shot
+3		UPi's explosion
+4		UPi's familiar
 
 =cut
 
@@ -31,21 +39,76 @@ use strict;
 require 'Collision.pl';
 
 
-%::DoodadDefinitions = (
+package Doodad;
+
+
+%Doodad::DoodadDefinitions = (
 'ZoliShot' => {
-	'W'  => 64,   'H'  => 64,   'T'  => 1,
-	'SX' => 48,   'SY' => -5,   'AX' => 0,    'AY' => 1,
-	'SA' => 1/25, 'FRAMES'=>6,  'HOSTILE'=> 1,                },
+	'T'  => 1,					'HOSTILE' => 1,				'LIFETIME' => -1,
+	'SIZE'	=> [ 64, 64 ],		'SPEED'	=> [ 48, -25 ],		'ACCEL'	=> [ 0, 2 ],
+
+	'GFXOWNER' => 2,			'FIRSTFRAME' => 0,			'FRAMES' => 6,
+	'SA' => 1/25
+},
 
 'UPiShot' => {
-	'W'  =>170,   'H'  => 22,   'T'  => 2,
-	'SX' => 48,   'SY' => 0,    'AX' => 0,    'AY' => 0,
-	'SA' => 1/10, 'FRAMES'=>5,  'HOSTILE'=> 1,                },
+	'T' => 2,					'HOSTILE' => 1,				'LIFETIME' => -1,
+	'SIZE' => [170, 22],		'SPEED' => [ 48, 0 ],		'ACCEL' => [ 0, 0 ],
+	
+	'GFXOWNER' => 0,			'FIRSTFRAME' => 340,		'FRAMES' => 5,
+	'SA' => 1/5,
+},
 
-'Explosion' => {
-	'W'  => 58,   'H'  => 80,   'T'  => 3,
-	'SX' => 0,    'SY' => 0,    'AX' => 0,    'AY' => 0,
-	'SA' => 1/10, 'FRAMES'=>15, 'HOSTILE'=> 0,                },
+'UPiExplosion' => {
+	'T' => 3,					'HOSTILE' => 0,				'LIFETIME' => 30,
+	'SIZE' => [ 58, 80],		'SPEED' => [ 0, 0 ],		'ACCEL' => [ 0, 0 ],
+	
+	'GFXOWNER' => 0,			'FIRSTFRAME' => 345,		'FRAMES' => 15,
+	'SA' => 1/2,
+},
+
+'UPiFamiliar' => {
+	'T' => 3,					'HOSTILE' => 0,				'LIFETIME' => -1,
+	'SIZE' => [ 20, 20],		'SPEED' => [ 0, 0 ],		'ACCEL' => [ 0, 0 ],
+	
+	'GFXOWNER' => 0,			'FIRSTFRAME' => 360,		'FRAMES' => 3,
+	'SA' => 1/10,				
+	
+	'ANGLE' => 0,
+	'UPDATECODE' => sub {
+		my ($self) = @_;
+		my ($fighter, $frame, $head, $targetposx, $targetposy);
+		
+		$fighter = $self->{OWNER} ? $::Fighter2 : $::Fighter1;
+		$frame = $fighter->{FRAMES}->[$fighter->{FR}];
+		$head = $frame->{head};
+
+		$self->{ANGLE} += 0.05 * $self->{DIR};
+		$targetposx = $fighter->{X} + $head->[0] * $::GAMEBITS2 * $fighter->{DIR} + sin( $self->{ANGLE} ) * 300;
+		$targetposy = $fighter->{Y} + $head->[1] * $::GAMEBITS2 + cos( $self->{ANGLE} ) * 300;
+		
+		if ( $fighter->{HP} > 0 )
+		{
+			$self->{ACCEL}->[0] = ($targetposx - $self->{POS}->[0] ) / 200;
+			$self->{ACCEL}->[1] = ($targetposy - $self->{POS}->[1] ) / 200;
+			$self->{SPEED}->[0] += $self->{ACCEL}->[0];
+			$self->{SPEED}->[1] += $self->{ACCEL}->[1];
+			$self->{SPEED}->[0] *= 0.95;
+			$self->{SPEED}->[1] *= 0.95;
+		}
+		
+		#$self->{SPEED}->[0] = ($targetposx - $self->{POS}->[0]) / 30;
+		#$self->{SPEED}->[1] = ($targetposy - $self->{POS}->[1]) / 30;
+		$self->{POS}->[0] += $self->{SPEED}->[0];
+		$self->{POS}->[1] += $self->{SPEED}->[1];
+
+		$self->{F} += $self->{SA};
+		$self->{F} -= $self->{FRAMES} if $self->{F} > ($self->{FRAMES} + $self->{FIRSTFRAME});
+
+		return 0;
+	},
+},
+
 );
 
 
@@ -56,20 +119,28 @@ CreateDoodad creates a new doodad, and appends it to the global doodad list,
 	x		int		The logical horizontal position of the center of the doodad
 	y		int		The logical vertical position of the center of the doodad
 	t		string	The type of the doodad (doodad types are described above)
+	dir		int		1 or -1
 	owner	int		The number of the player who 'owns' the doodad (0 or 1, anything else means no owner)
 
 =cut
 
-sub CreateDoodad($$$$)
+sub CreateDoodad
 {
-	my ($x, $y, $t, $owner) = @_;
+	my ($x, $y, $t, $dir, $owner) = @_;
 	my ($doodad, $doodaddef, $w, $h);
-
-	$doodaddef = $::DoodadDefinitions{$t};
+	
+	$doodaddef = $Doodad::DoodadDefinitions{$t};
+	
+	if ( ( not defined $doodaddef ) and $t != 0 )
+	{
+		print "CreateDoodad: Doodad $doodaddef doesn't exist!\n";
+		return
+	}
+	
 	if ( defined $doodaddef )
 	{
-		$w = $doodaddef->{W};
-		$h = $doodaddef->{H};
+		$w = $doodaddef->{SIZE}->[0];
+		$h = $doodaddef->{SIZE}->[1];
 		$t = $doodaddef->{T};
 	}
 	else
@@ -79,33 +150,48 @@ sub CreateDoodad($$$$)
 	}
 	
 	$doodad = {
-		'X'		=> $x - $w * $::GAMEBITS2 / 2,		#1/1
-		'Y'		=> $y - $h * $::GAMEBITS2 / 2,		#1/1
-		'W'		=> $w,
-		'H'		=> $h,
-		'T'		=> $t,
-		'F'		=> 0,
-		'OWNER'	=> $owner,
-		'SX'	=> 0,
-		'SY'	=> 0,
-		'SA'	=> 0,
-		'FRAMES'=> 0,
-		'LIFETIME'=> -1,
-		'HOSTILE'=> 1,
-		%{$doodaddef}
+		'T'			=> $t,
+		'OWNER'		=> $owner,
+		'HOSTILE'	=> 0,
+		'LIFETIME'	=> -1,
+		
+		'POS'		=> [ $x - $w * $::GAMEBITS2 / 2, $y - $h * $::GAMEBITS2 / 2 ],
+		'SIZE'		=> [ $w, $h ],
+		'SPEED'		=> [ 0, 0 ],
+		'ACCEL'		=> [ 0, 0 ],
+		'DIR'		=> $dir,
+		
+		'GFXOWNER'	=> $owner,
+		'FIRSTFRAME'=> 0,
+		'FRAMES'	=> 1,
+		'SA'		=> 0,
+		'F'			=> 0,
+		'TEXT'		=> '',
+		%{$doodaddef},
 	};
+	
+	$doodad->{SIZE}  = [@{$doodaddef->{SIZE}} ] if defined $doodaddef->{SIZE};
+	$doodad->{SPEED} = [@{$doodaddef->{SPEED}}] if defined $doodaddef->{SPEED};
+	$doodad->{ACCEL} = [@{$doodaddef->{ACCEL}}] if defined $doodaddef->{ACCEL};
+	$doodad->{F}	 = $doodad->{FIRSTFRAME};
+	
+	$doodad->{SPEED}->[0] *= $doodad->{DIR};
+	$doodad->{ACCEL}->[0] *= $doodad->{DIR};
+	$doodad->{GFXOWNER} = $owner if $doodad->{GFXOWNER} < 2;
 	
 	push @::Doodads, ($doodad);
 	return $doodad;
 }
 
 
+
 sub CreateTextDoodad
 {
 	my ($x, $y, $owner, $text) = @_;
 	my ($self);
-	$self = CreateDoodad($x, $y, 0, $owner);
+	$self = CreateDoodad($x, $y, 0, 0, $owner);
 	$self->{'TEXT'} = $text;
+	$self->{'GFXOWNER'} = 2;
 	return $self;
 }
 
@@ -122,7 +208,23 @@ deleted.
 sub UpdateDoodad
 {
 	my ($doodad) = @_;
+	
+	if ( exists $doodad->{UPDATECODE} )
+	{
+		# Call the updatecode.
+		return &{$doodad->{UPDATECODE}}( $doodad );
+	}
+	else
+	{
+		return MoveDoodad( $doodad );
+	}
+}
 
+
+sub MoveDoodad
+{
+	my ($doodad) = @_;
+	
 	if ( $doodad->{LIFETIME} >= 0 )
 	{
 		$doodad->{LIFETIME} -= 1;
@@ -133,39 +235,41 @@ sub UpdateDoodad
 		}
 	}
 
-	$doodad->{X} += $doodad->{SX};
-	$doodad->{Y} += $doodad->{SY};
-	$doodad->{F} += $doodad->{SA};
-
-	while ( $doodad->{F} > $doodad->{FRAMES} )
-	{
-		$doodad->{F} -= $doodad->{FRAMES};
-	}
+	$doodad->{SPEED}->[0] += $doodad->{ACCEL}->[0];
+	$doodad->{SPEED}->[1] += $doodad->{ACCEL}->[1];
+	$doodad->{POS}  ->[0] += $doodad->{SPEED}->[0];
+	$doodad->{POS}  ->[1] += $doodad->{SPEED}->[1];
 	
-	if ( $doodad->{X} > $::BGWIDTH2 ) { return 1; }
-	if ( $doodad->{X} < $doodad->{W} * $::GAMEBITS2 ) { return 1; }
-	if ( $doodad->{Y} > $::SCRHEIGHT2 ) { return 1; }
-	if ( $doodad->{Y} < $doodad->{H} * $::GAMEBITS2 ) { return 1; }
+	$doodad->{F} += $doodad->{SA};
+	$doodad->{F} -= $doodad->{FRAMES} if $doodad->{F} > ($doodad->{FRAMES} + $doodad->{FIRSTFRAME});
+
+	if ( $doodad->{POS}->[0] > $::BGWIDTH2 ) { return 1; }
+	if ( $doodad->{POS}->[0] < $doodad->{SIZE}->[0] * $::GAMEBITS2 ) { return 1; }
+	if ( $doodad->{POS}->[1] > $::SCRHEIGHT2 ) { return 1; }
+	if ( $doodad->{POS}->[1] < $doodad->{SIZE}->[1] * $::GAMEBITS2 ) { return 1; }
 	
 	if ( $doodad->{HOSTILE} )
 	{
-	#	CheckHit($doodad);
+		CheckDoodadHit($doodad);
 	}
+	
+	print "Doodad: POS=", join(',', @{$doodad->{POS}}), 
+		  "; SPEED=", join(',', @{$doodad->{SPEED}}), 
+		  "; ACCEL=", join(',', @{$doodad->{ACCEL}}), "\n";
 	
 	return 0;
 }
 
 
-=comment
-sub CheckHit($)
+sub CheckDoodadHit($)
 {
 	my ( $self ) = @_;
 
 	my ( @poly, $x, $y, $w, $h );
-	$x = $self->{X} / $::GAMEBITS2;
-	$y = $self->{Y} / $::GAMEBITS2;
-	$w = $self->{W};
-	$h = $self->{H};
+	$x = $self->{POS}->[0] / $::GAMEBITS2;
+	$y = $self->{POS}->[1] / $::GAMEBITS2;
+	$w = $self->{SIZE}->[0];
+	$h = $self->{SIZE}->[1];
 	
 	@poly = (
 		$x, $y,
@@ -196,7 +300,8 @@ sub DoHitPlayer($$)
 {
 	my ($self,$player) = @_;
 
-	$player->
+	$self->{HOSTILE} = 0;
+	$player->HitEvent( 'Hit', $self->{T} );
 }
 =cut
 

@@ -38,6 +38,7 @@ SV
 SV
 	*perl_doodad_x, *perl_doodad_y,
 	*perl_doodad_t, *perl_doodad_f,
+	*perl_doodad_dir, *perl_doodad_gfxowner,
 	*perl_doodad_text;
 
 SV
@@ -229,6 +230,8 @@ void Backend::ReadFromPerl()
 		perl_doodad_y = get_sv("doodad_y", TRUE);
 		perl_doodad_t = get_sv("doodad_t", TRUE);
 		perl_doodad_f = get_sv("doodad_f", TRUE);
+		perl_doodad_dir = get_sv("doodad_dir", TRUE);
+		perl_doodad_gfxowner = get_sv("doodad_gfxowner", TRUE);
 		perl_doodad_text = get_sv("doodad_text", TRUE);
 	}
 	
@@ -248,6 +251,8 @@ void Backend::ReadFromPerl()
 		oDoodad.m_iX = SvIV(perl_doodad_x);
 		oDoodad.m_iY = SvIV(perl_doodad_y);
 		oDoodad.m_iFrame = SvIV(perl_doodad_f);
+		oDoodad.m_iDir = SvIV(perl_doodad_dir);
+		oDoodad.m_iGfxOwner = SvIV(perl_doodad_gfxowner);
 
 		if ( oDoodad.m_iType == 0 )
 		{
@@ -312,8 +317,9 @@ void Backend::WriteToString( std::string& a_rsOutString )
 	for ( i = 0; i<m_iNumDoodads; ++i )
 	{
 		SDoodad& roDoodad = m_aoDoodads[i];
-		iNumChars += sprintf( acBuffer+iNumChars, "%d %d %d %d %d %s  ",
+		iNumChars += sprintf( acBuffer+iNumChars, "%d %d %d %d %d %d %d %s  ",
 			roDoodad.m_iX, roDoodad.m_iY, roDoodad.m_iType, roDoodad.m_iFrame,
+			roDoodad.m_iDir, roDoodad.m_iGfxOwner,
 			roDoodad.m_sText.size(), roDoodad.m_sText.c_str() );
 	}
 	
@@ -351,8 +357,9 @@ void Backend::ReadFromString( const std::string& a_rsString )
 	for ( i=0; i<m_iNumDoodads; ++i )
 	{
 		SDoodad& roDoodad = m_aoDoodads[i];
-		iNumMatches += sscanf( pcBuffer+iTotal, "%d %d %d %d %d %n",
+		iNumMatches += sscanf( pcBuffer+iTotal, "%d %d %d %d %d %d %d %n",
 			&roDoodad.m_iX, &roDoodad.m_iY, &roDoodad.m_iType, &roDoodad.m_iFrame,
+			&roDoodad.m_iDir, &roDoodad.m_iGfxOwner,
 			&j, &iOffset );
 		iTotal += iOffset;
 		roDoodad.m_sText.assign( pcBuffer + iTotal, j );

@@ -310,7 +310,7 @@ void DoReplayDemo()
 	
 	char acFilename[1024];
 	sprintf( acFilename, DATADIR "/demo%d.om", aiOrder[iNext] );
-	DoGame( acFilename, true, false );
+//	DoGame( acFilename, true, false );
 	
 	iNext = ( iNext + 1 ) % 6;
 }

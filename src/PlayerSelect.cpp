@@ -99,6 +99,7 @@ int PlayerSelect::GetFighterNameWidth( int a_iPlayer )
 
 bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 {
+	/*
 	static bool g_abFighterAvailable[ LASTFIGHTER ] =
 	{
 		false, 
@@ -107,6 +108,7 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 		true, false, false, false,
 		false, false
 	};
+	*/
 	
 	if ( a_enFighter < UNKNOWN 
 		|| a_enFighter >= LASTFIGHTER )
@@ -114,7 +116,9 @@ bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 		return false;
 	}
 	
-	return g_abFighterAvailable[ a_enFighter ];
+	g_oBackend.PerlEvalF("GetFighterStats(%d);", a_enFighter);
+	const char* pcDatafile = g_oBackend.GetPerlString("Datafile");
+	return ( pcDatafile && *pcDatafile );
 }
 
 
@@ -130,6 +134,7 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 	char a_pcFilename[FILENAME_MAX+1];
 	const char* s;
 
+	/*
 	switch (m_enFighter)
 	{
 		case ZOLI:		s = "ZOLIDATA.DAT"; break;
@@ -143,6 +148,9 @@ RlePack* PlayerSelect::LoadFighter( FighterEnum m_enFighter )		// static
 		case GRIZLI:	s = "GRIZLIDATA.DAT"; break;
 		default:		return NULL; break;
 	}
+	*/
+	g_oBackend.PerlEvalF( "GetFighterStats(%d);", m_enFighter );
+	s = g_oBackend.GetPerlString( "Datafile" );
 
 	strcpy( a_pcFilename, DATADIR );
 	strcat( a_pcFilename, "/characters/" );

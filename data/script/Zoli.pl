@@ -25,7 +25,7 @@ require 'DataHelper.pl';
 );
 
 
-
+=comment
 $ZoliDoodad =
 	{	'T'		=> 1,
 		'W'		=> 64,
@@ -35,7 +35,7 @@ $ZoliDoodad =
 		'FRAMES'=> 6,
 		'SA'	=> 1/25,
 	};
-
+=cut
 
 $ZCon = {
 'forw'=>'Walk',
@@ -148,7 +148,7 @@ JumpStates( \%ZoliFrame,
 { 'N'=>'SpinPunch',		'DEL'=>4,	'S'=>'+spin,-spin',
 	'HIT11'=>'Highhit' },
 { 'N'=>'Grenade',		'DEL'=>5,	'S'=>'+grenade',
-	'DEL12'=>15, 'DOODAD12'=>$ZoliDoodad },
+	'DEL12'=>15, 'DOODAD12'=>'ZoliShot' },
 { 'N'=>'Uppercut',		'DEL'=>5,	'S'=>'+uppercut,-uppercut',
 	'HIT9'=>'Uppercut' },
 { 'N'=>'Throw',			'DEL'=>8,	'S'=>'+throw' },
@@ -256,6 +256,18 @@ TravelingStates( \%ZoliFrame, \@ZoliFrames, \%ZoliStates, "specpunch", 0, 0 );
 #$frameLookup, $frameArray, $states, $frameName, $from, $to
 
 %ZoliStates = ( %ZoliShorthands, %ZoliStates );
+
+::RegisterFighter( {
+	'ID'			=> 3,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@ZoliFrames,
+	'STATES'		=> \%ZoliStates,
+	'DATAFILE'		=> 'ZOLIDATA.DAT',
+	'DATASIZE'		=> 4486206,
+} );
+
 
 return 1;
 

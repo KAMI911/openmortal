@@ -1,0 +1,148 @@
+2003-09-12 11:49  upi
+
+	* src/: Backend.h, Game.cpp, PlayerSelect.cpp, PlayerSelect.h:
+	Fighter names are displayed in the PlayerSelect and Game screens.
+
+2003-09-12 11:48  upi
+
+	* src/menu.cpp: "Hit Points" changed to "Stamina" in the menu.
+
+2003-09-12 11:47  upi
+
+	* data/script/: Backend.pl, Fighter.pl: Fighters can no longer be
+	"cornered". If a fighter is hit at the edge of the arena, the other
+	fighter is pushed back.
+
+2003-09-12 11:45  upi
+
+	* data/script/Descant.pl: Descant now cannot be leg swept too many
+	times.
+
+2003-09-11 21:54  upi
+
+	* data/script/: Backend.pl, DataHelper.pl, Fighter.pl, Grizli.pl:
+	Added "Earthquake" effect.
+
+2003-09-11 17:42  upi
+
+	* src/: Demo.cpp, State.h: Cleanup: Removed needless variables from
+	SState.
+
+2003-09-11 17:40  upi
+
+	* src/RlePack.cpp: Bugfix: Flipped characters no longer roll over
+	to the left of the screen by one pixel
+
+2003-09-07 16:08  upi
+
+	* data/script/: Backend.pl, Fighter.pl: Bugfix: Blocking with your
+	back turned no longer works.
+
+2003-09-07 16:03  upi
+
+	* src/: Game.cpp, GameOver.cpp, Makefile.in: Fixed several issues
+	related to menu invocation, game starting, game surrender in
+	various screens. They now all work alike.
+
+2003-09-06 22:21  upi
+
+	* data/script/Ulmar.pl: Ulmar: Fixed the "double lowpunch" bug.
+
+2003-09-06 21:50  upi
+
+	* src/: Backend.cpp, Backend.h, FighterEnum.h, FighterStats.cpp,
+	Game.cpp, GameOver.cpp, Makefile.am, PlayerSelect.cpp,
+	PlayerSelect.h, RlePack.cpp, RlePack.h, State.cpp, common.h,
+	main.cpp, menu.cpp: RlePack: Responsibilities cleaned up, updated
+	to new coding conventions.  PlayerSelect: Now an object.  Backend:
+	perl is no longer included in the main header.	Eliminated the
+	direct use of perl in some files.
+
+2003-09-05 12:37  upi
+
+	* src/State.cpp: Fixed windows and linux ini file location bug.
+
+2003-09-01 22:40  upi
+
+	* mkinstalldirs, data/characters/Makefile.in, src/Audio.cpp,
+	src/FlyingChars.cpp, src/Game.cpp, src/PlayerSelect.cpp,
+	src/RlePack.cpp, src/State.h, src/gfx.cpp, src/main.cpp,
+	src/menu.cpp, src/sge_bm_text.cpp, src/sge_bm_text.h,
+	src/sge_primitives.cpp, src/sge_primitives.h, src/sge_surface.cpp,
+	src/sge_surface.h, src/sge_tt_text.cpp, src/sge_tt_text.h: Cleanup:
+	removed gcc-specific code, cleaned up includes, minor bugfixes
+
+2003-09-01 21:30  upi
+
+	* TODO, openmortal.lsm, README, aclocal.m4, configure,
+	configure.in, config.guess, install-sh, Makefile.am, config.sub,
+	missing, mkinstalldirs, AUTHORS, ChangeLog, INSTALL, Makefile.in,
+	acinclude.m4, config.h.in, stamp-h.in, COPYING,
+	src/sge_primitives.h, src/sge_tt_text.h, src/menu.cpp, src/Audio.h,
+	src/Demo.h, src/Game.h, src/RlePack.h, src/gfx.h,
+	src/sge_primitives.cpp, src/FlyingChars.h, src/sge_tt_text.cpp,
+	src/Backend.cpp, src/Demo.cpp, src/GameOver.cpp,
+	src/sge_bm_text.cpp, src/Backend.h, src/FighterStats.cpp,
+	src/main.cpp, src/sge_bm_text.h, src/State.cpp,
+	src/sge_surface.cpp, src/FlyingChars.cpp, src/Game.cpp,
+	src/Makefile.am, src/common.h, src/gfx.cpp, src/sge_internal.h,
+	src/Makefile.in, src/menu.h, src/sge_surface.h,
+	src/PlayerSelect.cpp, src/State.h, src/common.cpp,
+	src/sge_config.h, data/Makefile.am, data/Makefile.in,
+	data/fonts/Makefile.am, data/gfx/Makefile.am, data/gfx/Makefile.in,
+	src/Audio.cpp, src/RlePack.cpp, data/fonts/Makefile.in,
+	data/sound/Makefile.am, data/sound/Makefile.in,
+	data/characters/MACIDATA.DAT.pl, data/characters/BENCEDATA.DAT.pl,
+	data/characters/DESCANTDATA.DAT.pl, data/characters/Makefile.am,
+	data/characters/Makefile.in, data/characters/SIRPIDATA.DAT.pl,
+	data/characters/UPIDATA.DAT.pl, data/characters/ZOLIDATA.DAT.pl,
+	data/characters/GRIZLIDATA.DAT.pl, data/characters/CUMIDATA.DAT.pl,
+	data/characters/ULMARDATA.DAT.pl, data/script/Backend.pl,
+	data/script/Bence.pl, data/script/PlayerInput.pl,
+	data/script/QuickSave.pl, data/script/Sirpi.pl, data/script/UPi.pl,
+	data/script/Collision.pl, data/script/FighterStats.pl,
+	data/script/State.pl, data/script/Keys.pl, data/script/Cumi.pl,
+	data/script/Descant.pl, data/script/Doodad.pl,
+	data/script/Grizli.pl, data/script/Makefile.am,
+	data/script/Makefile.in, data/script/Ulmar.pl,
+	data/script/Damage.pl, data/script/Fighter.pl, data/script/Maci.pl,
+	data/script/Zoli.pl, data/script/DataHelper.pl,
+	data/script/Kolos.pl: release version 0.3, initial CVS version
+
+2003-09-01 21:30  upi
+
+	* TODO, openmortal.lsm, README, aclocal.m4, configure,
+	configure.in, config.guess, install-sh, Makefile.am, config.sub,
+	missing, mkinstalldirs, AUTHORS, ChangeLog, INSTALL, Makefile.in,
+	acinclude.m4, config.h.in, stamp-h.in, COPYING,
+	src/sge_primitives.h, src/sge_tt_text.h, src/menu.cpp, src/Audio.h,
+	src/Demo.h, src/Game.h, src/RlePack.h, src/gfx.h,
+	src/sge_primitives.cpp, src/FlyingChars.h, src/sge_tt_text.cpp,
+	src/Backend.cpp, src/Demo.cpp, src/GameOver.cpp,
+	src/sge_bm_text.cpp, src/Backend.h, src/FighterStats.cpp,
+	src/main.cpp, src/sge_bm_text.h, src/State.cpp,
+	src/sge_surface.cpp, src/FlyingChars.cpp, src/Game.cpp,
+	src/Makefile.am, src/common.h, src/gfx.cpp, src/sge_internal.h,
+	src/Makefile.in, src/menu.h, src/sge_surface.h,
+	src/PlayerSelect.cpp, src/State.h, src/common.cpp,
+	src/sge_config.h, data/Makefile.am, data/Makefile.in,
+	data/fonts/Makefile.am, data/gfx/Makefile.am, data/gfx/Makefile.in,
+	src/Audio.cpp, src/RlePack.cpp, data/fonts/Makefile.in,
+	data/sound/Makefile.am, data/sound/Makefile.in,
+	data/characters/MACIDATA.DAT.pl, data/characters/BENCEDATA.DAT.pl,
+	data/characters/DESCANTDATA.DAT.pl, data/characters/Makefile.am,
+	data/characters/Makefile.in, data/characters/SIRPIDATA.DAT.pl,
+	data/characters/UPIDATA.DAT.pl, data/characters/ZOLIDATA.DAT.pl,
+	data/characters/GRIZLIDATA.DAT.pl, data/characters/CUMIDATA.DAT.pl,
+	data/characters/ULMARDATA.DAT.pl, data/script/Backend.pl,
+	data/script/Bence.pl, data/script/PlayerInput.pl,
+	data/script/QuickSave.pl, data/script/Sirpi.pl, data/script/UPi.pl,
+	data/script/Collision.pl, data/script/FighterStats.pl,
+	data/script/State.pl, data/script/Keys.pl, data/script/Cumi.pl,
+	data/script/Descant.pl, data/script/Doodad.pl,
+	data/script/Grizli.pl, data/script/Makefile.am,
+	data/script/Makefile.in, data/script/Ulmar.pl,
+	data/script/Damage.pl, data/script/Fighter.pl, data/script/Maci.pl,
+	data/script/Zoli.pl, data/script/DataHelper.pl,
+	data/script/Kolos.pl: Initial revision
+

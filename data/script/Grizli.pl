@@ -186,8 +186,20 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "getup", 1, 16 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::GrizliStates = %States;
-@::GrizliFrames = @Frames;
+# %::GrizliStates = %States;
+# @::GrizliFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 8,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'GRIZLIDATA.DAT',
+	'DATASIZE'		=> 7138871,
+} );
+
 }
 
 LoadGrizli();

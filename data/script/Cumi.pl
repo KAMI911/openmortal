@@ -177,9 +177,21 @@ FixStates( \%FrameLookup, \%States );
 TravelingStates( \%FrameLookup, \@Frames, \%States, "falling", 1, 13 );
 TravelingStates( \%FrameLookup, \@Frames, \%States, "getup", 1, 19 );
 
+%States = ( FindShorthands( \%States ), %States );
 
-%::CumiStates = ( FindShorthands( \%States ), %States );
-@::CumiFrames = @Frames;
+# %::CumiStates = %States;
+# @::CumiFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 4,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'CUMIDATA.DAT',
+	'DATASIZE'		=> 5365949,
+} );
 }
 
 

@@ -27,6 +27,7 @@ sub LoadUPi
 "highpunched",	6,		"lowpunched",	5,		"groinkicked",	19,
 "kneelingpunched",4,	"kneelingkicked", 7,	"thrown",		13,
 "cranekick",	9,		"burninghands",	13,		"kneelingfire",	12,
+"shotdoodad",	5,		"explodedoodad",15,		"familiardoodad",3,
 );
 
 
@@ -125,12 +126,12 @@ JumpStates( \%FrameLookup,
 { 'N'=>'Sweep',			'DEL'=>7,	'S'=>'+sweep,-sweep',
 	'HIT'=>'Hit' },
 { 'N'=>'Grenade',		'DEL'=>5,	'S'=>'+grenade',
-	'DEL12'=>15, 'DOODAD'=>$Doodad },
+	'DEL12'=>15, 'DOODAD'=>'UPiShot' },
 { 'N'=>'Uppercut',		'DEL'=>5,	'S'=>'+uppercut,-uppercut',
 	'HIT'=>'Uppercut' },
 { 'N'=>'Throw',			'DEL'=>8,	'S'=>'+throw' },
 
-{ 'N'=>'CraneKick',		'DEL'=>5,	'S'=>'+cranekick, _cranekick',
+{ 'N'=>'CraneKick',		'DEL'=>5,	'S'=>'+cranekick, -cranekick',
 	'HIT'=>'Uppercut', 'JUMP4'=>60, 'PUSHX4'=>12*16 },
 { 'N'=>'BurningHands',	'DEL'=>5,	'S'=>'+burninghands', },
 { 'N'=>'KneelingFire',	'DEL'=>5,	'S'=>'+kneelingfire', 'SITU'=>'Crouch',
@@ -188,8 +189,28 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "won", 0, 0 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::UPiStates = %States;
-@::UPiFrames = @Frames;
+# %::UPiStates = %States;
+# @::UPiFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 2,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub 
+	{
+		my ($self,$doodad) = @_;
+		$doodad = Doodad::CreateDoodad( $self->{X}, $self->{Y}, 'UPiFamiliar', $self->{DIR}, $self->{NUMBER} );
+		$doodad = Doodad::CreateDoodad( $self->{X}, $self->{Y}, 'UPiFamiliar', $self->{DIR}, $self->{NUMBER} );
+		$doodad->{ANGLE} = 2;
+		$doodad = Doodad::CreateDoodad( $self->{X}, $self->{Y}, 'UPiFamiliar', $self->{DIR}, $self->{NUMBER} );
+		$doodad->{ANGLE} = -2;
+	},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'UPIDATA.DAT',
+	'DATASIZE'		=> 6462957,
+} );
+
 }
 
 LoadUPi();

@@ -180,8 +180,20 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "spin", 0, 0 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::MaciStates = %States;
-@::MaciFrames = @Frames;
+# %::MaciStates = %States;
+# @::MaciFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 6,
+	'GENDER'		=> 2,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'MACIDATA.DAT',
+	'DATASIZE'		=> 5151824,
+} );
+
 }
 
 LoadMaci();

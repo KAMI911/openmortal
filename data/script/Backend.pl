@@ -70,25 +70,6 @@ require 'Keys.pl';
 require 'State.pl';
 
 
-=comment
-#require 'Kolos.pl';
-require 'Zoli.pl';
-require 'UPi.pl';
-#require 'Ulmar.pl';
-#require 'Cumi.pl';
-
-print "Kolos frames :", scalar @KolosFrames,"\n";
-print "Kolos states :", scalar keys %KolosStates,"\n";
-print "Zoli frames :", scalar @ZoliFrames,"\n";
-print "Zoli states :", scalar keys %ZoliStates,"\n";
-print "UPi frames :", scalar @UPiFrames,"\n";
-print "UPi states :", scalar keys %UPiStates,"\n";
-print "Ulmar frames :", scalar @UlmarFrames,"\n";
-print "Ulmar states :", scalar keys %UlmarStates,"\n";
-print "Cumi frames :", scalar @CumiFrames,"\n";
-print "Cumi states :", scalar keys %CumiStates,"\n";
-=cut
-
 
 =comment
 
@@ -134,11 +115,13 @@ $over = 0;		# Is the game over?
 $ko = 0;		# Is one fighter knocked down?
 
 
-$dx = 0;		# Doodad X position
-$dy = 0;		# Doodad Y position
-$dt = 0;		# Doodad type
-$df = 0;		# Doodad frame number
-
+$doodad_x = -1;			# Doodad X position
+$doodad_y = -1;			# Doodad Y position
+$doodad_t = -1;			# Doodad type
+$doodad_f = -1;			# Doodad frame number
+$doodad_dir = 0;		# The direction of the doodad; 1: normal; -1: flipped
+$doodad_gfxowner = -1;	# 0: first player; 1: second player; 2: Global doodad
+$doodad_text = '';		# The text of type 0 doodads.
 
 
 =comment
@@ -202,12 +185,12 @@ sub SelectStart
 	$time = 0;
 	$over = 0;
 	
-	$Fighter1->Reset(); #\@ZoliFrames,\%ZoliStates);
+	$Fighter1->Reset();
 	$Fighter1->{X} = 80 * $GAMEBITS2;
 	$Fighter1->{NEXTST} = 'Stand';
 	$Fighter1->Update();
 	
-	$Fighter2->Reset(); #\@ZoliFrames,\%ZoliStates);
+	$Fighter2->Reset();
 	$Fighter2->{X} = 560 * $GAMEBITS2;
 	$Fighter2->{NEXTST} = 'Stand';
 	$Fighter2->Update();
@@ -219,29 +202,34 @@ sub SelectStart
 
 sub SetPlayerNumber
 {
-	my ($player, $number) = @_;
+	my ($player, $fighterenum) = @_;
 	my ($f);
 	
+	DeleteDoodadsOf( $player );
+	
 	$f = $player ? $Fighter2 : $Fighter1;
-
-	if    ( $number eq 1 ) { $f->Reset('Ulmar', \@UlmarFrames,\%UlmarStates); }
-	elsif ( $number eq 2 ) { $f->Reset('UPi', \@UPiFrames,\%UPiStates); }
-	elsif ( $number eq 3 ) { $f->Reset('Zoli', \@ZoliFrames,\%ZoliStates); }
-	elsif ( $number eq 4 ) { $f->Reset('Cumi', \@CumiFrames,\%CumiStates); }
-	elsif ( $number eq 5 ) { $f->Reset('Sirpi', \@SirpiFrames,\%SirpiStates); }
-	elsif ( $number eq 6 ) { $f->Reset('Maci', \@MaciFrames,\%MaciStates); }
-	elsif ( $number eq 7 ) { $f->Reset('Bence', \@BenceFrames,\%BenceStates); }
-	elsif ( $number eq 9 ) { $f->Reset('Descant', \@DescantFrames,\%DescantStates); }
-	elsif ( $number eq 8 ) { $f->Reset('Grizli', \@GrizliFrames,\%GrizliStates); }
+	
+=comment
+	if    ( $fighterenum eq 1 ) { $f->Reset('Ulmar', \@UlmarFrames,\%UlmarStates); }
+	elsif ( $fighterenum eq 2 ) { $f->Reset('UPi', \@UPiFrames,\%UPiStates); }
+	elsif ( $fighterenum eq 3 ) { $f->Reset('Zoli', \@ZoliFrames,\%ZoliStates); }
+	elsif ( $fighterenum eq 4 ) { $f->Reset('Cumi', \@CumiFrames,\%CumiStates); }
+	elsif ( $fighterenum eq 5 ) { $f->Reset('Sirpi', \@SirpiFrames,\%SirpiStates); }
+	elsif ( $fighterenum eq 6 ) { $f->Reset('Maci', \@MaciFrames,\%MaciStates); }
+	elsif ( $fighterenum eq 7 ) { $f->Reset('Bence', \@BenceFrames,\%BenceStates); }
+	elsif ( $fighterenum eq 9 ) { $f->Reset('Descant', \@DescantFrames,\%DescantStates); }
+	elsif ( $fighterenum eq 8 ) { $f->Reset('Grizli', \@GrizliFrames,\%GrizliStates); }
 	else {
 		# Fallback
 		$f->Reset('Zoli', \@ZoliFrames,\%ZoliStates);
 	}
+=cut
+	$f->Reset($fighterenum);
 	
 	$f->{NEXTST} = 'Stand';
 	$f->Update();
 	
-	$::PlayerName = $::FighterStats[$number]->{NAME};
+	$::PlayerName = $::FighterStats[$fighterenum]->{NAME};
 }
 
 
@@ -322,6 +310,8 @@ sub GameStart
 {
 	my ( $MaxHP, $debug ) = @_;
 	
+	@Doodads = ();
+	@Sounds = ();
 	$bgx = ( $SCRWIDTH2 - $BGWIDTH2) >> 1;
 	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
 	$BgSpeed = 0;
@@ -342,9 +332,6 @@ sub GameStart
 	$ko = 0;
 	$OverTimer = 0;
 	$JudgementMode = 0;	
-
-	@Doodads = ();
-	@Sounds = ();
 
 	$p1h = $p2h = 0;
 }
@@ -376,16 +363,27 @@ sub GetNextDoodadData
 {
 	if ( $NextDoodad >= scalar @Doodads )
 	{
-		$doodad_x = $doodad_y = $doodad_t = $doodad_f = -1;
+		$doodad_x = $doodad_y = $doodad_t = $doodad_f = $doodad_dir = $doodad_gfxowner = -1;
+		$doodad_text = '';
 		return;
 	}
 
 	my ($doodad) = $Doodads[$NextDoodad];
-	$doodad_x = $doodad->{X} / $GAMEBITS2 - $bgx;
-	$doodad_y = $doodad->{Y} / $GAMEBITS2 - $bgy;
+	$doodad_x = $doodad->{POS}->[0] / $GAMEBITS2 - $bgx;
+	$doodad_y = $doodad->{POS}->[1] / $GAMEBITS2 - $bgy;
 	$doodad_t = $doodad->{T};
 	$doodad_f = $doodad->{F};
+	$doodad_dir = $doodad->{DIR};
+	$doodad_gfxowner = $doodad->{GFXOWNER};
 	$doodad_text = $doodad->{TEXT};
+	
+	
+	if ($doodad_gfxowner < 2 )
+	{
+		$doodad_x += $Fighters[$doodad_gfxowner]->{FRAMES}->[$doodad_f]->{'x'} * $doodad_dir;
+		$doodad_y += $Fighters[$doodad_gfxowner]->{FRAMES}->[$doodad_f]->{'y'};
+	}
+	
 	++$NextDoodad;
 }
 
@@ -398,8 +396,26 @@ sub UpdateDoodads
 	for ($i=0; $i<scalar @Doodads; ++$i)
 	{
 		$doodad = $Doodads[$i];
-		$j = UpdateDoodad( $doodad );
+		$j = Doodad::UpdateDoodad( $doodad );
 		if ( $j )
+		{
+			# Remove this Doodad
+			splice @Doodads, $i, 1;
+			--$i;
+		}
+	}
+}
+
+
+
+sub DeleteDoodadsOf($)
+{
+	my ($owner) = @_;
+	my ($i, $doodad);
+	for ($i=0; $i<scalar @Doodads; ++$i)
+	{
+		$doodad = $Doodads[$i];
+		if ( $doodad->{OWNER} == $owner )
 		{
 			# Remove this Doodad
 			splice @Doodads, $i, 1;

@@ -61,6 +61,7 @@ public:
 	struct SDoodad
 	{
 		int m_iX, m_iY, m_iType, m_iFrame;
+		int m_iDir, m_iGfxOwner;
 		std::string m_sText;
 	}				m_aoDoodads[ MAXDOODADS ];
 

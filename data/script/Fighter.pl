@@ -13,9 +13,12 @@ use strict;
 
 Fighter's members are:
 
+ID		int		The ID of the fighter
+STATS	hash	Reference to the fighter's stats (includes GENDER)
 NAME	string	The name of the character, e.g. "Ulmar".
 FRAMES	array	The character's frame description.
 STATES	hash	The character's state description.
+
 NUMBER	int		Player number (either 0 or 1)
 X		int		The fighter's current anchor, horizontal coordinate.
 Y		int		The fighter's current anchor, vertical coordinate.
@@ -71,18 +74,25 @@ sub new {
 }
 
 sub Reset {
-	my ($self, $name, $frames, $states) = @_;
+	my ($self, $fighterenum) = @_;
 	
 	die "Insufficient parameters." unless defined $self;# and defined $frames and defined $states;
+	$fighterenum = $self->{ID} unless defined $fighterenum;
 	
-	my ($number);
+	my ($number, $stats);
 	$number = $self->{NUMBER};
+	$stats = ::GetFighterStats($fighterenum);
+	
+	die "Couldn't load stats of fighter $fighterenum\n" unless defined $stats;
+	die "The fighter $fighterenum is not yet usable.\n" unless defined $stats->{STATES};
 
-	print STDERR "Resetting fighter $number\n";
-
-	$self->{NAME}	= $name if defined $name;
-	$self->{FRAMES}	= $frames if defined $frames;
-	$self->{STATES}	= $states if defined $states;
+	print STDERR "Resetting fighter $number to character $fighterenum\n";
+  
+	$self->{ID}		= $fighterenum;
+	$self->{STATS}	= $stats;
+	$self->{NAME}	= $stats->{NAME};
+	$self->{FRAMES}	= $stats->{FRAMES};
+	$self->{STATES}	= $stats->{STATES};
 	$self->{X}		= (( $number ? 540 : 100 ) << $::GAMEBITS) + $::BgPosition;
 	$self->{Y}		= $::GROUND2;
 	$self->{ST}		= 'Start';
@@ -97,6 +107,8 @@ sub Reset {
 	$self->{DELIVERED} = 0;
 	$self->{COMBO} 	= 0;
 	$self->{COMBOHP}= 0;
+	
+	&{$self->{STATS}->{STARTCODE}}($self);
 }
 
 
@@ -608,19 +620,17 @@ sub ComboEnds
 		$head = $self->{FRAMES}->[$self->{FR}]->{head};
 		$x = $self->{X} + $head->[0] * $::GAMEBITS2 * $self->{DIR};
 		$y = $self->{Y} + $head->[1] * $::GAMEBITS2;
-		$doodad = ::CreateTextDoodad( $x, $y - 30 * $::GAMEBITS2,
+		$doodad = Doodad::CreateTextDoodad( $x, $y - 30 * $::GAMEBITS2,
 			$self->{NUMBER},
 			$combotext );
 		$doodad->{LIFETIME} = $ismaxcombo ? 120 : 80;
-		$doodad->{SY} = -3;
-		$doodad->{SX} = -3;
+		$doodad->{SPEED} = [-3,-3];
 		
-		$doodad = ::CreateTextDoodad( $x, $y - 10 * $::GAMEBITS2,
+		$doodad = Doodad::CreateTextDoodad( $x, $y - 10 * $::GAMEBITS2,
 			$self->{NUMBER},
 			int($self->{COMBOHP}*$::HitPointScale/10) . "% damage" );
 		$doodad->{LIFETIME} = 80;
-		$doodad->{SY} = -3;
-		$doodad->{SX} = +3;
+		$doodad->{SPEED} = [+3,-3];
 		
 		print $self->{COMBO}, "-hit combo for ", $self->{COMBOHP}, " damage.\n";
 		push @::Sounds, ( $ismaxcombo ? 'crashhh.voc' : 'ba_gooock.voc');
@@ -703,25 +713,20 @@ die "ERROR IN STATE $nextst" unless defined $st->{DEL};
 	if ( defined ($st->{DOODAD}) )
 	{
 		# Create a doodad (probably a shot)
-		my ($frame, $hit, $doodad, $ddata);
+		my ($frame, $hit, $doodad, $doodadname);
 		
 		$frame = $self->{FRAMES}->[$self->{FR}];
 		$hit = $frame->{hit};
 		if ( defined $hit )
 		{
-			$ddata = $st->{DOODAD};
-		
-			$doodad = ::CreateDoodad(
+			$doodadname = $st->{DOODAD};
+			
+			$doodad = Doodad::CreateDoodad(
 				$self->{X} + $hit->[0] * $::GAMEBITS2 * $self->{DIR},
 				$self->{Y} + $hit->[1] * $::GAMEBITS2,
-				$ddata->{W},
-				$ddata->{H},
-				$ddata->{T},
+				$doodadname,
+				$self->{DIR},
 				$self->{NUMBER} );
-			$doodad->{SX} = $ddata->{SX} * $self->{DIR};
-			$doodad->{SY} = $ddata->{SY} * $self->{DIR};
-			$doodad->{FRAMES} = $ddata->{FRAMES};
-			$doodad->{SA} = $ddata->{SA};
 		}
 	}
 

@@ -187,8 +187,20 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "getup", 0, 0 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::BenceStates = %States;
-@::BenceFrames = @Frames;
+# %::BenceStates = %States;
+# @::BenceFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 7,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'BENCEDATA.DAT',
+	'DATASIZE'		=> 6750636,
+} );
+
 }
 
 LoadBence();

@@ -4,22 +4,36 @@ use strict;
 
 FIGHTER STATS ARE:
 
-NAME	string
-TEAM	string
-STYLE	string
-AGE		string
-WEIGHT	string
-HEIGHT	string
-SHOE	string
-STORY	string
+ID			int		All fighters have an integer ID...
+NAME		string	Name of the fighter displayed to the user
+GENDER		int		1=male 2=female
+VERSION		int		Version of the fighter's code
+DATAVERSION	int		Version of the data file
+DATAFILE	string	Filename of the .DAT file.
+STARTCODE	sub		Executed when Reset() is called on the fighter
+
+TEAM		string
+STYLE		string
+AGE			string
+WEIGHT		string
+HEIGHT		string
+SHOE		string
+STORY		string
 
 =cut
 
 
+
+=comment
+We store "official" characters in the @FighterStats array. Non-syndicated
+characters will have a unique ID and stored in a has.
+=cut
+
 @::FighterStats = (		
 {},	# Dummy UNKNOWN fighter entry..
 
-{	'NAME'	=>'Watasiwa baka janajo',
+{	'ID'	=> 1,
+	'NAME'	=>'Watasiwa baka janajo',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Clown-fu',
 	'AGE'	=>'15',
@@ -42,7 +56,8 @@ Down Back LPunch - WrISt shot
 Forward Back Forward LPunch - WrISt mash',
 	},
 
-{	'NAME'	=>'Dark Black Evil Mage',
+{	'ID'	=> 2,
+	'NAME'	=>'Dark Black Evil Mage',
 	'TEAM'	=>'Evil leader',
 	'STYLE'	=>'Piro-fu',
 	'AGE'	=>'30',
@@ -61,7 +76,8 @@ Down Back LPunch - Fireball
 Back Up HPunch - Burning Hands',
 },
 
-{	'NAME'	=>'Boxer',
+{	'ID'	=> 3,
+	'NAME'	=>'Boxer',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Kickbox-fu',
 	'AGE'	=>'16',
@@ -78,7 +94,8 @@ Down Back LPunch - Weight toss
 Forward Forward HPunch - Leaping punch',
 },
 
-{	'NAME'	=>'Cumi',
+{	'ID'	=> 4,
+	'NAME'	=>'Cumi',
 	'TEAM'	=>'Good Leader',
 	'STYLE'	=>'N/A',
 	'AGE'	=>'15',
@@ -97,7 +114,8 @@ Forward Forward HPunch - Spit
 Back Down Forward - Baseball',
 },
 
-{	'NAME'	=>'Sirpi',
+{	'ID'	=> 5,
+	'NAME'	=>'Sirpi',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Don\'tHurtMe-FU',
 	'AGE'	=>'24',
@@ -115,7 +133,8 @@ join the good team... also he is frightened alone.',
 Forward Forward HPunch - Applause',
 },
 
-{	'NAME'	=>'Macy',
+{	'ID'	=> 6,
+	'NAME'	=>'Macy',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Macy-fu',
 	'AGE'	=>'17',
@@ -133,7 +152,8 @@ it won\'t be until the next fight agains Evil...',
 Forward Forward HKick - Scissor Kick',
 	},
 
-{	'NAME'	=>'Jan Ito',
+{	'ID'	=> 7,
+	'NAME'	=>'Jan Ito',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Kururin-do',
 	'AGE'	=>'20',
@@ -153,7 +173,8 @@ Back Fw Back Fw LPunch - Stick Spin
 Back Forward HPunc - Pierce',
 	},
 
-{	'NAME'	=>'Grizzly',
+{	'ID'	=> 8,
+	'NAME'	=>'Grizzly',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Bear dance',
 	'AGE'	=>'21',
@@ -175,7 +196,8 @@ Down Down LKick - Earthquake
 Back Forward Back HPunch - Nunchaku',
 	},
 
-{	'NAME'	=>'Descant',
+{	'ID'	=> 9,
+	'NAME'	=>'Descant',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Murderization',
 	'AGE'	=>'58',
@@ -195,7 +217,8 @@ Forward Down HPunch - Knife Throw
 Forward Forward HPunch - Gun Hit',
 },
 
-{	'NAME'	=>'Rising-san',
+{	'ID'	=> 10,
+	'NAME'	=>'Rising-san',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Flick-fu',
 	'AGE'	=>'500',
@@ -208,7 +231,8 @@ brought back his destructive techique, unmatched on Earth. Noone knows
 why he joined the Dark Evil Mage...',
 },
 
-{	'NAME'	=>'Mad Sawman',
+{	'ID'	=> 11,
+	'NAME'	=>'Mad Sawman',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'Sawing',
 	'AGE'	=>'35',
@@ -222,7 +246,8 @@ forests, chopping trees and heads alike. On hot summer nights his
 maniac laughter echoes far.',
 },
 
-{	'NAME'	=>'Imperfect Soldier',
+{	'ID'	=> 12,
+	'NAME'	=>'Imperfect Soldier',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Pub Fight',
 	'AGE'	=>'50',
@@ -237,7 +262,8 @@ subordinates with a constant flow of stories of pub fights, until
 they ask for relocation.',
 },
 
-{	'NAME'	=>'Aisha',
+{	'ID'	=> 13,
+	'NAME'	=>'Aisha',
 	'TEAM'	=>'Good',
 	'STYLE'	=>'Death Dance',
 	'AGE'	=>'21',
@@ -262,7 +288,8 @@ nni az egeszbol, igy hat az egyik alkalommal kijelentette, hogy ha ezt
 tulelem, csatlakozom azokhoz a hulye Mortalosokhoz!',
 },
 
-{	'NAME'	=>'Misi (?)',
+{	'ID'	=> 14,
+	'NAME'	=>'Misi (?)',
 	'TEAM'	=>'Evil',
 	'STYLE'	=>'',
 	'AGE'	=>'',
@@ -275,23 +302,53 @@ tulelem, csatlakozom azokhoz a hulye Mortalosokhoz!',
 );
 
 
+
+sub RegisterFighter($)
+{
+	my ($reginfo) = @_;
+	
+	# reginfo must contain: ID, GENDER, DATAVERSION, DATASIZE, STARTCODE, FRAMES, STATES, DATAFILE
+	foreach my $attr (qw(ID GENDER DATAVERSION DATASIZE STARTCODE FRAMES STATES DATAFILE))
+	{
+		die "RegisterFighter: Attribute $attr not found" unless defined $reginfo->{$attr};
+	}
+	
+	my ($fighterenum, $fighterstats);
+	$fighterenum = $reginfo->{ID};
+	$fighterstats = GetFighterStats($fighterenum);
+	die "RegisterFighter: Unable to locate fighter $fighterenum\n" unless defined $fighterstats;
+	
+	# Add the reginfo to the fighter stats:
+	%{$fighterstats} = ( %{$fighterstats}, %{$reginfo} );
+	
+#	$::FighterStat
+}
+
+
+
 sub GetFighterStats($)
 {
-	my ($fighter) = @_;
-	$::Name		= $::FighterStats[$fighter]->{NAME};
-	$::Team		= $::FighterStats[$fighter]->{TEAM};
-	$::Style	= $::FighterStats[$fighter]->{STYLE};
-	$::Age		= $::FighterStats[$fighter]->{AGE};
-	$::Weight	= $::FighterStats[$fighter]->{WEIGHT};
-	$::Height	= $::FighterStats[$fighter]->{HEIGHT};
-	$::Shoe		= $::FighterStats[$fighter]->{SHOE};
-	$::Story	= $::FighterStats[$fighter]->{STORY};
-	$::Keys		= $::FighterStats[$fighter]->{KEYS};
+	my ($fighterenum) = @_;
+	
+	my ($source) = $::FighterStats[$fighterenum];
+	
+	$::Name		= $source->{NAME};
+	$::Team		= $source->{TEAM};
+	$::Style	= $source->{STYLE};
+	$::Age		= $source->{AGE};
+	$::Weight	= $source->{WEIGHT};
+	$::Height	= $source->{HEIGHT};
+	$::Shoe		= $source->{SHOE};
+	$::Story	= $source->{STORY};
+	$::Keys		= $source->{KEYS};
+	$::Datafile	= $source->{DATAFILE};
 	
 	$::Story =~ s/([^\n])\n([^\n])/$1 $2/gms;
-
-	@::StatTags = ( "Name: ", "Team: ", "Style: ", 'Age: ', 'Weight: ', 'Height: ', 'Shoe size: ' );
+	
+	@::StatTags = ( 'Name: ', 'Team: ', 'Style: ', 'Age: ', 'Weight: ', 'Height: ', 'Shoe size: ' );
 	#@::StatTags	= ( "Név: ", "Csapat: ", "Stílus: ", "Kor: ", "Súly: ", "Magasság: ", "Cipõméret: " );
+	
+	return $source;
 }
 
 

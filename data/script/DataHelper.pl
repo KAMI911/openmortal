@@ -4,6 +4,9 @@
 use strict;
 
 
+require 'FighterStats.pl';
+
+
 
 =comment
 

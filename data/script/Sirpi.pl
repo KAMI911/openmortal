@@ -184,8 +184,20 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "specpunch", 0, 0 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::SirpiStates = %States;
-@::SirpiFrames = @Frames;
+# %::SirpiStates = %States;
+# @::SirpiFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 5,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'SIRPIDATA.DAT',
+	'DATASIZE'		=> 5587262,
+} );
+
 }
 
 LoadSirpi();

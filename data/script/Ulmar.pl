@@ -177,8 +177,20 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "getup", 0, 0 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::UlmarStates = %States;
-@::UlmarFrames = @Frames;
+# %::UlmarStates = %States;
+# @::UlmarFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 1,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'ULMARDATA.DAT',
+	'DATASIZE'		=> 6316271,
+} );
+
 }
 
 LoadUlmar();

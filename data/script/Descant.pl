@@ -184,8 +184,19 @@ TravelingStates( \%FrameLookup, \@Frames, \%States, "swept", 0, 0 );
 
 %States = ( FindShorthands( \%States ), %States );
 
-%::DescantStates = %States;
-@::DescantFrames = @Frames;
+#%::DescantStates = %States;
+#@::DescantFrames = @Frames;
+
+::RegisterFighter( {
+	'ID'			=> 9,
+	'GENDER'		=> 1,
+	'DATAVERSION'	=> 1,
+	'STARTCODE'		=> sub {},
+	'FRAMES'		=> \@Frames,
+	'STATES'		=> \%States,
+	'DATAFILE'		=> 'DESCANTDATA.DAT',
+	'DATASIZE'		=> 5877193,
+} );
 }
 
 LoadDescant();

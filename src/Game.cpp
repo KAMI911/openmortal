@@ -261,6 +261,13 @@ void Game::DrawDoodads()
 			sge_BF_textout( gamescreen, fastFont, s, iDoodadX, iDoodadY );
 			continue;
 		}
+		
+		if ( roDoodad.m_iGfxOwner < 2 )
+		{
+			g_oPlayerSelect.GetPlayerInfo(roDoodad.m_iGfxOwner).m_poPack->Draw( 
+				roDoodad.m_iFrame, roDoodad.m_iX, roDoodad.m_iY, roDoodad.m_iDir < 1 );
+			continue;
+		}
 
 		SDL_Rect rsrc, rdst;
 		rdst.x = roDoodad.m_iX;
@@ -323,10 +330,12 @@ void Game::Draw()
 	else if ( Ph_REWIND == m_enGamePhase )
 	{
 		DrawTextMSZ( "REW", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
+		sge_BF_textout( gamescreen, fastFont, "Press F1 to skip...", 230, 450 );
 	}
 	else if ( Ph_SLOWFORWARD == m_enGamePhase )
 	{
 		DrawTextMSZ( "REPLAY", inkFont, 320, 10, AlignHCenter, C_WHITE, gamescreen );
+		sge_BF_textout( gamescreen, fastFont, "Press F1 to skip...", 230, 450 );
 	}
 	else if ( Ph_REPLAY == m_enGamePhase )
 	{
