@@ -16,6 +16,7 @@
 #include "Audio.h"
 #include "Backend.h"
 #include "sge_tt_text.h"
+#include "sge_surface.h"
 #include "MortalNetwork.h"
 
 #include <stdarg.h>
@@ -93,23 +94,36 @@ SDL_Surface* poBackground = NULL;
 void InputKeys( int a_iPlayerNumber )
 {
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
-	DrawGradientText( "Input keys", titleFont, 20, gamescreen );
+	DrawGradientText( "Input keys", titleFont, 10, gamescreen );
 	SDL_Flip( gamescreen );
 	
 	static const char* apcKeyNames[9] = { "up", "down", "left", "right", "block", 
 		"low punch", "high punch", "low kick", "high kick" };
 	char acBuffer[1024];
-	int iY = 70;
+	char acSide[128];
+	char acFormat[128];
+	int iY = 75;
+	int iYIncrement = 35;
+	SDLKey enKey;
+	
+	DrawTextMSZ( "Press Escape to abort", inkFont, 320, iY, AlignHCenter|UseShadow, C_LIGHTGRAY, gamescreen );
+	iY += iYIncrement + 10;
+
+	strcpy( acSide, Translate(a_iPlayerNumber ? "Left" : "Right") );
+	strcpy( acFormat, Translate("%s player-'%s'?") );
 	
 	for ( int i=0; i<9; ++i )
 	{
-		sprintf( acBuffer,
-			Translate("%s player-'%s'?"),
-			Translate(a_iPlayerNumber ? "Left" : "Right"),
-			Translate(apcKeyNames[i]) );
-		DrawTextMSZ( acBuffer, inkFont, 10, iY, UseShadow, C_WHITE, gamescreen );
+		// 1. PRINT THE FONT AND THE CURRENT KEYSYM
+		sprintf( acBuffer, acFormat, acSide, Translate(apcKeyNames[i]) );
+		int w = DrawTextMSZ( acBuffer, inkFont, 10, iY, UseShadow, C_WHITE, gamescreen );
+		enKey = (SDLKey) g_oState.m_aiPlayerKeys[a_iPlayerNumber][i];
+		g_oBackend.PerlEvalF( "GetKeysym(%d);", enKey );
+		DrawTextMSZ( g_oBackend.GetPerlString("keysym"), inkFont, w+30, iY, UseShadow, C_LIGHTCYAN, gamescreen );
 		
-		SDLKey enKey = GetKey();
+		// 2. INPUT THE NEW KEY
+		
+		enKey = GetKey();
 		
 		if ( SDLK_ESCAPE == enKey )
 		{
@@ -118,10 +132,16 @@ void InputKeys( int a_iPlayerNumber )
 
 			return;
 		}
-		g_oBackend.PerlEvalF( "GetKeysym(%d);", enKey );
-		DrawTextMSZ( g_oBackend.GetPerlString("keysym"), inkFont, 530, iY, UseShadow, C_WHITE, gamescreen );
+
+		// 3. PRINT THE NEW KEY
+		
 		g_oState.m_aiPlayerKeys[a_iPlayerNumber][i] = enKey;
-		iY += 35;
+		
+		g_oBackend.PerlEvalF( "GetKeysym(%d);", enKey );
+		sge_Blit( poBackground, gamescreen, w+10, iY, w+10, iY, 640, 50 );
+		DrawTextMSZ( g_oBackend.GetPerlString("keysym"), inkFont, w+30, iY, UseShadow, C_WHITE, gamescreen );
+		sge_UpdateRect( gamescreen, w+10, iY, 640, 50 );
+		iY += iYIncrement;
 	}
 	
 	DrawTextMSZ( "Thanks!", inkFont, 320, iY + 20, UseShadow | AlignCenter, C_WHITE, gamescreen );
@@ -188,6 +208,7 @@ bool MortalNetworkCheckKey()
 	
 	return false;
 }
+
 
 
 const char* FindString( const char* a_ppcNames[], const int a_piValues[], int a_iValue )
@@ -655,6 +676,7 @@ void TextMenuItem::SetValue( const char* a_pcValue )
 
 
 /***************************************************************************
+
 							MENU DEFINITION
  ***************************************************************************/
  
@@ -824,9 +846,12 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		case MENU_OPTIONS:
 		{
 			Menu* poMenu = new Menu( "Options" );
-			poMenu->AddEnumMenuItem( "GAME SPEED: ", g_oState.m_iGameSpeed, g_ppcGameSpeed, g_piGameSpeed, MENU_GAME_SPEED );
-			poMenu->AddEnumMenuItem( "GAME TIME: ", g_oState.m_iGameTime, g_ppcGameTime, g_piGameTime, MENU_GAME_TIME );
-			poMenu->AddEnumMenuItem( "STAMINA: ", g_oState.m_iHitPoints, g_ppcHitPoints, g_piHitPoints, MENU_TOTAL_HIT_POINTS );
+			if ( g_oState.m_enGameMode != SState::IN_NETWORK || g_poNetwork->IsMaster() )
+			{
+				poMenu->AddEnumMenuItem( "GAME SPEED: ", g_oState.m_iGameSpeed, g_ppcGameSpeed, g_piGameSpeed, MENU_GAME_SPEED );
+				poMenu->AddEnumMenuItem( "GAME TIME: ", g_oState.m_iGameTime, g_ppcGameTime, g_piGameTime, MENU_GAME_TIME );
+				poMenu->AddEnumMenuItem( "STAMINA: ", g_oState.m_iHitPoints, g_ppcHitPoints, g_piHitPoints, MENU_TOTAL_HIT_POINTS );
+			}
 			poMenu->AddMenuItem( "~SOUND", SDLK_s, MENU_SOUND );
 			poMenu->AddMenuItem( g_oState.m_bFullscreen ? "~FULLSCREEN ON" : "~FULLSCREEN OFF", SDLK_f, MENU_FULLSCREEN );
 			poMenu->AddMenuItem( "~RIGHT PLAYER KEYS", SDLK_r, MENU_KEYS_RIGHT );
@@ -1105,6 +1130,7 @@ void DoMenu( bool a_bDrawBackground )
 		
 		oRect.w = 1; oRect.y = 0; oRect.h = poBackground->h;
 		
+
 		for ( i=0; i<poBackground->w; i+=2 )
 		{
 			oRect.x = i;
