@@ -759,6 +759,188 @@ Only to become ROADKILL on his way to the Mortal Szombat tournament! It was Cumi
 
 
 
+$::Portuguese = { 'LanguageCode' => 0,
+
+# In-game text
+
+	'MAX COMBO!!!'		=> 'COMBO MÁXIMO!!!',
+	'%d-hit combo!'		=> 'Combo de %d golpes!',  
+	'%d%% damage'		=> '%d%% de dano',		
+	'Round %d'		=> 'Round %d',
+	'REW'			=> 'RETROCEDER',
+	'REPLAY'		=> 'REPLAY',
+	'DEMO'			=> 'DEMO',
+	'Press F1 to skip...'	=>'Pressione F1 para resumir...',
+	'HURRY UP!'		=> 'APRESSEM-SE!',
+	'TIME IS UP!'		=> 'TEMPO ESGOTADO!',
+
+	'Final Judgement'	=> 'Julgamento Final',
+	'Continue?'		=> 'Continuar?',
+	'SPLAT!'		=> 'SPLAT!',
+	'Choose A Fighter Dammit' => 'Escolha um Lutador',
+
+# Menu items
+
+	"Main Menu"			=> "Menu Principal",
+	"~SINGLE PLAYER GAME"		=> "JOGO ~INDIVIDUAL",
+	"~MULTI PLAYER GAME"		=> "JOGO ~MULTIPLAYER" ,
+	"~SURRENDER GAME"		=> "~Entregar-se",
+	"~OPTIONS"			=> "~OPÇÕES",
+	"~INFO"				=> "IN~FORMAÇÕES",
+	"QUIT"				=> "SAIR",
+	"~OK"				=> "~OK",
+	"~LANGUAGE: "			=> "~Língua: ",
+
+	"Options"			=> "Opções",
+	"~FULLSCREEN ON"		=> "TELA CHEIA ATIVADA",
+	"~FULLSCREEN OFF"		=> "TELA CHEIA DESATIVADA",
+	"GAME SPEED: "			=> "VELOCIDADE DE JOGO: ",
+	"GAME TIME: "			=> "TEMPO DE JOGO: ",
+	"STAMINA: "			=> "RESISTÊNCIA: ",
+	"~SOUND"			=> "~AUDIO",
+	"~RIGHT PLAYER KEYS"		=> "TECLAS, JOGADOR DA ~DIREITA",
+	"~LEFT PLAYER KEYS"		=> "TECLAS, JOGADOR DA ~ESQUERDA",
+	
+	"Sound"				=> "Audio",
+	"CHANNELS: "		=> "CANAIS: ",	# Mono / Stereo
+	"SOUND QUALITY: "	=> "QUALIDADE DE SOM: ",	# KHz of playback rate
+	"SOUND FIDELITY: "	=> "FIDELIDADE DE SOM: ",# 8 bit or 16 bit
+	"MUSIC VOLUME: "	=> "VOLUME DA MÚSICA: ",	# OFF or numeric
+	"EFFECTS VOLUME: "	=> "VOLUME DOS EFEITOS: ",	# OFF or numeric
+	
+
+# Menu options
+
+	"BABY"				=> "BEBÊ",
+	"VERY LOW"			=> "MUITO BAIXA",
+	"LOW"				=> "BAIXA",
+	"NORMAL"			=> "NORMAL",
+	"HIGH"				=> "ALTA",
+	"VERY HIGH"			=> "MUITO ALTA",
+	"NEAR IMMORTAL"			=> "QUASE IMORTAL",
+
+	"SNAIL RACE"			=> "CORRIDA DE LESMAS",
+	"SLOW"				=> "DEVAGAR",
+	"NORMAL"			=> "NORMAL",
+	"TURBO"				=> "TURBO",
+	"KUNG-FU MOVIE"			=> "FILME DE KUNG-FU",
+
+	# Sound / Channels
+	"MONO"				=> "MONO",
+	"STEREO"			=> "ESTÉREO",
+
+	# Sound / Mixing rate settings
+	# CLASHES WITH MENU OPTIONS!!!
+	"LOW"				=> "BAIXA",
+	"MEDIUM"			=> "MÉDIA",
+	"HIGH"				=> "ALTA",
+	
+	# Sound volume
+	"OFF"				=> "DESLIGADO",
+	
+# Key configuration
+
+	'%s player-\'%s\'?'	=> 'Jogador da %s-\'%s\'?',		# The first %s becomes Left or Right. The second %s is up/down/high punch/...
+	'Left'				=> 'Esquerda',
+	'Right'				=> 'Direita',
+	"up",				=> 'cima',
+	"down",				=> 'baixo',
+	"left",				=> 'esquerda',
+	"right",			=> 'direita',
+	"block",			=> 'defesa',
+	"low punch",		=> 'soco baixo',
+	"high punch",		=> 'soco alto',
+	"low kick",			=> 'chute baixo',
+	"high kick"			=> 'chute alto',
+	'Thanks!'			=> 'Obrigado!',
+	
+# Demo screens,
+
+	'Fighter Stats'		=> 'Ficha Técnica',
+	'Unfortunately this fighter is not yet playable.' => 'Infelizmente ainda não é possível jogar com esse lutador',
+	'Name: '			=> 'Nome: ',
+	'Team: '			=> 'Time: ',
+	'Style: '			=> 'Estilo: ',
+	'Age: '				=> 'Idade: ',
+	'Weight: '			=> 'Peso: ',
+	'Height: '			=> 'Altura: ',
+	'Shoe size: '		=> 'Calçado: ',
+	
+	"Credits"			=> 'Créditos',
+	"CreditsText1"		=>
+"CRÉDITOS DE OPENMORTAL
+
+
+-- EQUIPE OPENMORTAL --
+
+
+PROGRAMADOR - UPi
+MÚSICA - Purple Motion
+MÚSICA - XTD / Mystic
+GRÁFICOS - UPi
+Tradução para o Alemão - ??
+Tradução para o Francês - Vampyre
+Tradução para o Espanhol - EdsipeR
+Tradução para o Português - Vinicius Fortuna
+
+-- ELENCO --
+
+Boxer - Zoli
+Cumi - ele mesmo
+Descant - ele mesmo
+Fureszes Orult - Ambrus
+Grizli - ele mesmo
+Kinga - ela mesma
+Macy - ela mesma
+Misi - ele mesmo
+Rising-san - Surba
+Sirpi - ele mesmo
+Taka Ito - Bence
+Tokeletlen Katona - Dani
+Watasiwa Baka Janajo - Ulmar
+Black Dark Evil Mage - UPi
+
+-- HOSPEDAGEM --
+
+sourceforge.net
+apocalypse.rulez.org
+freshmeat.net
+
+OpenMortal é marca registrada de 2003 da Equipe OpenMortal
+Distribuído segundo a Licença Pública Geral GNU Versão 2\n\n",
+
+	'CreditsText2'		=>
+'Obrigado à Midway por não nos ameaçar com assuntos legais até agora, apesar '.
+'de nós certamente termos violado pelo menos umas 50 de suas patentes, direitos de cópia internacionais e marcas registradas.
+
+
+OpenMortal precisa de sua ajuda! Se você puder contribuir com músicas, gráicos, códigos aperfeiçoados, '.
+'personagens extras, dinheiro, cerveja, pizza ou qualquer outro bem-de-consumo, por favor escreva para nós em upi@apocalypse.rulez.org! '.
+"Atualmente o mesmo endereço também está aceitando comentários e mensagens de fãs.\n\n",
+
+	'CreditsText3'		=>
+"Não se esqueça de dar uma olhada nos outros produtos da
+Apocalypse Production
+e da Degec Entertainment\n\n",
+
+	'Story1Text'		=>
+"Nós, os Deuses dos Evil Killer Black Antipathic Dim (witted) Fire Mages não mais toleramos a falta de maldade no mundo.
+
+Nós os mandamos em uma missão tão diabólica, tão maligna, que o mundo nunca mais será o mesmo!
+
+Nós ordenamos nossos indignos seguidores que
+DESTUÍSSEM O SÁBADO,
+condenando a humanidade a uma era sombria, com 5 dias úteis e apenas 1 dia de folga por semana... PARA SEMPRE!\n\n\n\n\n\n\n\n\n",
+
+	'Story2Text',		=>
+"Sempre que o Mal surge no horizonte, os heróis estão lá para salvar o dia. Son Goku, o protetor da Terra e da Humanidade veio para nos salvar...
+
+Apenas para ser MORTO ATROPELADO em seu caminho para o torneio de Mortal Szombat! Bem, afinal era o primeiro dia de direção de Cumi...\n\n\n\n\n\n\n\n\n",
+};
+
+
+
+
 
 
 
@@ -771,6 +953,7 @@ Only to become ROADKILL on his way to the Mortal Szombat tournament! It was Cumi
 	'hu'	=> $::Hungarian,
 	'fr'	=> $::French,
 	'es'	=> $::Spanish,
+	'pt'	=> $::Portuguese, 
 );
 
 =comment
@@ -781,6 +964,7 @@ $::Language = $::English;
 $::Language = $::Hungarian;
 $::Language = $::French;
 $::Language = $::Spanish;
+$::Language = $::Portuguese;
 
 sub SetLanguage($)
 {
