@@ -1,4 +1,5 @@
 use strict;
+use bytes;
 
 =comment
 
@@ -274,7 +275,7 @@ $::Hungarian = {  'LanguageCode' => 3,
 
 # Key configuration
 
-	'%s player-\'%s\'?'	=> '%s játékos - \'%s\?',
+	'%s player-\'%s\'?'	=> '%s játékos - \'%s\'?',
 	'Left'				=> 'Bal',
 	'Right'				=> 'Jobb',
 	"up",				=> 'fel',
@@ -816,3 +817,4 @@ sub Translate($)
 # "Connect to game", "Create game"
 # "Network mode: ",  "Connect to: ", "Start Network Play!", "Cancel"
 # "Connection closed."
+# "Press Escape to abort"
