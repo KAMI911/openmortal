@@ -456,7 +456,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		{
 			Menu* poMenu = new Menu( "Options" );
 			poMenu->AddEnumMenuItem( "GAME TIME: ", g_oState.m_iGameTime, g_ppcGameTime, g_piGameTime, MENU_GAME_TIME );
-			poMenu->AddEnumMenuItem( "HIT POINTS: ", g_oState.m_iHitPoints, g_ppcHitPoints, g_piHitPoints, MENU_TOTAL_HIT_POINTS );
+			poMenu->AddEnumMenuItem( "STAMINA: ", g_oState.m_iHitPoints, g_ppcHitPoints, g_piHitPoints, MENU_TOTAL_HIT_POINTS );
 			poMenu->AddMenuItem( "~SOUND", SDLK_s, MENU_SOUND );
 			poMenu->AddMenuItem( g_oState.m_bFullscreen ? "~FULLSCREEN ON" : "~FULLSCREEN OFF", SDLK_f, MENU_FULLSCREEN );
 			poMenu->AddMenuItem( "~RIGHT PLAYER KEYS", SDLK_r, MENU_KEYS_RIGHT );
