@@ -219,13 +219,13 @@ int DrawMainScreen()
 {
 	SDL_Surface* background = LoadBackground( "Mortal.jpg", 240 );
 	
-	DrawTextMSZ( "Version " VERSION "  © 2003-2004 by UPi", inkFont, 320, 430, UseShadow | AlignHCenter, C_WHITE, background, false );
+	DrawTextMSZ( "Version " VERSION " - European Union Editition", inkFont, 320, 430, UseShadow | AlignHCenter, C_WHITE, background, false );
 	SDL_Rect r;
 	r.x = r.y = 0;
 	
 	std::string sStaffFilename = DATADIR;
 	sStaffFilename += "/characters/STAFF.DAT";
-	RlePack pack( sStaffFilename.c_str(), 255 );
+	RlePack pack( sStaffFilename.c_str(), 256 );
 	pack.ApplyPalette();
 	SDL_BlitSurface( background, NULL, gamescreen, &r );
 	SDL_Flip( gamescreen );
@@ -307,15 +307,35 @@ The loop ends if the game mode changes to a non-game mode (e.g. IN_DEMO or IN_CH
 
 void GameLoop()
 {
+	class CVideoModeChange
+	{
+	public:
+		CVideoModeChange( bool a_bWide )
+		{
+			m_bWide = a_bWide;
+			if ( m_bWide ) SetVideoMode( true, g_oState.m_bFullscreen );
+		}
+		~CVideoModeChange()
+		{
+			if ( m_bWide ) SetVideoMode( false, g_oState.m_bFullscreen );
+		}
+		bool m_bWide;
+	} oVideoModeChanger( g_oState.m_iNumPlayers > 2 );
+
 #define IS_GAME_MODE (g_oState.m_enGameMode != SState::IN_DEMO \
 	&& g_oState.m_enGameMode != SState::IN_CHAT \
 	&& !g_oState.m_bQuitFlag)
 	
-	Audio->PlaySample( "car_start.voc" );
+	Audio->PlaySample( "GAME_NEW" );
 	Audio->PlayMusic( "GameMusic" );
 
 	bool bNetworkGame = SState::IN_NETWORK == g_oState.m_enGameMode;
-
+	
+	if ( bNetworkGame )
+	{
+		g_oState.m_enTeamMode = SState::Team_ONE_VS_ONE;
+	}
+	
 	while ( IS_GAME_MODE )
 	{
 		if ( SState::Team_GOOD_VS_EVIL == g_oState.m_enTeamMode )
@@ -355,6 +375,7 @@ void GameLoop()
 		{
 			g_oPlayerSelect.DoPlayerSelect();
 		}
+		
 		if ( !IS_GAME_MODE ) break;
 
 		//sprintf( acReplayFile, "/tmp/msz%d.replay", ++iGameNumber );
@@ -498,7 +519,7 @@ int main(int argc, char *argv[])
 	
 	g_oPlayerSelect.SetPlayer( 0, ZOLI );
 	g_oPlayerSelect.SetPlayer( 1, ZOLI );
-
+	
 	/*
 	{
 		int iGameNumber=0;
