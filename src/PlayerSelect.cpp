@@ -22,6 +22,7 @@
 #include "RlePack.h"
 #include "Backend.h"
 #include "State.h"
+#include "MortalNetwork.h"
 
 
 #define CHOOSERLEFT		158
@@ -109,17 +110,6 @@ int PlayerSelect::GetFighterNameWidth( int a_iPlayer )
 
 bool PlayerSelect::IsFighterAvailable( FighterEnum a_enFighter )
 {
-	/*
-	static bool g_abFighterAvailable[ LASTFIGHTER ] =
-	{
-		false, 
-		true, true, true, true,
-		true, true, true, true, 
-		true, false, false, false,
-		false, false
-	};
-	*/
-	
 	if ( a_enFighter <= UNKNOWN )
 	{
 		return false;
@@ -223,9 +213,20 @@ void PlayerSelect::SetTint( int a_iPlayer, TintEnum a_enTint )
 
 
 
+bool PlayerSelect::IsNetworkGame()
+{
+	return SState::IN_NETWORK == g_oState.m_enGameMode;
+}
+
 
 void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 {
+	// If we are in network mode, all keys count as the local player's...
+	if ( IsNetworkGame() )
+	{
+		a_iPlayer = g_poNetwork->IsMaster() ? 0 : 1;
+	}
+	
 	int& riP = a_iPlayer ? m_iP2 : m_iP1;
 	int iOldP = riP;
 	
@@ -234,7 +235,6 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 	{
 		return;
 	}
-	
 	
 	switch ( a_iKey )
 	{
@@ -253,10 +253,15 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 		default:
 			if ( IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
 			{
-				rbDone = true;
-				
-				g_oBackend.PerlEvalF( "PlayerSelected(%d);", a_iPlayer );
 				Audio->PlaySample("magic.voc");
+				
+				rbDone = true;
+				g_oBackend.PerlEvalF( "PlayerSelected(%d);", a_iPlayer );
+				if ( IsNetworkGame() )
+				{
+					g_poNetwork->SendFighter( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+					g_poNetwork->SendReady();
+				}
 				return;
 			}
 	}
@@ -266,8 +271,58 @@ void PlayerSelect::HandleKey( int a_iPlayer, int a_iKey )
 		Audio->PlaySample("strange_quack.voc");
 		if ( IsFighterAvailable( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] ) )
 		{
+			if ( IsNetworkGame() )
+			{
+				g_poNetwork->SendFighter( ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
+			}
 			SetPlayer( a_iPlayer, ChooserCells[riP/CHOOSERCOLS][riP%CHOOSERCOLS] );
 		}
+	}
+}
+
+
+void PlayerSelect::HandleNetwork()
+{
+	g_poNetwork->Update();
+	
+	bool bMaster = g_poNetwork->IsMaster();
+	int iPlayer = bMaster ? 1 : 0;
+	int& riP = bMaster ? m_iP2 : m_iP1;
+	bool& rbDone = bMaster ? m_bDone2 : m_bDone1;
+
+	if ( rbDone )
+	{
+		return;
+	}
+
+	int iOldP = riP;
+	FighterEnum enOldFighter = ChooserCells[iOldP/CHOOSERCOLS][iOldP%CHOOSERCOLS];
+	FighterEnum enRemoteFighter = g_poNetwork->GetRemoteFighter();
+
+	if ( enOldFighter != enRemoteFighter
+		&& enRemoteFighter != UNKNOWN )
+	{
+		SetPlayer( iPlayer, enRemoteFighter );
+		int i, j;
+		for ( i=0; i<CHOOSERROWS; ++i )
+		{
+			for ( int j=0; j<CHOOSERCOLS; ++j )
+			{
+				if ( ChooserCells[i][j] == enRemoteFighter )
+				{
+					riP = i * CHOOSERCOLS + j;
+					break;
+				}
+			}
+		}
+	}
+
+	bool bDone = g_poNetwork->IsRemoteSideReady();
+	if ( bDone )
+	{
+		rbDone = true;
+		Audio->PlaySample("magic.voc");
+		g_oBackend.PerlEvalF( "PlayerSelected(%d);", iPlayer );
 	}
 }
 
@@ -460,6 +515,11 @@ void PlayerSelect::DoPlayerSelect()
 				break;
 			}	// switch statement
 		}	// Polling events
+		
+		if ( IsNetworkGame() )
+		{
+			HandleNetwork();
+		}
 		
 		g_oBackend.ReadFromPerl();
 		

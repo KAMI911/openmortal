@@ -32,7 +32,8 @@
 #include "RlePack.h"
 #include "Backend.h"
 #include "State.h"
-#include "Demo.h"
+#include "FighterStats.h"
+#include "MortalNetwork.h"
 
 
 #ifdef _WINDOWS
@@ -79,6 +80,10 @@ _sge_TTFont* LoadTTF( const char* a_pcFilename, int a_iSize )
 		Complain( ("Couldn't load font: " + sPath).c_str() );
 	}
 	
+
+
+
+
 
 	return poFont;
 }
@@ -135,20 +140,19 @@ int init( int iFlags )
 
 	sge_TTF_AAOff();
 	
-	inkFont = LoadTTF( "aardvark.ttf", 24 );
+	inkFont = LoadTTF( "aardvark.ttf", 20 );
 	if ( !inkFont ) return -1;
-	impactFont = LoadTTF( "gooddogc.ttf", 20 );
+	impactFont = LoadTTF( "bradybun.ttf", 20 );	// gooddogc.ttf, 20
 	if ( !impactFont ) return -1;
-	titleFont = LoadTTF( "manslem.ttf", 40 );
+	titleFont = LoadTTF( "deadgrit.ttf", 48 );		// deadgrit.ttf, 48
 	if ( !titleFont ) return -1;
 
-	fastFont = LoadBMPFont( "impactfont2.png" );
+	fastFont = LoadBMPFont( "brandybun3.png" );
 	if ( !fastFont ) return -1;
-	//SDL_SetColorKey( fastFont->FontSurface, SDL_SRCCOLORKEY | SDL_RLEACCEL,
-	//	sge_GetPixel(fastFont->FontSurface,0,fastFont->FontSurface->h-1) );
-	creditsFont = LoadBMPFont( "fangfont.png" );
-	storyFont = LoadBMPFont( "glossyfont.png" );
+	creditsFont = LoadBMPFont( "CreditsFont2.png" );//"fangfont.png" );
 	if ( !creditsFont ) return -1;
+	storyFont = LoadBMPFont( "glossyfont.png" );
+	if ( !storyFont ) return -1;
 	
     return 0;
 }
@@ -158,6 +162,7 @@ int init2()
 {
 	if ( !g_oBackend.Construct() )
 	{
+
 		fprintf(stderr, "couldn't start backend.\n" );
 		return -1;
 	}
@@ -212,7 +217,6 @@ int DrawMainScreen()
 	
 	int retval = 0;
 	i = 0;
-	SDL_Event event;
 	
     SDL_FreeSurface( background );
 	return retval;
@@ -232,6 +236,7 @@ int main(int argc, char *argv[])
 	
 	g_oState.m_pcArgv0 = argv[0];
 	g_oState.Load();
+	CMortalNetwork::Create();
 	
 	bool bDebug = false;
 
@@ -275,6 +280,8 @@ int main(int argc, char *argv[])
 	{
 		return -1;
 	}
+
+	g_oState.SetLanguage( g_oState.m_acLanguage );
 	
 	new MszAudio;
 	Audio->LoadMusic( "Last_Ninja_-_The_Wilderness.mid", "DemoMusic" );
@@ -285,7 +292,8 @@ int main(int argc, char *argv[])
 	
 	g_oPlayerSelect.SetPlayer( 0, ZOLI );
 	g_oPlayerSelect.SetPlayer( 1, SIRPI );
-	
+
+	/*
 	int nextFighter = 0;
 	int describeOrder[ (int)LASTFIGHTER ];
 	
@@ -299,6 +307,7 @@ int main(int argc, char *argv[])
 		describeOrder[j] = describeOrder[k];
 		describeOrder[k] = l;
 	}
+	*/
 
 	/*
 	{
@@ -315,6 +324,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	*/
+	bool bNetworkGame = false;
 	
 	while ( 1 )
 	{
@@ -325,9 +335,13 @@ int main(int argc, char *argv[])
 		Audio->PlaySample( "car_start.voc" );
 		Audio->PlayMusic( "GameMusic" );
 
+		bNetworkGame = false;
+
 		while ( g_oState.m_enGameMode != SState::IN_DEMO 
 			&& !g_oState.m_bQuitFlag )
 		{
+			bNetworkGame = SState::IN_NETWORK == g_oState.m_enGameMode;
+			
 			g_oPlayerSelect.DoPlayerSelect();
 			if ( g_oState.m_bQuitFlag || g_oState.m_enGameMode == SState::IN_DEMO  ) break;
 			
@@ -347,6 +361,13 @@ int main(int argc, char *argv[])
 				oDemo.Run();		
 			}
 			if ( g_oState.m_bQuitFlag || g_oState.m_enGameMode == SState::IN_DEMO  ) break;
+		}
+		
+		if ( bNetworkGame && !g_oState.m_bQuitFlag )
+		{
+			DrawTextMSZ( "Connection closed.", inkFont, 320, 210, AlignHCenter | UseShadow, C_WHITE, gamescreen );
+			DrawTextMSZ( g_poNetwork->GetLastError(), impactFont, 320, 250, AlignHCenter | UseShadow, C_WHITE, gamescreen );
+			GetKey();
 		}
 		
 		if ( g_oState.m_bQuitFlag ) break;

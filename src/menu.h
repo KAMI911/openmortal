@@ -16,30 +16,32 @@
 
 class MenuItem;
 class EnumMenuItem;
+class TextMenuItem;
 
 class Menu
 {
 public:
 	Menu( const char* a_pcTitle );
-	~Menu();
+	virtual ~Menu();
 
-	MenuItem* AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut = SDLK_UNKNOWN, int a_iCode = 0 );
-	EnumMenuItem* AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
+	virtual MenuItem* AddMenuItem( const char* a_pcUtf8Text, SDLKey a_tShortcut = SDLK_UNKNOWN, int a_iCode = 0 );
+	virtual EnumMenuItem* AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialValue, 
 		const char** a_ppcNames, const int* a_piValues, int a_iCode = 0 );
-	MenuItem* AddMenuItem( MenuItem* a_poItem );
-	void AddOkCancel( int a_iOkCode = 0 );
-	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
-	void ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
-	int Run();
+	virtual TextMenuItem* AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode = 0 );
+	virtual MenuItem* AddMenuItem( MenuItem* a_poItem );
+	virtual void AddOkCancel( int a_iOkCode = 0 );
+	virtual void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem );
+	virtual void ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem );
+	virtual int Run();
 
-	void Draw();
-	void Clear();
+	virtual void Draw();
+	virtual void Clear();
 
 protected:
 
-	void FocusNext();
-	void FocusPrev();
-	void InvokeSubmenu( Menu* a_poSubmenu );
+	virtual void FocusNext();
+	virtual void FocusPrev();
+	virtual void InvokeSubmenu( Menu* a_poSubmenu );
 
 	typedef std::vector<MenuItem*> ItemList;
 	typedef ItemList::iterator ItemIterator;
@@ -110,6 +112,22 @@ protected:
 	std::string		m_sUtf8Title;
 	const char**	m_ppcNames;
 	const int*		m_piValues;
+};
+
+
+
+class TextMenuItem: public MenuItem
+{
+public:
+	TextMenuItem( Menu* a_poMenu, const char* a_pcInitialValue, const char* a_pcUtf8Title, int a_iCode );
+	virtual ~TextMenuItem();
+
+	virtual void Draw();
+	virtual void SetValue( const char* a_pcValue );
+	
+protected:
+	std::string		m_sTitle;
+	std::string		m_sValue;
 };
 
 

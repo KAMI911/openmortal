@@ -15,6 +15,10 @@
 #include "common.h"
 #include "Audio.h"
 #include "Backend.h"
+#include "sge_tt_text.h"
+#include "MortalNetwork.h"
+
+#include <stdarg.h>
 
 
 enum 
@@ -29,12 +33,18 @@ MENU_UNKNOWN,
 		MENU_MEDIUM,
 		MENU_HARD,
 	MENU_MULTI_PLAYER,
+	MENU_NETWORK_GAME,
+		MENU_SERVER,
+		MENU_HOSTNAME,
+		MENU_CONNECT,
+		MENU_CANCEL,
 	MENU_OPTIONS,
 		MENU_GAME_SPEED,
 		MENU_GAME_TIME,			//	( :30 - 5:00 )
 		MENU_TOTAL_HIT_POINTS,	// ( 25 - 1000 )
 		MENU_SOUND,
 			MENU_CHANNELS,		// MONO / STEREO
+
 			MENU_MIXING_RATE,	// 11kHz / 22kHz / 44.1 kHz
 			MENU_BITS,			// 8 bit / 16 bit
 			MENU_MUSIC_VOLUME,	// (0% - 100%)
@@ -44,6 +54,7 @@ MENU_UNKNOWN,
 		MENU_KEYS_RIGHT,
 		MENU_KEYS_LEFT,
 		MENU_OPTIONS_OK,
+	MENU_LANGUAGE,
 	MENU_INFO,
 	MENU_QUIT,					// (confirm)
 };
@@ -51,6 +62,7 @@ MENU_UNKNOWN,
 
 const char* g_ppcGameTime[] = { "0:30", "0:45", "1:00", "1:15", "1:30", "1:45", "2:00", "3:00", "5:00", NULL };
 const int g_piGameTime[] = { 30, 45, 60, 75, 90, 105, 120, 180, 300 };
+
 const char* g_ppcHitPoints[] = { "BABY", "VERY LOW", "LOW", "NORMAL", "HIGH", "VERY HIGH", "NEAR IMMORTAL", NULL };
 const int g_piHitPoints[] = { 1, 10, 50, 100, 150, 200, 500 };
 const char* g_ppcGameSpeed[] = { "SNAIL RACE", "SLOW", "NORMAL", "TURBO", "KUNG-FU MOVIE", NULL };
@@ -61,9 +73,17 @@ const char* g_ppcMixingRate[] = { "LOW", "MEDIUM", "HIGH", NULL };
 const int g_piMixingRate[] = { 1, 2, 3 };
 const char* g_ppcMixingBits[] = { "8 bit", "16 bit", NULL };
 const int g_piMixingBits[] = { 1, 2 };
+
+
 const char* g_ppcVolume[] = { "OFF", "10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%", NULL };
 const int g_piVolume[] = { 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
 
+const char* g_ppcLanguage[] = { "English", "Spanish", "Francais", "Magyar", NULL };
+const int g_piLanguage[] =    {    0,    1,    2,    3 };
+const char* g_ppcLanguageCodes[] = { "en", "es", "fr", "hu" };
+
+const char* g_ppcServer[] = { "Connect to game", "Create game", NULL };
+int g_piServer[] = { 0, 1 };
 
 
 SDL_Surface* poBackground = NULL;
@@ -83,7 +103,10 @@ void InputKeys( int a_iPlayerNumber )
 	
 	for ( int i=0; i<9; ++i )
 	{
-		sprintf( acBuffer, "%s player-'%s'?", a_iPlayerNumber ? "Left" : "Right", apcKeyNames[i] );
+		sprintf( acBuffer,
+			Translate("%s player-'%s'?"),
+			Translate(a_iPlayerNumber ? "Left" : "Right"),
+			Translate(apcKeyNames[i]) );
 		DrawTextMSZ( acBuffer, inkFont, 10, iY, UseShadow, C_WHITE, gamescreen );
 		
 		SDLKey enKey = GetKey();
@@ -92,6 +115,7 @@ void InputKeys( int a_iPlayerNumber )
 		{
 			SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 			SDL_Flip( gamescreen );
+
 			return;
 		}
 		g_oBackend.PerlEvalF( "GetKeysym(%d);", enKey );
@@ -105,6 +129,179 @@ void InputKeys( int a_iPlayerNumber )
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	SDL_Flip( gamescreen );
 }
+
+
+
+
+/***************************************************************************
+							NETWORK MENU DEFINITION
+ ***************************************************************************/
+
+static int g_iMessageY;
+
+void MortalNetworkMessage( const char* format, ... )
+{
+	char acBuffer[1024];
+	va_list ap;
+	va_start( ap, format );
+	vsnprintf( acBuffer, 1023, format, ap );
+	va_end( ap );
+	DrawTextMSZ( acBuffer, impactFont, 20, g_iMessageY, 0, C_LIGHTGRAY, gamescreen );
+	g_iMessageY += 25;
+}
+
+
+bool MortalNetworkCheckKey()
+{
+	SDL_Event event;
+	while (SDL_PollEvent(&event))
+	{
+		switch (event.type)
+		{
+			case SDL_QUIT:
+				g_oState.m_bQuitFlag = true;
+				return true;
+			
+			case SDL_KEYDOWN:
+			{
+				return true;
+			}
+			break;
+		}	// switch statement
+	}	// Polling events
+	
+	return false;
+}
+
+
+
+class CNetworkMenu: public Menu
+{
+public:
+	CNetworkMenu(): Menu( "Network Play Setup" )
+	{
+		m_bOK = false;
+		m_bServer = g_oState.m_bServer;
+		m_sHostname = g_oState.m_acLatestServer;
+		
+		AddEnumMenuItem( "Network mode: ", m_bServer ? 1 : 0, g_ppcServer, g_piServer, MENU_SERVER );
+		m_poServerMenuItem = AddTextMenuItem( "Connect to: ", m_sHostname.c_str(), MENU_HOSTNAME );
+		m_poServerMenuItem->SetEnabled(!m_bServer);
+		AddMenuItem( "START NETWORK GAME!", SDLK_UNKNOWN, MENU_CONNECT );
+
+		MenuItem* poItem = AddMenuItem( "Cancel", SDLK_UNKNOWN, MENU_CANCEL );
+		SDL_Rect oRect;
+		oRect.x = gamescreen->w - 150; oRect.w = 150;
+		oRect.y = gamescreen->h - 50; oRect.h = 30;
+		poItem->SetPosition( oRect );
+	}
+
+	~CNetworkMenu() {}
+
+	void ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
+	{
+		switch ( a_iItemCode )
+		{
+		case MENU_SERVER:
+		{
+			EnumMenuItem* poItem = (EnumMenuItem*) a_poMenuItem;
+			if ( m_bServer )
+			{
+				poItem->Decrement();
+			}
+			else
+			{
+				poItem->Increment();
+			}
+			break;
+		}
+			
+		case MENU_CONNECT:
+		{
+			Clear();
+			Draw();
+			
+			g_iMessageY = 260;
+			m_bOK = g_poNetwork->Start( m_bServer ? NULL : m_sHostname.c_str() );
+			
+			if ( m_bOK )
+			{
+				g_oState.SetServer( m_bServer ? NULL : m_sHostname.c_str() );
+				g_oState.m_enGameMode = SState::IN_NETWORK;
+				m_bDone = true;
+				m_iReturnCode = 100;
+			}
+			else
+			{
+				const char* acError = g_poNetwork->GetLastError();
+				DrawTextMSZ( "Couldn't connect", inkFont, 320, g_iMessageY, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen );
+				DrawTextMSZ( acError, impactFont, 320, g_iMessageY + 40, AlignHCenter|UseShadow, C_LIGHTRED, gamescreen, false );
+			}
+			
+			if ( g_oState.m_bQuitFlag )
+			{
+				m_bDone = true;
+				m_iReturnCode = 100;
+			}
+			break;
+		}
+
+		case MENU_CANCEL:
+			m_bOK = false;
+			m_bDone = true;
+			m_iReturnCode = -1;
+			break;
+
+		case MENU_HOSTNAME:
+			Clear();
+			Draw();
+			
+			char acBuffer[256];
+			strncpy( acBuffer, m_sHostname.c_str(), 255 );
+			acBuffer[255] = 0;
+			
+			int x = DrawTextMSZ( "Server name: ", impactFont, 20, 270, 0, C_WHITE, gamescreen );
+			
+			int iRetval = sge_tt_input( gamescreen, impactFont, acBuffer, SGE_IBG, strlen(acBuffer), 255,
+				20+x, 270 + sge_TTF_FontAscent(impactFont), C_LIGHTCYAN, C_BLACK, 255 );
+			//DECLSPEC int sge_tt_input(SDL_Surface *screen,sge_TTFont *font,char *string,Uint8 flags, int pos,int len,Sint16 x,Sint16 y, Uint32 fcol, Uint32 bcol, int Alpha);
+			if ( iRetval == -1 )
+			{
+				m_bDone = true;
+				m_iReturnCode = 100;
+				g_oState.m_bQuitFlag = true;
+			}
+			if ( iRetval > 0 )
+			{
+				m_sHostname = acBuffer;
+				m_poServerMenuItem->SetValue( acBuffer );
+			}
+			Clear();
+			Draw();
+			break;
+		}
+	}
+
+	void ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
+	{
+		switch ( a_iItemCode )
+		{
+		case MENU_SERVER:
+			m_bServer = a_iValue;
+			m_poServerMenuItem->SetEnabled(!m_bServer);
+			break;
+		}
+	}
+
+
+protected:
+	bool			m_bOK;
+	bool			m_bServer;
+	std::string		m_sHostname;
+
+	TextMenuItem*	m_poServerMenuItem;
+};
+
 
 
 
@@ -129,6 +326,7 @@ MenuItem::MenuItem( Menu* a_poMenu, const char* a_pcUtf8Text, int a_iCode )
 	m_iBackgroundColor = C_BLACK;
 	m_bActive = false;
 	m_bEnabled = true;
+
 }
 
 	
@@ -147,6 +345,7 @@ void MenuItem::Draw()
 		SDL_FillRect( gamescreen, &m_oPosition, 0 );
 	}
 	
+
 	int iX = m_oPosition.x;
 	int iY = m_oPosition.y;
 
@@ -175,7 +374,9 @@ void MenuItem::Clear()
 	else
 	{
 		SDL_FillRect( gamescreen, &m_oPosition, C_WHITE );
+
 	}
+
 
 	SDL_UpdateRect( gamescreen, m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );	
 }
@@ -188,6 +389,7 @@ void MenuItem::Activate()
 		m_poMenu->ItemActivated( m_iCode, this );
 	}
 }
+
 	
 	
 void MenuItem::SetText( const char* a_pcUtf8Text, bool a_bCenter )
@@ -246,10 +448,10 @@ EnumMenuItem::~EnumMenuItem()
 
 void EnumMenuItem::Draw()
 {
-	m_sUtf8Text = m_sUtf8Title;
+	m_sUtf8Text = Translate( m_sUtf8Title.c_str() );
 	if ( m_iValue <= m_iMax )
 	{
-		m_sUtf8Text += m_ppcNames[m_iValue];
+		m_sUtf8Text += Translate(m_ppcNames[m_iValue]);
 	}
 	if ( m_iValue > 0 )
 	{
@@ -264,6 +466,7 @@ void EnumMenuItem::Draw()
 }
 
 
+
 void EnumMenuItem::Increment()
 {
 	if ( m_iValue < m_iMax )
@@ -274,6 +477,7 @@ void EnumMenuItem::Increment()
 		Audio->PlaySample( "ding.voc" );
 	}
 }
+
 
 
 void EnumMenuItem::Decrement()
@@ -320,9 +524,53 @@ void EnumMenuItem::SetEnumValues( const char ** a_ppcNames, const int * a_piValu
 
 
 /***************************************************************************
+							TextMenuItem DEFINITION
+ ***************************************************************************/
+
+
+
+TextMenuItem::TextMenuItem( Menu* a_poMenu, const char* a_pcInitialValue, const char* a_pcUtf8Title, int a_iCode )
+	: MenuItem( a_poMenu, a_pcUtf8Title, a_iCode )
+
+{
+	m_sTitle = a_pcUtf8Title;
+	m_sValue = a_pcInitialValue;
+}
+
+
+TextMenuItem::~TextMenuItem()
+{
+}
+
+
+void TextMenuItem::Draw()
+{
+	m_sUtf8Text = Translate( m_sTitle.c_str() );
+	m_sUtf8Text += m_sValue;
+	
+	MenuItem::Draw();
+}
+
+
+void TextMenuItem::SetValue( const char* a_pcValue )
+{
+	m_sValue = a_pcValue;
+	Draw();
+}
+
+
+
+
+
+
+
+
+
+/***************************************************************************
 							MENU DEFINITION
  ***************************************************************************/
  
+
 
 Menu::Menu( const char* a_pcTitle )
 : m_sTitle( a_pcTitle )
@@ -362,6 +610,15 @@ EnumMenuItem* Menu::AddEnumMenuItem( const char* a_pcUtf8Text, int a_iInitialVal
 }
 
 
+TextMenuItem* Menu::AddTextMenuItem( const char* a_pcTitle, const char* a_pcValue, int a_iCode )
+{
+	TextMenuItem* poItem = new TextMenuItem( this, a_pcValue, a_pcTitle, a_iCode );
+	AddMenuItem( poItem );
+	return poItem;
+}
+
+
+
 
 MenuItem* Menu::AddMenuItem( MenuItem* a_poItem )
 {
@@ -369,8 +626,8 @@ MenuItem* Menu::AddMenuItem( MenuItem* a_poItem )
 	
 	SDL_Rect oRect;
 	oRect.x = 0; oRect.w = gamescreen->w;
-	oRect.y = m_oItems.size() * 45 + 100;
-	oRect.h = 45;
+	oRect.y = m_oItems.size() * 40 + 100;
+	oRect.h = 43;
 
 	a_poItem->SetPosition( oRect );
 	
@@ -397,7 +654,14 @@ void Menu::InvokeSubmenu( Menu* a_poMenu )
 {
 	Audio->PlaySample( "strange_button.voc" );
 	Clear();
+
 	m_iReturnCode = a_poMenu->Run();
+	if ( g_oState.m_bQuitFlag )
+	{
+		m_iReturnCode = 100;
+		m_bDone = true;
+	}
+	
 	if ( m_iReturnCode < 0 )
 	{
 		Audio->PlaySample( "pop.voc" );
@@ -428,6 +692,14 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 			m_iReturnCode = 100;
 			g_oState.m_enGameMode = SState::IN_DEMO;
 			break;
+		
+		case MENU_NETWORK_GAME:
+		{
+			Menu* poMenu = new CNetworkMenu();
+			InvokeSubmenu( poMenu );
+			delete poMenu;
+			break;
+		}
 			
 		case MENU_MULTI_PLAYER:
 			m_bDone = true;
@@ -504,6 +776,7 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 		
 		default:
 			break;
+
 	}
 }
 
@@ -534,6 +807,12 @@ void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
 			
 		case MENU_TOTAL_HIT_POINTS:
 			g_oState.m_iHitPoints = a_iValue;
+			break;
+		
+		case MENU_LANGUAGE:
+			g_oState.SetLanguage( g_ppcLanguageCodes[ a_iValue ] );
+			Clear();
+			Draw();
 			break;
 	} // end of switch a_iItemCode
 }
@@ -698,6 +977,13 @@ void Menu::Clear()
 }
 
 
+
+
+
+
+
+
+
 void DoMenu( bool a_bDrawBackground )
 {
 	Audio->PlaySample( "crashhh.voc" );
@@ -736,19 +1022,25 @@ void DoMenu( bool a_bDrawBackground )
 	if ( SState::IN_DEMO == g_oState.m_enGameMode )
 	{
 		oMenu.AddMenuItem( "~SINGLE PLAYER GAME", SDLK_s, MENU_SINGLE_PLAYER )->SetEnabled(false);
+		oMenu.AddMenuItem( "~NETWORK GAME", SDLK_n, MENU_NETWORK_GAME );
 		oMenu.AddMenuItem( "~MULTI PLAYER GAME", SDLK_m, MENU_MULTI_PLAYER );
 	}
 	else
 	{
 		oMenu.AddMenuItem( "~SURRENDER GAME", SDLK_s, MENU_SURRENDER );
 	}
+	oMenu.AddEnumMenuItem( "~LANGUAGE: ", g_oState.m_iLanguageCode, g_ppcLanguage, g_piLanguage, MENU_LANGUAGE );
+
 	oMenu.AddMenuItem( "~OPTIONS", SDLK_o, MENU_OPTIONS );
 	oMenu.AddMenuItem( "~INFO", SDLK_i, MENU_INFO )->SetEnabled(false);
 	oMenu.AddMenuItem( "QUIT", SDLK_UNKNOWN, MENU_QUIT );
 	
 	oMenu.Run();
-	
-	Audio->PlaySample("shades_rollup.voc");
+
+	if ( !g_oState.m_bQuitFlag )
+	{
+		Audio->PlaySample("shades_rollup.voc");
+	}
 	
 	//SDL_BlitSurface( poBackground, 0, gamescreen, 0 );
 	//SDL_Flip( gamescreen );

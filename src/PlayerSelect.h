@@ -64,9 +64,11 @@ public:
 protected:
 
 	void HandleKey( int a_iPlayer, int a_iKey );
+	void HandleNetwork();
 	void DrawRect( int a_iPos, int a_iColor );
 	void CheckPlayer( SDL_Surface* a_poBackground, int a_iRow, int a_iCol );
 	static RlePack* LoadFighter( FighterEnum m_enFighter );
+	bool IsNetworkGame();
 
 protected:
 	PlayerInfo	m_aoPlayers[2];
