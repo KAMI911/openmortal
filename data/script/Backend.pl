@@ -124,8 +124,9 @@ $doodad_gfxowner = -1;	# 0: first player; 1: second player; 2: Global doodad
 $doodad_text = '';		# The text of type 0 doodads.
 
 
-sub ResetGame
+sub ResetGame($)
 {
+	my ($bgposition) = @_;
 	$gametick		= 0;
 	$over			= 0;
 	$ko				= 0;
@@ -133,8 +134,8 @@ sub ResetGame
 	$bgx			= 0;
 	$bgy			= 0;
 	$BgSpeed		= 0;
-	$BgPosition		= 0;
-	$BgScrollEnabled = 0;
+	$BgPosition		= $bgposition;
+	$BgScrollEnabled = $bgposition != 0;
 	
 	$OverTimer		= 0;
 	$JudgementMode	= 0;
@@ -162,7 +163,7 @@ JUDGEMENT METHODS
 
 sub JudgementStart($)
 {
-	ResetGame();
+	ResetGame(0);
 	# $bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
 	$JudgementMode = 1;
 	($JudgementWinner) = @_;
@@ -187,7 +188,7 @@ PLAYER SELECTION METHODS
 
 sub SelectStart
 {
-	ResetGame();
+	ResetGame(0);
 	
 	if ( $Fighter1->{OK} )
 	{
@@ -300,18 +301,15 @@ sub GameStart($$)
 {
 	my ( $MaxHP, $debug ) = @_;
 
-	ResetGame();
+	ResetGame( $BgMax >> 1);
 	
 	$bgx = ( $SCRWIDTH2 - $BGWIDTH2) >> 1;
 	$bgy = ( $SCRHEIGHT2 - $BGHEIGHT2 ) >> 1;
-	$BgPosition = $BgMax >> 1;
 	$BgScrollEnabled = 1;
 	$HitPointScale = 1000 / $MaxHP;			# 1/1
 	$Debug = $debug;
 
-	$Fighter1->Reset();
 	$Fighter1->{HP} = $MaxHP;
-	$Fighter2->Reset();
 	$Fighter2->{HP} = $MaxHP;
 	
 	$p1h = $p2h = 0;
