@@ -14,7 +14,7 @@
 #include <vector>
 
 struct SDL_Surface;
-
+class Background;
 
 
 class Game
@@ -47,7 +47,7 @@ protected:
 
 	bool				m_bIsReplay;
 	bool				m_bDebug;
-	SDL_Surface*		m_poBackground;
+	Background*			m_poBackground;
 	SDL_Surface*		m_poDoodads;
 	
 	int					m_aiRoundsWonByPlayer[2];

@@ -17,6 +17,7 @@
 #include <fstream>
 
 #include "PlayerSelect.h"
+#include "Background.h"
 #include "common.h"
 #include "gfx.h"
 #include "Backend.h"
@@ -94,13 +95,22 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 	m_bIsReplay = a_bIsReplay;
 	m_bDebug = a_bDebug;
 	
-	char acFilename[1024];
+	/*char acFilename[1024];
 	sprintf( acFilename, "level%d.png", mg_iBackgroundNumber++ );
 	m_poBackground = LoadBackground( acFilename, 64 );
 	if ( NULL == m_poBackground )
 	{
 		mg_iBackgroundNumber = 1;
 		m_poBackground = LoadBackground( "level1.png", 64 );
+	}
+	*/
+	
+	m_poBackground = new Background();
+	m_poBackground->Load(mg_iBackgroundNumber++);
+	if ( !m_poBackground->IsOK() )
+	{
+		m_poBackground->Load(1);
+		mg_iBackgroundNumber = 1;
 	}
 	
 	m_poDoodads = LoadBackground( "Doodads.png", 48, 64 );
@@ -112,7 +122,7 @@ Game::Game( bool a_bIsReplay, bool a_bDebug)
 
 Game::~Game()
 {
-	SDL_FreeSurface( m_poBackground );
+	delete m_poBackground;
 	m_poBackground = NULL;
 	SDL_FreeSurface( m_poDoodads );
 	m_poDoodads = NULL;
@@ -210,9 +220,12 @@ void Game::DrawHitPointDisplay()
 
 void Game::DrawBackground()
 {
+	m_poBackground->Draw( g_oBackend.m_iBgX, g_oBackend.m_iBgY );
+	/*
 	sge_Blit( m_poBackground, gamescreen, 
 		g_oBackend.m_iBgX, g_oBackend.m_iBgY,
 		0, 0, SCREENWIDTH, SCREENHEIGHT );
+	*/
 }
 
 
