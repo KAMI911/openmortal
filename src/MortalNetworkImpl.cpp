@@ -117,7 +117,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 	{
 		Uint32 ipaddr=SDL_SwapBE32(oAddress.host);
 		MortalNetworkMessage("Connecting to %d.%d.%d.%d port %d",
-			ipaddr>>24, (ipaddr>>16)&0xff, (ipaddr>>8)&0xff, ipaddr&0xff, oAddress.port);
+			ipaddr>>24, (ipaddr>>16)&0xff, (ipaddr>>8)&0xff, ipaddr&0xff, MORTALNETWORKPORT );
 	}
 	
 	if ( !a_pcServerName )
@@ -129,6 +129,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 		
 		// Wait for connection ...
 		MortalNetworkMessage ( Translate("Waiting for connection... (press any key to abort)") );
+		MortalNetworkMessage( Translate("You must have port 14882 open for this to work.") );
 		TCPsocket poClient;
 		while ( 1 )
 		{
@@ -155,7 +156,7 @@ bool CMortalNetworkImpl::Start( const char* a_pcServerName )
 		}
 		Uint32 ipaddr=SDL_SwapBE32(poRemoteAddress->host);
 		MortalNetworkMessage("Accepted connection from %d.%d.%d.%d port %d",
-			ipaddr>>24, (ipaddr>>16)&0xff, (ipaddr>>8)&0xff, ipaddr&0xff, oAddress.port);
+			ipaddr>>24, (ipaddr>>16)&0xff, (ipaddr>>8)&0xff, ipaddr&0xff, MORTALNETWORKPORT);
 
 		// Set the client socket as our socket, and drop the server socket.
 
