@@ -8,12 +8,12 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <SDL/SDL_image.h>
+#include "SDL_image.h"
 #include "sge_surface.h"
 #include "sge_primitives.h"
 #include "sge_bm_text.h"
-#include <SDL/SDL_events.h>
-#include <SDL/SDL_keysym.h>
+#include "SDL_events.h"
+#include "SDL_keysym.h"
 #include <fstream>
 
 #include "common.h"
@@ -671,6 +671,10 @@ void Game::DoReplay( const char* a_pcReplayFile )
 		for ( int i=0; i< iNumTicks; ++i )
 		{
 			std::getline( oInput, sLine );
+		}
+		if ( 0 == sLine.size() )
+		{
+			break;
 		}
 		
 		iLastTick = iThisTick;

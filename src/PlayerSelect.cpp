@@ -8,9 +8,9 @@
 
 #include <stdio.h>
  
-#include <SDL/SDL.h>
-#include <SDL/SDL_video.h>
-#include <SDL/SDL_image.h>
+#include "SDL.h"
+#include "SDL_video.h"
+#include "SDL_image.h"
 #include "sge_primitives.h"
  
 #include "common.h"
@@ -348,8 +348,9 @@ void PlayerSelect()
 	background = SDL_DisplayFormat( background );
 	
 	DrawGradientText( "Choose A Fighter Dammit", titleFont, 10, background );
-	
-	for ( int i=0; i<CHOOSERROWS; ++i )
+
+	int i;	
+	for ( i=0; i<CHOOSERROWS; ++i )
 	{
 		for ( int j=0; j<CHOOSERCOLS; ++j )
 		{
@@ -374,7 +375,7 @@ void PlayerSelect()
 	thisTick = SDL_GetTicks() / gameSpeed;
 	lastTick = thisTick - 1;
 	
-	int		i		= 0;
+			i		= 0;
 	bool	bDraw	= true;
 	int		over	= 0;
 	

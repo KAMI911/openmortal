@@ -52,7 +52,11 @@ SDL_Color Colors[] =
 
 void Complain( const char* a_pcError )
 {
+#ifdef _WINDOWS
+	::MessageBoxA( 0, a_pcError, "OpenMortal", MB_ICONEXCLAMATION );
+#else
 	fprintf( stderr, "%s", a_pcError );
+#endif
 }
 
 
@@ -256,7 +260,8 @@ int main(int argc, char *argv[])
 		iFlags |= SDL_FULLSCREEN;
 	}
 	
-	for ( int i=1; i<argc; ++i )
+	int i;
+	for ( i=1; i<argc; ++i )
 	{
 		if ( !strcmp(argv[i], "-debug") )
 		{
@@ -303,7 +308,6 @@ int main(int argc, char *argv[])
 	
 	int nextFighter = 0;
 	int describeOrder[ (int)LASTFIGHTER ];
-	int i;
 	
 	for ( i=0; i<(int)LASTFIGHTER; ++i ) describeOrder[i] = i;
 	for ( i=0; i<100; ++i )

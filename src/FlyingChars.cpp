@@ -6,7 +6,7 @@
     email                : upi@apocalypse.rulez.org
  ***************************************************************************/
 
-#include <FlyingChars.h>
+#include "FlyingChars.h"
 #include "sge_surface.h"
 #include "common.h"
 
@@ -81,7 +81,6 @@ void FlyingChars::DequeueText()
 	}
 	
 	EnqueuedText& oEnqueuedText = m_oEnqueuedTexts.front();
-	m_oEnqueuedTexts.pop_front();
 	
 	m_pcText = oEnqueuedText.m_pcText;
 	m_enAlignment = oEnqueuedText.m_enAlignment;
@@ -97,6 +96,8 @@ void FlyingChars::DequeueText()
 			break;
 		}
 	}
+	
+	m_oEnqueuedTexts.pop_front();
 }
 
 

@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_video.h>
+#include "SDL.h"
+#include "SDL_video.h"
 
 #include "common.h"
 #include "RlePack.h"
@@ -68,7 +68,7 @@ RlePack::RlePack( const char* filename )
 	if (datacount>500) datacount = 500;			// Sanity
 	
 	p->arraysize = datacount;
-	p->sprites = new (RLE_SPRITE*)[ datacount ];
+	p->sprites = new RLE_SPRITE*[ datacount ];
 	
 	while( (!feof(f)) && (!ferror(f)) && (datacount>0) )
 	{
@@ -113,7 +113,7 @@ RlePack::RlePack( const char* filename )
 			pallength = length>1024 ? 1024 : length;
 			pallength /= 4;
 			
-			for (uint i=0; i< pallength; i++)
+			for (unsigned int i=0; i< pallength; i++)
 			{
 				char c[4];
 				fread( c, 4, 1, f );

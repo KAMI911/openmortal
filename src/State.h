@@ -62,9 +62,13 @@ struct SState
 		m_iHitPoints = 100;
 		
 		#ifdef _WINDOWS
-		m_bFullscreen = true;
+			#ifdef _DEBUG
+				m_bFullScreen = false;
+			#else
+				m_bFullscreen = true;
+			#endif
 		#else
-		m_bFullscreen = false;
+			m_bFullscreen = false;
 		#endif
 		
 		m_iChannels = 2;

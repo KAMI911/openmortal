@@ -8,10 +8,9 @@
 
 #include <string.h>
 
-#include <SDL/SDL.h>
-#include <SDL/SDL_video.h>
-#include <SDL/SDL_image.h>
-#include <SDL/SDL_ttf.h>
+#include "SDL.h"
+#include "SDL_video.h"
+#include "SDL_image.h"
 #include "sge_tt_text.h"
 #include "sge_surface.h"
 
@@ -175,7 +174,7 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 		1, y1, 255, 0, 255);
 
 
-	for ( int y=1; y<size.h-1; ++y )
+	for ( y=1; y<size.h-1; ++y )
 	{
 		int color = 254 * y / (size.h-1) + 1;
 		unsigned char *p0, *p1, *p2;

@@ -18,7 +18,7 @@
 #ifndef sge_surface_H
 #define sge_surface_H
 
-#include <SDL/SDL.h>
+#include "SDL.h"
 #include "sge_internal.h"
 
 

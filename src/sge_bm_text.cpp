@@ -21,7 +21,7 @@
 *  Thanks to Karl Bartel for the SFont format!
 */
 
-#include <SDL/SDL.h>
+#include "SDL.h"
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
@@ -31,7 +31,7 @@
 #include "sge_tt_text.h"
 
 #ifdef _SGE_HAVE_IMG
-#include <SDL/SDL_image.h>
+#include "SDL_image.h"
 #endif
 
 using namespace std;

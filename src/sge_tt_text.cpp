@@ -24,7 +24,7 @@
 */	
 
 
-#include <SDL/SDL.h>
+#include "SDL.h"
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>

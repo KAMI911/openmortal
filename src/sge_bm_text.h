@@ -18,7 +18,7 @@
 #ifndef sge_bm_text_H
 #define sge_bm_text_H
 
-#include <SDL/SDL.h>
+#include "SDL.h"
 #include "sge_internal.h"
 
 /* BF open flags */

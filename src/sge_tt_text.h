@@ -21,7 +21,7 @@
 #ifndef sge_tt_text_H
 #define sge_tt_text_H
 
-#include <SDL/SDL.h>
+#include "SDL.h"
 #include "sge_internal.h"
 
 /* Text input flags */
