@@ -490,7 +490,7 @@ void draw_rle_sprite_v_flip( RLE_SPRITE* src, int dx, int dy )	// static method
    SDL_Surface* dst = gamescreen;
    // Clip to dst->clip_rect
    int dst_cl = dst->clip_rect.x;
-   int dst_cr = dst->clip_rect.w + dst_cl;
+   int dst_cr = dst->clip_rect.w + dst_cl - 1;
    int dst_ct = dst->clip_rect.y;
    int dst_cb = dst->clip_rect.h + dst_ct;
 
