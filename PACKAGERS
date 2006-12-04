@@ -1,0 +1,15 @@
+Packagers, please read this!
+
+If you wish to package/redistribute OpenMortal for a specific distribution,
+PLEASE LET ME KNOW so I can contact you in case there is a security update,
+or new version for OpenMortal.
+
+OpenMortal can be split into sub-packages to reduce download size. Do
+"./configure -help" for details.
+
+Also I would like to thank all the people who helped bring OpenMortal to
+Gentoo, Mandrake, Sorcerer, UHU, MacOS X, NetBSD, and any others that I
+haven't notices.
+
+Cheers,
+UPi.

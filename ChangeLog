@@ -1,3 +1,153 @@
+2004-03-03 21:05  upi
+
+	* src/: Demo.cpp (1.9), FighterStats.cpp (1.5), Game.cpp (1.21),
+	Joystick.cpp (1.2): Minor fixes before 0.6 release.
+
+2004-03-02 10:52  upi
+
+	* src/: Game.cpp (1.20), Game.h (1.7), MortalNetwork.h (1.6),
+	MortalNetworkImpl.cpp (1.12), MortalNetworkImpl.h (1.6),
+	PlayerSelect.cpp (1.13), main.cpp (1.15): Implementation: The game
+	background is now synchronized in network mode.
+
+2004-03-02 10:50  upi
+
+	* data/script/Backend.pl (1.9): Bugfix: The startup code of
+	characters is no longer run twice.
+
+2004-03-02 10:16  upi
+
+	* src/: OnlineChat.cpp (1.3), TextArea.cpp (1.4), sge_tt_text.cpp
+	(1.7): Minor improvements to CTextArea (Faster typing, scrolling,
+	no last character off-by-one bug)
+
+2004-03-02 10:14  upi
+
+	* src/main.cpp (1.14): Bugfix: Now you can go to the demo directly
+	from MortalNet.
+
+2004-03-02 09:47  upi
+
+	* src/main.cpp (1.13): Return to MortalNet after network game
+	disconnects
+
+2004-03-02 09:17  upi
+
+	* src/: Demo.cpp (1.8), Event.h (1.1), Game.cpp (1.19),
+	GameOver.cpp (1.5), Joystick.cpp (1.1), Joystick.h (1.1),
+	OnlineChat.cpp (1.2), OnlineChat.h (1.2), PlayerSelect.cpp (1.12),
+	common.cpp (1.3), gfx.cpp (1.4), gfx.h (1.5), main.cpp (1.12),
+	menu.cpp (1.13), menu.h (1.4): Added joystick support.
+
+2004-03-02 09:15  upi
+
+	* src/State.cpp (1.9): User and language detection for win32 fixed.
+
+2004-03-02 09:04  upi
+
+	* src/MortalNetworkImpl.cpp (1.11): Bugfix: Network messages are
+	now all sent in one packet instead of two packets. (oops)
+
+2004-03-01 13:47  upi
+
+	* src/: Backend.cpp (1.8), Backend.h (1.6), Background.cpp (1.2),
+	Game.cpp (1.18), Game.h (1.6), Makefile.am (1.8), Makefile.in
+	(1.8), MortalNetwork.h (1.5), MortalNetworkImpl.cpp (1.10),
+	MortalNetworkImpl.h (1.5), common.cpp (1.2), main.cpp (1.11):
+	Updated networking (less lag, symmetric degradation)
+
+2004-03-01 13:43  upi
+
+	* data/gfx/Makefile.am (1.5): Updated graphics for 0.6 release.
+
+2004-03-01 13:00  upi
+
+	* data/script/: Backend.pl (1.8), CollectStats.pl (1.1),
+	CollectedStats.pl (1.1), DataHelper.pl (1.6), Doodad.pl (1.4),
+	Fighter.pl (1.9), FighterStats.pl (1.6), Makefile.am (1.4),
+	Makefile.in (1.4), PlayerInput.pl (1.3), QuickSave.pl (1.2),
+	Rewind.pl (1.1), Translate.pl (1.8): Updated networking (less lag,
+	symmetric degradation)
+
+2004-03-01 12:51  upi
+
+	* data/: Makefile.am (1.3), Makefile.in (1.3): Fix CVS problem with
+	characters directory.
+
+2004-03-01 12:50  upi
+
+	* ChangeLog (1.4), README (1.3), TODO (1.3), configure (1.3),
+	configure.in (1.4), openmortal.lsm (1.3): Version number set to 0.6
+
+2004-02-14 11:04  upi
+
+	* data/script/: DataHelper.pl (1.5), Fighter.pl (1.8): RFE824745:
+	Blocking improved: Now it works faster, and causes DEL penalties to
+	the opponent. Block jumpkicking and jumppunching is greatly
+	penaltized.
+
+2004-02-14 09:13  upi
+
+	* data/script/PlayerInput.pl (1.2): Implementation: Better key
+	handling. Arrow keys now work as default if they are kept pressed
+	(RFE891821)
+
+2004-02-13 20:38  upi
+
+	* src/MortalNetworkImpl.cpp (1.9): Clearer messages when
+	connecting.
+
+2004-02-13 20:29  upi
+
+	* src/: Demo.cpp (1.7), main.cpp (1.10): Added version string to
+	title screen, "Press Escape for the menu" message to demo screens.
+
+2004-02-05 09:54  upi
+
+	* src/: Game.cpp (1.17), sge_tt_text.cpp (1.6): Fixed unicode
+	translation bug.
+
+2004-02-05 08:43  vfortuna
+
+	* src/MortalNetworkImpl.cpp (1.8): Fixed compile error
+
+2004-02-05 08:23  vfortuna
+
+	* data/script/FighterStats.hu (1.2): Removed obsolete file
+	FighterStats.hu
+
+2004-02-05 07:56  upi
+
+	* data/script/: Makefile.am (1.3), Makefile.in (1.3): Removed
+	obsolete FighterStats.hu
+
+2004-02-05 05:32  vfortuna
+
+	* data/script/FighterStats.hu (1.1): Initial revision (Fighters
+	Stats Hungarian Translation)
+
+2004-02-04 15:00  vfortuna
+
+	* data/script/Translate.pl (1.7): Portuguese LanguageCode
+	correction and minor changes in translation.
+
+2004-02-04 02:22  vfortuna
+
+	* data/script/Translate.pl (1.6): Minor Portuguese translation
+	correction and some credits update
+
+2004-02-04 01:14  vfortuna
+
+	* src/menu.cpp (1.12): Added Portuguese Language
+
+2004-02-04 00:45  vfortuna
+
+	* data/script/Translate.pl (1.5): Added Portuguese Translation
+
+2004-01-31 16:10  upi
+
+	* data/script/Translate.pl (1.4): Updated credits.
+
 2004-01-31 14:05  upi
 
 	* data/gfx/Makefile.in (1.5): level7 is now parallax, added level8.

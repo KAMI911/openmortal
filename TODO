@@ -1,56 +1,48 @@
 Characters:
 
-+   Surba
-    Misi
-    Kinga
-    Dia
-    Judy
-    Siska
+1st recording
++   Surba (Rising San)
+2nd recording
+    Misi (Apatsuka)
+3rd recording
+    Dia (Pixie)
+    Siska (?)
     
 
 Others:
 
     Block after hit
     Doodads / projectiles.
-    Color depth independent RlePack.draw()
+    Asynch blitting / optimal depth selection / HW surface
 
     No hitting falling opponent.
     Polish character graphics.
 
     Single-player mode.
 
+Proofread Translate and FighterStats.
+Better chat font, greater left margin
+Music addon (playlist)
+More parallax backgrounds
+Scrolling CReadLine
+Improve network lag
+POPUP MESSAGE ON FIRST NETWORK RUN!
+
 
 SPLITTING (done):
 	bin
 	data
-	characters-1: Macy, Boxer, Cumi, Grizzly, Bence, UPi [6]
+	characters-1: Macy, Boxer, Cumi, Grizzly, Bence, UPi, Kinga [7]
 	characters-2: Descant, Ulmar, Sirpi, Ambrus, Dani [5]
 	characters-sch: Agent, Tejszin, Jacint, Mrsmith, Jozsi, Sleepy [6]
 
 
 NETWORK:
-x	HANGEFFEKTEK
-	Preserve MSGS between games.
+	Preserve MSGS between games. (maybe not)
 	Find local server.
 
 
 
-X	Credits for Purple Motion!!
-X	Write to music authors
-Proofread Translate and FighterStats.
-X	Version string display on the intro screen.
-Clean up the garbage in stdout.
-Sound events throught network -> review this.
-Better chat font, greater left margin
-Synch backgrounds in the network game
-Music addon (playlist)
-More parallax backgrounds
-Return to MortalNet after network game disconnects
-Fix CTextArea last character bug
-Scrolling CReadLine
-Improve network lag
-X	"you need to have port X open to challenge".
-Options available in the MortalNet menu
 
 
 SOUND EFFECTS
@@ -87,3 +79,24 @@ SOUND EFFECTS
 	
 	max combo reached: crashhh.voc
 
+ 798995	Implement throws			2003-09-02 10:32	upi	upi	 
+ 798996	Implement projectiles		2003-09-02 10:35	upi	upi	 
+ 801073	Downloadable characters		2003-09-05 15:19	nobody	upi	 
+ 803221	Add joystick support		2003-09-09 17:22	upi	nobody	 
+ 809711	Character Editor			2003-09-20 13:12	upi	nobody	 
+ 810668	Add Finishing moves, fatalities etc.  2003-09-22 17:32	nobody	mucknert	
+ 824453	Improved collision detection  2003-10-16 01:09	nobody	upi	
+ 824749	Blood						2003-10-16 13:45	nobody	upi	 
+ 824776	Improved design, logo and background art	  2003-10-16 14:20	nobody	upi	 
+ 824815	Boss character(s)			2003-10-16 15:13	nobody	upi	 
+ 824820	More story screens			2003-10-16 15:17	upi	upi	 
+ 824821	Freezing characters			2003-10-16 15:19	nobody	upi	 
+ 824823	Hurt characters				2003-10-16 15:21	nobody	upi	 
+ 897493	Points / Scoring			2004-02-15 17:00	nobody	interruach	 
+ 897496	You have Won! Screens / Text.  2004-02-15 17:02	nobody	interruach	 
+ 897504	Chat in character selection screen  2004-02-15 17:15	nobody	interruach	 
+ 901632	Team Mode					2004-02-21 09:04	nobody	bane84	 
+ 901634	Stage Interaction			2004-02-21 09:06	nobody	bane84	 
+ 901635	Chat Room Interface...		2004-02-21 09:08	nobody	bane84	 
+ 906855	Ninjas!						2004-02-29 12:22	nobody	protoformx
+ 

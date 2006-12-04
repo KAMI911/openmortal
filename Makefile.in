@@ -64,10 +64,14 @@ host_triplet = @host@
 target_alias = @target_alias@
 target_triplet = @target@
 AUTODIRS = @AUTODIRS@
+CC = @CC@
 CXX = @CXX@
 FT2_CFLAGS = @FT2_CFLAGS@
 FT2_CONFIG = @FT2_CONFIG@
 FT2_LIBS = @FT2_LIBS@
+HAVE_LIB = @HAVE_LIB@
+LIB = @LIB@
+LTLIB = @LTLIB@
 MAKEINFO = @MAKEINFO@
 PACKAGE = @PACKAGE@
 PERL = @PERL@
@@ -77,11 +81,9 @@ SDL_LIBS = @SDL_LIBS@
 VERSION = @VERSION@
 perl_embed_ccflags = @perl_embed_ccflags@
 perl_embed_ldflags = @perl_embed_ldflags@
-@MAIN_TRUE@MSUBDIRS = src
-@MAIN_FALSE@MSUBDIRS = 
 
-SUBDIRS = $(MSUBDIRS) data
-DIST_SUBDIRS = $(MSUBDIRS) data
+SUBDIRS = data src
+DIST_SUBDIRS = data src
 EXTRA_DIST = AUTHORS COPYING ChangeLog INSTALL PACKAGERS README TODO openmortal.lsm
 AUTOMAKE_OPTIONS = foreign 1.4
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,9 +103,9 @@ GZIP_ENV = --best
 all: all-redirect
 .SUFFIXES:
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --foreign Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --foreign --include-deps Makefile
 
-Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
@@ -270,11 +272,6 @@ distdir: $(DISTFILES)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	-chmod 777 $(distdir)
-	here=`cd $(top_builddir) && pwd`; \
-	top_distdir=`cd $(distdir) && pwd`; \
-	distdir=`cd $(distdir) && pwd`; \
-	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --foreign Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
