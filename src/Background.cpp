@@ -137,7 +137,7 @@ void CBackground::AddExtraLayer( const SBackgroundLayer& a_roLayer )
 
 void CBackground::DeleteExtraLayers()
 {
-	while ( m_aLayers.size() > m_iFirstExtraLayer )
+	while ( (int)m_aLayers.size() > m_iFirstExtraLayer )
 	{
 		SDL_FreeSurface( m_aLayers.back().m_poSurface );
 		m_aLayers.pop_back();
