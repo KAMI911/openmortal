@@ -2,14 +2,23 @@
 
 gfxdatadir	= $(pkgdatadir)/gfx
 gfxdata_DATA	= \
-Credits.png         level10_hill.png   level4.desc        level7_cumi.png     level8.png              \
-Doodads.png         level10_sky.png    level4_earth.png   level7.desc         level9.png              \
-FighterStats.png    level1.png         level4_ground.png  level7_ground1.png  Makefile.am             \
-Foot.png            level2.png         level4_moon.png    level7_ground2.png  Makefile.in             \
-GameOver.png        level3_city.png    level4_nebula.png  level7_ground3.png  Mortal.png              \
-icon.bmp            level3.desc        level4_rock.png    level7_ground4.png  PlayerSelect_chat.png   \
-icon.png            level3_ground.png  level4_saturn.png  level7_logo.png     PlayerSelect.png        \
-level10.desc        level3_moon.png    level5.png         level7_sky.png      Story1.png              
+Credits.jpg         level3_ground.png       level7_cumi.png \
+Doodads.png         level3_moon.png         level7.desc \
+FighterStats.jpg    level3_sky.png          level7_ground1.png \
+Foot.jpg            level4.desc             level7_ground2.png \
+Foot.mask.png       level4_earth.jpg        level7_ground3.png \
+GameOver.jpg        level4_earth.mask.png   level7_ground4.png \
+icon.bmp            level4_ground.jpg       level7_logo.png \
+icon.png            level4_ground.mask.png  level7_sky.png \
+level10.desc        level4_moon.jpg         level7_upi.png \
+level10_ground.png  level4_moon.mask.png    level8.jpg \
+level10_hill.png    level4_nebula.jpg       level9.jpg \
+level10_sky.png     level4_rock.jpg         Mortal-en.jpg \
+level11.jpg         level4_rock.mask.png    Mortal.jpg \
+level1.jpg          level4_saturn.jpg       Story1.jpg \
+level2.jpg          level4_saturn.mask.png  Story2.jpg \
+level3_city.png     level5.jpg              eu.jpg\
+level3.desc         level6.jpg
 
 
 EXTRA_DIST = $(gfxdata_DATA)

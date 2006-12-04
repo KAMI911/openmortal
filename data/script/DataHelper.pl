@@ -96,10 +96,10 @@ sub LoadFrames ($$$)
 	# Make sure that Whatever.dat also exists.
 	$DatName = $DataName;
 	$DatName =~ s/\.txt$//;
-	open DATFILE, "../characters/$DatName" || die ("Couldn't open ../characters/$DatName");
+	open DATFILE, "../data/characters/$DatName" || die ("Couldn't open ../data/characters/$DatName");
 	close DATFILE;
 	
-	open DATAFILE, "../characters/$DataName" || die ("Couldn't open ../characters/$DataName");
+	open DATAFILE, "../data/characters/$DataName" || die ("Couldn't open ../data/characters/$DataName");
 	$data = '';
 	while ( read DATAFILE, $data, 16384, length($data) )
 	{
@@ -420,9 +420,22 @@ sub KneelingStates($$$$)
 }
 
 
-sub JumpStates($$)
+
+=comment
+JumpStates is for generating the Jump, JumpFW, JumpBW, JumpFly, 
+JumpStart, JumpKick, JumpPunch states for a state description list.
+
+Parameters:
+$frames		hash	The frame lookup hash.
+$con		hash	Connections during jumping (usually, JumpKick and JumpPunch only)
+$framenames	hash	[optional] If the standard frame names (kneeling, 
+					onknees, kneelingkick, kneelingpunch) are not good, this has should
+					contain replacement names (e.g. 'kneelingkick' => 'sweep')
+=cut
+
+sub JumpStates
 {
-	my ( $frames, $con ) = @_;
+	my ( $frames, $con, $framenames ) = @_;
 	my ( $kneelingframes, $onkneesframes,
 		$kickframes, $punchframes ) = (
 			FindLastFrame( $frames, 'kneeling' ),
@@ -452,7 +465,7 @@ sub JumpStates($$)
 	$statesknees = $statestotal - $statesdown * 2;
 
 	$jump = { 'N'=>'Jump', 'DEL'=> $deldown, 'S'=>'kneeling 1-2, kneeling 1',
-		'JUMPN'=>$jumpheight, NEXTSTN=>'JumpFly', 'SOUND1'=>'slip4.voc', };
+		'JUMPN'=>$jumpheight, NEXTSTN=>'JumpFly', 'SOUND1'=>'PLAYER_JUMPS', };
 	$jumpfw = { %{$jump}, 'N'=>'JumpFW', 'PUSHX3'=>18*16 };
 	$jumpbw = { %{$jump}, 'N'=>'JumpBW', 'PUSHX3'=>-9*16 };
 	

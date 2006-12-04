@@ -40,7 +40,7 @@ COMBOHP		int		The amount of HP delivered in the last combo.
 OTHER		Fighter	A reference to the other Fighter
 LANDINGPENALTY int	This is added to DEL when the character lands (used to penaltize blocked jumpkicks). Becomes DELPENALTY upon landing.
 DELPENALTY	int		This is added to DEL in the next state.
-BOUNDSCHECK	bool	Should horizontal bounds checking be done for this fighter (for team mode when new fighter enters)	
+BOUNDSCHECK	bool	Should horizontal bounds checking be done for this fighter (for team mode when new fighter enters)'
 
 
 new
@@ -225,9 +225,10 @@ sub Advance {
 		for ($i=0; $i<$::NUMPLAYERS; ++$i)
 		{
 			$other = $::Fighters[$i];
+			next if ( $other->{Y} < $::GROUND2 ) or ( $other->{ST}  eq 'Dead' );
 			$centerOtherX = $other->GetCenterX;
 		
-			if ( abs($centerX - $centerOtherX) < 60 )
+			if ( abs($centerX - $centerOtherX) < 60  )
 			{
 				$pushDir = ($centerX > $centerOtherX) ?  1 : -1;
 				$self->{X} += 10 * $pushDir;
@@ -265,7 +266,7 @@ sub Advance {
 			if ( $st->{SITU} eq 'Falling')
 			{
 				::AddEarthquake( $self->{PUSHY} / 20 );				# 1/1
-				push @::Sounds, ('splat.wav') if $self->{PUSHY} > 40;
+				push @::Sounds, ('PLAYER_FALLS') if $self->{PUSHY} > 40;
 				# print "PUSHY = ", $self->{PUSHY}, "; ";
 				if ( $self->{PUSHY} > 30 )
 				{
@@ -290,7 +291,7 @@ sub Advance {
 			}
 			else
 			{
-				push @::Sounds, ('thump.wav');
+				push @::Sounds, ('PLAYER_LANDS');
 				$self->{PUSHY} = 0;
 				$self->{Y} = $::GROUND2;
 				if ( substr($self->{ST},0,4) eq 'Jump' )
@@ -435,7 +436,7 @@ sub CheckHit($)
 		print "NEXTST = $nextst";
 		$nextst = $self->{STATES}->{$nextst};
 		print "NEXTST->HIT = ", $nextst->{HIT}, "\n";
-		push @::Sounds, ('woosh.wav') unless $nextst->{HIT} and defined $self->{FRAMES}->[$nextst->{F}]->{hit};
+		push @::Sounds, ('ATTACK_MISSES') unless $nextst->{HIT} and defined $self->{FRAMES}->[$nextst->{F}]->{hit};
 	}
 	
 	return @retval;
@@ -547,7 +548,7 @@ sub HitEvent($$$$)
 
 	if ( $self->{HP} <= 0 )
 	{
-		push @::Sounds, ('bowling.voc');
+		push @::Sounds, ('PLAYER_KO');
 		$self->{NEXTST} = 'Falling';
 		$self->{PUSHX} = -20 * 3 * $self->{DIR};
 		$self->{PUSHY} = -80;
@@ -563,7 +564,7 @@ sub HitEvent($$$$)
 
 	if ( $blocked )
 	{
-		push @::Sounds, ('thump.wav');
+		push @::Sounds, ('ATTACK_BLOCKED');
 		$self->HitPush( $other, - $damage * 20 * $self->{DIR} );
 		$other->{DEL} += 20 * $::DELMULTIPLIER;
 
@@ -581,16 +582,16 @@ sub HitEvent($$$$)
 
 	if ( $event eq 'Uppercut' ) 
 	{ 
-		push @::Sounds, ('evil_laughter.voc');
+		push @::Sounds, ('UPPERCUT_HITS');
 		::AddEarthquake( 20 );
 	}
 	elsif ($event eq 'Groinhit') 
 	{ 
-		push @::Sounds, ('woman_screams.voc'); 
+		push @::Sounds, ('GROINKICK_HITS'); 
 	}
 	else
 	{ 
-		push @::Sounds, ('thump3.voc'); 
+		push @::Sounds, ('ATTACK_HITS'); 
 	}
 	
 	$self->{COMBO} +=  1;
@@ -741,7 +742,7 @@ sub ComboEnds
 		$doodad->{SPEED} = [+3,-3];
 		
 		print $self->{COMBO}, "-hit combo for ", $self->{COMBOHP}, " damage.\n";
-		push @::Sounds, ( $ismaxcombo ? 'crashhh.voc' : 'ba_gooock.voc');
+		push @::Sounds, ( $ismaxcombo ? 'MAX_COMBO' : 'COMBO');
 	}
 		
 	$self->{COMBO} = 0;
