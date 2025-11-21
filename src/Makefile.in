@@ -64,10 +64,14 @@ host_triplet = @host@
 target_alias = @target_alias@
 target_triplet = @target@
 AUTODIRS = @AUTODIRS@
+CC = @CC@
 CXX = @CXX@
 FT2_CFLAGS = @FT2_CFLAGS@
 FT2_CONFIG = @FT2_CONFIG@
 FT2_LIBS = @FT2_LIBS@
+HAVE_LIB = @HAVE_LIB@
+LIB = @LIB@
+LTLIB = @LTLIB@
 MAKEINFO = @MAKEINFO@
 PACKAGE = @PACKAGE@
 PERL = @PERL@
@@ -115,14 +119,6 @@ DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
 TAR = gtar
 GZIP_ENV = --best
-DEP_FILES =  .deps/Audio.P .deps/Backend.P .deps/Background.P \
-.deps/Chooser.P .deps/Demo.P .deps/FighterStats.P .deps/FlyingChars.P \
-.deps/Game.P .deps/GameOver.P .deps/Joystick.P \
-.deps/MortalNetworkImpl.P .deps/OnlineChat.P .deps/PlayerSelect.P \
-.deps/PlayerSelectController.P .deps/PlayerSelectView.P .deps/RlePack.P \
-.deps/State.P .deps/TextArea.P .deps/common.P .deps/gfx.P .deps/main.P \
-.deps/menu.P .deps/sge_bm_text.P .deps/sge_primitives.P \
-.deps/sge_surface.P .deps/sge_tt_text.P
 SOURCES = $(openmortal_SOURCES)
 OBJECTS = $(openmortal_OBJECTS)
 
@@ -130,9 +126,9 @@ all: all-redirect
 .SUFFIXES:
 .SUFFIXES: .S .c .cpp .o .s
 $(srcdir)/Makefile.in: Makefile.am $(top_srcdir)/configure.in $(ACLOCAL_M4) 
-	cd $(top_srcdir) && $(AUTOMAKE) --gnu src/Makefile
+	cd $(top_srcdir) && $(AUTOMAKE) --gnu --include-deps src/Makefile
 
-Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status $(BUILT_SOURCES)
+Makefile: $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
@@ -161,6 +157,9 @@ uninstall-binPROGRAMS:
 	list='$(bin_PROGRAMS)'; for p in $$list; do \
 	  rm -f $(DESTDIR)$(bindir)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
 	done
+
+.c.o:
+	$(COMPILE) -c $<
 
 .s.o:
 	$(COMPILE) -c $<
@@ -218,11 +217,6 @@ distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 subdir = src
 
 distdir: $(DISTFILES)
-	here=`cd $(top_builddir) && pwd`; \
-	top_distdir=`cd $(top_distdir) && pwd`; \
-	distdir=`cd $(distdir) && pwd`; \
-	cd $(top_srcdir) \
-	  && $(AUTOMAKE) --include-deps --build-dir=$$here --srcdir-name=$(top_srcdir) --output-dir=$$top_distdir --gnu src/Makefile
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
@@ -233,57 +227,73 @@ distdir: $(DISTFILES)
 	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
+Audio.o: Audio.cpp Audio.h State.h common.h
+Backend.o: Backend.cpp common.h Backend.h FighterEnum.h Audio.h State.h \
+	MszPerl.h
+Background.o: Background.cpp Background.h sge_surface.h sge_internal.h \
+	sge_config.h gfx.h common.h
+Chooser.o: Chooser.cpp Chooser.h FighterEnum.h common.h PlayerSelect.h \
+	Backend.h Event.h State.h gfx.h sge_primitives.h sge_internal.h \
+	sge_config.h
+common.o: common.cpp common.h State.h Joystick.h Event.h
+Demo.o: Demo.cpp FlyingChars.h sge_bm_text.h sge_internal.h sge_config.h \
+	State.h gfx.h common.h Backend.h FighterEnum.h RlePack.h \
+	FighterStats.h Demo.h Event.h ../config.h
+FighterStats.o: FighterStats.cpp PlayerSelect.h FighterEnum.h common.h \
+	FlyingChars.h sge_bm_text.h sge_internal.h sge_config.h \
+	sge_tt_text.h gfx.h RlePack.h Backend.h State.h FighterStats.h \
+	Demo.h MszPerl.h
+FlyingChars.o: FlyingChars.cpp FlyingChars.h sge_bm_text.h \
+	sge_internal.h sge_config.h sge_surface.h common.h
+Game.o: Game.cpp sge_surface.h sge_internal.h sge_config.h \
+	sge_primitives.h sge_bm_text.h Event.h PlayerSelect.h \
+	FighterEnum.h common.h Background.h gfx.h Backend.h RlePack.h \
+	State.h Game.h Audio.h MortalNetwork.h MszPerl.h
+GameOver.o: GameOver.cpp PlayerSelect.h FighterEnum.h common.h gfx.h \
+	Backend.h State.h RlePack.h Audio.h Event.h
+gfx.o: gfx.cpp sge_tt_text.h sge_internal.h sge_config.h sge_surface.h \
+	common.h gfx.h State.h Event.h
+Joystick.o: Joystick.cpp Event.h common.h Joystick.h
+main.o: main.cpp ../config.h PlayerSelect.h FighterEnum.h common.h \
+	sge_tt_text.h sge_internal.h sge_config.h sge_bm_text.h \
+	sge_surface.h gfx.h Audio.h RlePack.h Backend.h State.h \
+	FighterStats.h Demo.h MortalNetwork.h
+menu.o: menu.cpp sge_primitives.h sge_internal.h sge_config.h menu.h \
+	gfx.h State.h common.h Audio.h Backend.h FighterEnum.h \
+	sge_tt_text.h sge_surface.h MortalNetwork.h Joystick.h
+MortalNetworkImpl.o: MortalNetworkImpl.cpp MortalNetworkImpl.h \
+	MortalNetwork.h FighterEnum.h State.h PlayerSelect.h common.h \
+	../config.h
+OnlineChat.o: OnlineChat.cpp OnlineChat.h TextArea.h State.h menu.h \
+	Audio.h sge_tt_text.h sge_internal.h sge_config.h gfx.h \
+	common.h ../config.h Event.h
+PlayerSelect.o: PlayerSelect.cpp PlayerSelect.h FighterEnum.h common.h \
+	PlayerSelectController.h sge_primitives.h sge_internal.h \
+	sge_config.h sge_surface.h Audio.h sge_bm_text.h gfx.h \
+	RlePack.h Backend.h State.h MortalNetwork.h Chooser.h \
+	sge_tt_text.h TextArea.h Event.h
+PlayerSelectController.o: PlayerSelectController.cpp \
+	PlayerSelectController.h FighterEnum.h common.h \
+	PlayerSelectView.h State.h PlayerSelect.h Chooser.h \
+	MortalNetwork.h Backend.h Event.h Audio.h TextArea.h \
+	sge_tt_text.h sge_internal.h sge_config.h
+PlayerSelectView.o: PlayerSelectView.cpp sge_tt_text.h sge_internal.h \
+	sge_config.h sge_bm_text.h sge_primitives.h RlePack.h \
+	FighterEnum.h PlayerSelectView.h State.h PlayerSelect.h \
+	common.h Chooser.h TextArea.h Backend.h gfx.h
+RlePack.o: RlePack.cpp RlePack.h FighterEnum.h gfx.h common.h DrawRle.h
+sge_bm_text.o: sge_bm_text.cpp sge_surface.h sge_internal.h sge_config.h \
+	sge_bm_text.h sge_tt_text.h
+sge_primitives.o: sge_primitives.cpp sge_primitives.h sge_internal.h \
+	sge_config.h sge_surface.h
+sge_surface.o: sge_surface.cpp sge_surface.h sge_internal.h sge_config.h
+sge_tt_text.o: sge_tt_text.cpp sge_surface.h sge_internal.h sge_config.h \
+	sge_primitives.h sge_tt_text.h
+State.o: State.cpp ../config.h gfx.h common.h State.h Backend.h \
+	FighterEnum.h MszPerl.h
+TextArea.o: TextArea.cpp TextArea.h sge_surface.h sge_internal.h \
+	sge_config.h sge_tt_text.h sge_primitives.h gfx.h common.h
 
-DEPS_MAGIC := $(shell mkdir .deps > /dev/null 2>&1 || :)
-
--include $(DEP_FILES)
-
-mostlyclean-depend:
-
-clean-depend:
-
-distclean-depend:
-	-rm -rf .deps
-
-maintainer-clean-depend:
-
-%.o: %.c
-	@echo '$(COMPILE) -c $<'; \
-	$(COMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-cp .deps/$(*F).pp .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm .deps/$(*F).pp
-
-%.lo: %.c
-	@echo '$(LTCOMPILE) -c $<'; \
-	$(LTCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
-	  < .deps/$(*F).pp > .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm -f .deps/$(*F).pp
-
-%.o: %.cpp
-	@echo '$(CXXCOMPILE) -c $<'; \
-	$(CXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-cp .deps/$(*F).pp .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm .deps/$(*F).pp
-
-%.lo: %.cpp
-	@echo '$(LTCXXCOMPILE) -c $<'; \
-	$(LTCXXCOMPILE) -Wp,-MD,.deps/$(*F).pp -c $<
-	@-sed -e 's/^\([^:]*\)\.o[ 	]*:/\1.lo \1.o :/' \
-	  < .deps/$(*F).pp > .deps/$(*F).P; \
-	tr ' ' '\012' < .deps/$(*F).pp \
-	  | sed -e 's/^\\$$//' -e '/^$$/ d' -e '/:$$/ d' -e 's/$$/ :/' \
-	    >> .deps/$(*F).P; \
-	rm -f .deps/$(*F).pp
 info-am:
 info: info-am
 dvi-am:
@@ -321,24 +331,23 @@ distclean-generic:
 
 maintainer-clean-generic:
 mostlyclean-am:  mostlyclean-binPROGRAMS mostlyclean-compile \
-		mostlyclean-tags mostlyclean-depend mostlyclean-generic
+		mostlyclean-tags mostlyclean-generic
 
 mostlyclean: mostlyclean-am
 
-clean-am:  clean-binPROGRAMS clean-compile clean-tags clean-depend \
-		clean-generic mostlyclean-am
+clean-am:  clean-binPROGRAMS clean-compile clean-tags clean-generic \
+		mostlyclean-am
 
 clean: clean-am
 
 distclean-am:  distclean-binPROGRAMS distclean-compile distclean-tags \
-		distclean-depend distclean-generic clean-am
+		distclean-generic clean-am
 
 distclean: distclean-am
 
 maintainer-clean-am:  maintainer-clean-binPROGRAMS \
 		maintainer-clean-compile maintainer-clean-tags \
-		maintainer-clean-depend maintainer-clean-generic \
-		distclean-am
+		maintainer-clean-generic distclean-am
 	@echo "This command is intended for maintainers to use;"
 	@echo "it deletes files that may require special tools to rebuild."
 
@@ -348,13 +357,12 @@ maintainer-clean: maintainer-clean-am
 maintainer-clean-binPROGRAMS uninstall-binPROGRAMS install-binPROGRAMS \
 mostlyclean-compile distclean-compile clean-compile \
 maintainer-clean-compile tags mostlyclean-tags distclean-tags \
-clean-tags maintainer-clean-tags distdir mostlyclean-depend \
-distclean-depend clean-depend maintainer-clean-depend info-am info \
-dvi-am dvi check check-am installcheck-am installcheck install-exec-am \
-install-exec install-data-am install-data install-am install \
-uninstall-am uninstall all-redirect all-am all installdirs \
-mostlyclean-generic distclean-generic clean-generic \
-maintainer-clean-generic clean mostlyclean distclean maintainer-clean
+clean-tags maintainer-clean-tags distdir info-am info dvi-am dvi check \
+check-am installcheck-am installcheck install-exec-am install-exec \
+install-data-am install-data install-am install uninstall-am uninstall \
+all-redirect all-am all installdirs mostlyclean-generic \
+distclean-generic clean-generic maintainer-clean-generic clean \
+mostlyclean distclean maintainer-clean
 
 
 # set the include path found by configure
