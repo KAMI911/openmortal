@@ -21,7 +21,7 @@ Bence.icon.png   Elf.jpg           Kinga.full.png   Sleepy.dat        UPi.pl \
 Bence.jpg        Grizli.dat        Kinga.icon.png   Sleepy.dat.txt    Zoli.dat \
 Bence.pl         Grizli.dat.txt    Kinga.jpg        Sleepy.icon.png   Zoli.dat.txt \
 Cumi.dat         Grizli.full.png   Kinga.pl         Sleepy.pl         Zoli.full.png \
-Cumi.dat.txt     Grizli.icon.png   Macy.dat         STAFF.DAT         Zoli.icon.png \
+Cumi.dat.txt     Grizli.icon.png   Macy.dat         staff.dat         Zoli.icon.png \
 Cumi.full.png    Grizli.jpg        Macy.dat.txt     Surba.full.png    Zoli.jpg \
 Cumi.icon.png    Grizli.pl         Macy.full.png    Surba.icon.png    Zoli.pl \
 Cumi.jpg         Jacint.dat        Macy.icon.png    Surba.jpg
