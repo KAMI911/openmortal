@@ -29,6 +29,10 @@ After configure does it's magic, you go
    make install
    openmortal
 
+Developer packages for Debian, Ubuntu, Linux Mint and its derivates:
+
+apt install -y libperl-dev libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-net1.2-dev libfreetype-dev
+
 What to do in case something goes wrong during installation:
 
    1. Curse me.

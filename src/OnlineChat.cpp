@@ -61,7 +61,7 @@ Displays the 'you have been challenged' screen.
 class CChallengeMenu: public Menu
 {
 public:
-	CChallengeMenu::CChallengeMenu( std::string a_sChallenger )
+	CChallengeMenu( std::string a_sChallenger )
 	: Menu( "You have been challenged!" ),
 	m_sChallenger( a_sChallenger )
 	{
