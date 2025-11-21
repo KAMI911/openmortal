@@ -1,0 +1,17 @@
+Makefile
+aclocal.m4
+autom4te.cache/
+compile
+config.cache
+config.h
+config.h.in~
+config.log
+config.status
+configure~
+Makefile
+depcomp
+src/.deps/
+stamp-h1
+*.o
+*.in
+src/openmortal
