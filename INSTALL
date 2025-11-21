@@ -8,6 +8,10 @@ So, here's this configure script, right? Yes. Depending on which
 version you downloaded it installs the "base" system with all the
 characters, or just some characters.
 
+First command to run is:
+
+    autoreconf -i
+
 If you got the master package, you can choose to disable some of
 the characters with parameters to configure:
 
