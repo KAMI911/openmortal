@@ -714,7 +714,7 @@ void Game::Advance( int a_iNumFrames )
 		g_poNetwork->SendGameTick( g_oBackend.m_iGameTick );
 		g_poNetwork->Update();
 
-		int i = 0;
+		i = 0;
 
 		while ( g_poNetwork->GetGameTick() + m_iEnqueueDelay < g_oBackend.m_iGameTick + a_iNumFrames )
 		{

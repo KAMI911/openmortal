@@ -78,7 +78,7 @@ int DrawTextMSZ( const char* string, _sge_TTFont* font, int x, int y, int flags,
 	{
 		char *str2 = strdup( string );
 		char onechar[2];
-		char *c1, *c2, *c3;
+		char *c1, *c2;
 		int w = 0;
 		int i, j;
 		bool notend;
@@ -213,7 +213,7 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 
 	for ( i=2; i<255; ++i )
 	{
-		int j = i > 25 ? i-25 : 0;
+		j = i > 25 ? i-25 : 0;
 		colors[i].r = 255;
 		colors[i].g = 255-j;
 		colors[i].b = 0;

@@ -437,7 +437,7 @@ void Backend::WriteToString( std::string& a_rsOutString )
 	for ( i = 0; i<m_iNumDoodads; ++i )
 	{
 		SDoodad& roDoodad = m_aoDoodads[i];
-		iNumChars += sprintf( acBuffer+iNumChars, "%d %d %d %d %d %d %d %s  ",
+		iNumChars += sprintf( acBuffer+iNumChars, "%d %d %d %d %d %d %ld %s  ",
 			roDoodad.m_iX, roDoodad.m_iY, roDoodad.m_iType, roDoodad.m_iFrame,
 			roDoodad.m_iDir, roDoodad.m_iGfxOwner,
 			roDoodad.m_sText.size(), roDoodad.m_sText.c_str() );
@@ -446,7 +446,7 @@ void Backend::WriteToString( std::string& a_rsOutString )
 	iNumChars += sprintf( acBuffer+iNumChars, "%d ", m_iNumSounds );
 	for ( i = 0; i<m_iNumSounds; ++i )
 	{
-		iNumChars += sprintf( acBuffer+iNumChars, " %d %s",
+		iNumChars += sprintf( acBuffer+iNumChars, " %ld %s",
 			m_asSounds[i].size(), m_asSounds[i].c_str() );
 	}
 	
