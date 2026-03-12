@@ -1,4 +1,4 @@
-Makefile
+# Autotools generated files
 aclocal.m4
 autom4te.cache/
 compile
@@ -9,10 +9,35 @@ config.log
 config.status
 configure
 configure~
-Makefile
 depcomp
-src/.deps/
+INSTALL
+mkinstalldirs
 stamp-h1
-*.o
+stamp-h.in
+config.guess
+config.sub
+install-sh
+missing
+
+# Makefile and generated build files
+Makefile
+Makefile.in
 *.in
+
+# Build artifacts
+*.o
+src/.deps/
 src/openmortal
+
+# Distribution and packaging build artifacts
+distribution/
+debian/.debhelper/
+debian/autoreconf.after
+debian/autoreconf.before
+debian/debhelper-build-stamp
+debian/files
+debian/openmortal/
+debian/openmortal-data/
+debian/openmortal-dbgsym/
+debian/tmp/
+debian/*.substvars

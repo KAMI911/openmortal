@@ -15,7 +15,7 @@
 \defgroup Demo Demos and special screens
 */
 
-class FlyingChars;
+class CFlyingChars;
 struct SDL_Surface;
 
 /**
@@ -26,11 +26,11 @@ struct SDL_Surface;
 The demos are played by the DoDemos() function in a predefined order.
 */
 
-class Demo
+class CDemo
 {
 public:
-	Demo();
-	virtual ~Demo();
+	CDemo();
+	virtual ~CDemo();
 	
 	virtual int Run();
 	
@@ -42,7 +42,7 @@ protected:
 	
 	
 protected:
-	FlyingChars*	m_poFlyingChars;
+	CFlyingChars*	m_poFlyingChars;
 	bool			m_bAdvanceGame;
 	SDL_Surface*	m_poBackground;
 };
