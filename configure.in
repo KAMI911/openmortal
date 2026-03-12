@@ -10,7 +10,7 @@ dnl AC_CONFIG_AUX_DIR(admin)
 AC_CANONICAL_SYSTEM
 AC_ARG_PROGRAM
 
-AM_INIT_AUTOMAKE(openmortal, 0.7)
+AM_INIT_AUTOMAKE(openmortal, 0.7.1)
 
 AC_PREFIX_DEFAULT(/usr/local)
 if test "x$prefix" = "xNONE"; then
@@ -25,7 +25,6 @@ AM_CONFIG_HEADER(config.h)
 AC_C_CONST
 AC_PROG_CXX
 
-PKG_PROG_PKG_CONFIG
 
 dnl
 dnl Switches
@@ -123,8 +122,11 @@ AC_CHECK_LIB(SDL_net,
 
 dnl Check for Freetype 2 library
 
-PKG_CHECK_MODULES(FT2, freetype2,,
-	AC_MSG_ERROR([*** FreeType2 not found!])
+FT2_VERSION=2.1.0
+AC_CHECK_FT2(
+	$FT2_VERSION,
+	:,
+	AC_MSG_ERROR([*** FreeType 2 version $FT2_VERSION not found!])
 )
 CXXFLAGS="$CXXFLAGS $FT2_CFLAGS"
 LIBS="$LIBS $FT2_LIBS"

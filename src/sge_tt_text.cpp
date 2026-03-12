@@ -40,9 +40,9 @@
 
 #ifndef _SGE_NOTTF
 #include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_OUTLINE_H
-#include FT_TRUETYPE_IDS_H
+#include <freetype/freetype.h>
+#include <freetype/ftoutln.h>
+#include <freetype/ttnameid.h>
 
 /* The structure used to hold glyph information (cached) */
 struct glyph {

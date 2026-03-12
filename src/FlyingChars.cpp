@@ -15,7 +15,7 @@ int g_iLineTime = 100;
 int g_iCharTime = 80;
 
 
-FlyingChars::FlyingChars( sge_bmpFont* a_poFont, const SDL_Rect& a_roRect, int a_iFontDisplacement )
+CFlyingChars::CFlyingChars( sge_bmpFont* a_poFont, const SDL_Rect& a_roRect, int a_iFontDisplacement )
 {
 	m_poFont = a_poFont;
 	m_oRect = a_roRect;
@@ -35,16 +35,16 @@ FlyingChars::FlyingChars( sge_bmpFont* a_poFont, const SDL_Rect& a_roRect, int a
 }
 
 
-FlyingChars::~FlyingChars()
+CFlyingChars::~CFlyingChars()
 {
 }
 	
 
-void FlyingChars::AddText( const char* a_pcText,
-	TextAlignment a_enAlignment, bool a_bOneByOne )
+void CFlyingChars::AddText( const char* a_pcText,
+	TextAlignmentEnum a_enAlignment, bool a_bOneByOne )
 {
 	
-	EnqueuedText oNewText;
+	SEnqueuedText oNewText;
 	oNewText.m_pcText = a_pcText;
 	oNewText.m_enAlignment = a_enAlignment;
 	m_oEnqueuedTexts.push_back( oNewText );
@@ -61,7 +61,7 @@ void FlyingChars::AddText( const char* a_pcText,
 }
 
 
-bool FlyingChars::IsDone()
+bool CFlyingChars::IsDone()
 {
 	if ( m_oEnqueuedTexts.size() == 0
 		&& ( NULL == m_pcText || 0 == m_pcText[ m_iTextOffset] )
@@ -73,14 +73,14 @@ bool FlyingChars::IsDone()
 }
 
 
-void FlyingChars::DequeueText()
+void CFlyingChars::DequeueText()
 {
 	if ( 0 == m_oEnqueuedTexts.size() )
 	{
 		return;
 	}
 	
-	EnqueuedText& oEnqueuedText = m_oEnqueuedTexts.front();
+	SEnqueuedText& oEnqueuedText = m_oEnqueuedTexts.front();
 	
 	m_pcText = (unsigned char*) oEnqueuedText.m_pcText;
 	m_enAlignment = oEnqueuedText.m_enAlignment;
@@ -101,7 +101,7 @@ void FlyingChars::DequeueText()
 }
 
 
-void FlyingChars::Advance( int a_iNumFrames )
+void CFlyingChars::Advance( int a_iNumFrames )
 {
 
 	if ( a_iNumFrames > 5 )	a_iNumFrames = 5;
@@ -131,9 +131,9 @@ void FlyingChars::Advance( int a_iNumFrames )
 	m_dScrollup -= iScrollup;
 	iScrollup *= 2;
 
-	for ( FlyingLetterIterator it=m_oLetters.begin(); it!=m_oLetters.end(); ++it )
+	for ( CFlyingLetterIterator it=m_oLetters.begin(); it!=m_oLetters.end(); ++it )
 	{
-		FlyingLetter& roLetter = *it;
+		SFlyingLetter& roLetter = *it;
 		if ( m_bScrolling )
 		{
 		    roLetter.m_iDY -= iScrollup;
@@ -192,11 +192,11 @@ void FlyingChars::Advance( int a_iNumFrames )
 }
 
 
-void FlyingChars::Draw()
+void CFlyingChars::Draw()
 {
-	for ( FlyingLetterIterator it=m_oLetters.begin(); it!=m_oLetters.end(); ++it )
+	for ( CFlyingLetterIterator it=m_oLetters.begin(); it!=m_oLetters.end(); ++it )
 	{
-		FlyingLetter& roLetter = *it;
+		SFlyingLetter& roLetter = *it;
 		int iDestX, iDestY;
 		
 		if (roLetter.m_iDelay > 0)
@@ -236,7 +236,7 @@ void FlyingChars::Draw()
 }
 
 
-void FlyingChars::AddNextLine()
+void CFlyingChars::AddNextLine()
 {
 	if ( NULL == m_pcText )
 	{
@@ -344,7 +344,7 @@ void FlyingChars::AddNextLine()
 			break;
 	}
 	
-	FlyingLetter oLetter;
+	SFlyingLetter oLetter;
 	oLetter.m_iDY = m_iLastLineY * 2;
 	
 	for ( const unsigned char *pcChar = pcLineStart; pcChar<pcLineEnd; ++pcChar )
@@ -383,7 +383,7 @@ void FlyingChars::AddNextLine()
 }
 
 
-int FlyingChars::GetCharWidth( unsigned char a_cChar )
+int CFlyingChars::GetCharWidth( unsigned char a_cChar )
 {
 	if ( a_cChar == 0 )
 	{
