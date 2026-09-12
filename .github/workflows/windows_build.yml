@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PLATFORM: x86
-            MSYS_TARGET: i686
-            MSYSTEM: MINGW32
+          # i686 (32-bit) is intentionally not built: MSYS2 has dropped several
+          # mingw-w64-i686-* packages this project needs (perl, icu, SDL_mixer),
+          # so a MINGW32 build can no longer complete here.
           - PLATFORM: x86-64
             MSYS_TARGET: x86_64
             MSYSTEM: MINGW64
@@ -30,6 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Define paths
+        shell: bash
         run: |
           echo "PLATFORM_BUILD_PATH=${{ runner.temp }}/distribution/windows-${{ matrix.PLATFORM }}_build" >> $GITHUB_ENV
           echo "PLATFORM_PACKAGE_PATH=${{ runner.temp }}/distribution/windows-${{ matrix.PLATFORM }}_package" >> $GITHUB_ENV
