@@ -9,7 +9,6 @@ on:
 
 env:
   VERSION: 0.7.2
-  DIST_FOLDER: ${{ runner.temp }}/distribution
 
 jobs:
   build:
@@ -80,32 +79,33 @@ jobs:
 
       - name: Install
         shell: msys2 {0}
-        run: make DESTDIR="${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_build" install
+        run: make DESTDIR="${PLATFORM_BUILD_PATH}" install
 
       - name: Package
         shell: msys2 {0}
         run: |
+          set -e
           if [ "${{ matrix.PLATFORM }}" = "x86-64" ]; then
             PREFIX=/mingw64
           else
             PREFIX=/mingw32
           fi
-          mkdir -p ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_package/${PREFIX}/bin
-          mkdir -p ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_package/${PREFIX}/share/openmortal
-          cp -a ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_build/${PREFIX}/share \
-            ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_package/${PREFIX}/
+          mkdir -p ${PLATFORM_PACKAGE_PATH}/${PREFIX}/bin
+          mkdir -p ${PLATFORM_PACKAGE_PATH}/${PREFIX}/share/openmortal
+          cp -a ${PLATFORM_BUILD_PATH}/${PREFIX}/share \
+            ${PLATFORM_PACKAGE_PATH}/${PREFIX}/
           install -m755 \
-            ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_build/${PREFIX}/bin/openmortal.exe \
-            ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_package/${PREFIX}/bin/openmortal.exe
-          ntldd -R ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_build/${PREFIX}/bin/openmortal.exe \
+            ${PLATFORM_BUILD_PATH}/${PREFIX}/bin/openmortal.exe \
+            ${PLATFORM_PACKAGE_PATH}/${PREFIX}/bin/openmortal.exe
+          ntldd -R ${PLATFORM_BUILD_PATH}/${PREFIX}/bin/openmortal.exe \
             | grep -v -i "system32" \
             | grep -i -v "winsxs" \
             | grep -v -i "not found" \
             | awk '{print $3}' \
             | xargs -d '\n' -I{} cp -- "{}" \
-              ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_package/${PREFIX}/bin/
+              ${PLATFORM_PACKAGE_PATH}/${PREFIX}/bin/
           tar zcvf openmortal-${{ env.VERSION }}_windows_${{ matrix.PLATFORM }}.tar.gz \
-            -C ${DIST_FOLDER}/windows-${{ matrix.PLATFORM }}_package .
+            -C ${PLATFORM_PACKAGE_PATH} .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
