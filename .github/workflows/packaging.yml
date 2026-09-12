@@ -38,7 +38,7 @@ jobs:
           set -e
           apt-get update -qq
           apt-get install -y --no-install-recommends \
-            wget build-essential autoconf automake libtool pkg-config \
+            wget ca-certificates build-essential autoconf automake libtool pkg-config \
             dh-autoreconf debhelper devscripts fakeroot \
             libperl-dev libsdl1.2-dev libsdl-image1.2-dev \
             libsdl-mixer1.2-dev libsdl-net1.2-dev libfreetype6-dev libgif-dev
@@ -47,6 +47,7 @@ jobs:
         run: |
           set -e
           autoreconf -i -f
+          grep -q pkg_cv_FT2 configure || { echo "::error::configure was not regenerated from configure.ac as expected"; exit 1; }
           ./configure --prefix=/usr
           make -j$(nproc)
 
@@ -182,6 +183,7 @@ jobs:
         run: |
           set -e
           autoreconf -i -f
+          grep -q pkg_cv_FT2 configure || { echo "::error::configure was not regenerated from configure.ac as expected"; exit 1; }
           ./configure
           make -j$(nproc)
 

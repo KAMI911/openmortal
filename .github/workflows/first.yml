@@ -25,7 +25,9 @@ jobs:
 
       - name: Build
         run: |
+          set -e
           autoreconf -i -f
+          grep -q pkg_cv_FT2 configure || { echo "::error::configure was not regenerated from configure.ac as expected"; exit 1; }
           ./configure
           make -j$(nproc)
 
