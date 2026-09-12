@@ -1,0 +1,223 @@
+name: Developer test release
+
+# Publishes a public, pre-release GitHub Release for ad-hoc developer/test
+# builds, without touching the "real" release pipeline (packaging.yml /
+# openmortal-build.yml / obs.yml), which stays tied to "v*.*.*" tags.
+#
+# To cut a dev build, tag a commit and push the tag, e.g.:
+#   git tag dev-2026-09-12
+#   git tag dev-2026-09-12-window-scale
+#   git push origin dev-2026-09-12-window-scale
+#
+# Convention: dev-<YYYY-MM-DD>[-<short-name>]. The date keeps releases sorted
+# and unique; the optional suffix is free text to tell builds apart (a
+# feature name, a branch, ticket id, etc). Anything starting with "dev-"
+# works, so numeric-date discipline is a convention, not an enforced rule.
+
+on:
+  push:
+    tags:
+      - "dev-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)build and release, e.g. dev-2026-09-12-window-scale"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  APPIMAGE_EXTRACT_AND_RUN: 1
+  DIST_FOLDER: ${{ github.workspace }}/distribution
+
+jobs:
+  linux-x86-64:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      PLATFORM: x86-64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Define paths
+        run: |
+          echo "DEV_TAG=${{ inputs.tag || github.ref_name }}" >> $GITHUB_ENV
+          echo "PLATFORM_BUILD_PATH=${DIST_FOLDER}/linux-${PLATFORM}_build" >> $GITHUB_ENV
+          echo "PLATFORM_PACKAGE_PATH=${DIST_FOLDER}/linux-${PLATFORM}_package" >> $GITHUB_ENV
+          echo "PLATFORM_APPIMAGE_PATH=${DIST_FOLDER}/AppDir" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          set -e
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            wget build-essential autoconf automake libtool pkg-config \
+            libperl-dev libsdl1.2-dev libsdl-image1.2-dev \
+            libsdl-mixer1.2-dev libsdl-net1.2-dev libfreetype6-dev libgif-dev
+
+      - name: Build from source
+        run: |
+          set -e
+          autoreconf -i -f
+          ./configure --prefix=/usr
+          make -j$(nproc)
+
+      - name: Install binary files
+        run: make DESTDIR="${{ env.PLATFORM_BUILD_PATH }}/" install
+
+      - name: Package tarball
+        run: |
+          set -e
+          mkdir -p ${{ env.PLATFORM_PACKAGE_PATH }}/usr/bin
+          mkdir -p ${{ env.PLATFORM_PACKAGE_PATH }}/usr/share/openmortal
+          cp -a ${{ env.PLATFORM_BUILD_PATH }}/usr/share ${{ env.PLATFORM_PACKAGE_PATH }}/usr/
+          install -m755 ${{ env.PLATFORM_BUILD_PATH }}/usr/bin/openmortal ${{ env.PLATFORM_PACKAGE_PATH }}/usr/bin/openmortal
+          tar zcvf openmortal-${{ env.DEV_TAG }}_linux_${{ env.PLATFORM }}.tar.gz -C ${{ env.PLATFORM_PACKAGE_PATH }} .
+
+      - name: Prepare AppImage environment
+        run: |
+          set -e
+          mkdir -p ${{ env.PLATFORM_APPIMAGE_PATH }}/usr/bin
+          mkdir -p ${{ env.PLATFORM_APPIMAGE_PATH }}/usr/share/icons/hicolor/32x32/apps
+          install -m644 data/gfx/icon.png ${{ env.PLATFORM_APPIMAGE_PATH }}/usr/share/icons/hicolor/32x32/apps/openmortal.png
+          mkdir -p ${{ env.PLATFORM_APPIMAGE_PATH }}/usr/share/openmortal
+          cp -a ${{ env.PLATFORM_BUILD_PATH }}/usr/share ${{ env.PLATFORM_APPIMAGE_PATH }}/usr/
+          install -m644 packaging/openmortal.AppImage.desktop ${{ env.PLATFORM_APPIMAGE_PATH }}/openmortal.desktop
+          install -m755 ${{ env.PLATFORM_BUILD_PATH }}/usr/bin/openmortal ${{ env.PLATFORM_APPIMAGE_PATH }}/usr/bin/openmortal
+
+      - name: Download linuxdeploy and appimagetool
+        run: |
+          wget -qO /tmp/linuxdeploy-x86_64.AppImage "https://github.com/linuxdeploy/linuxdeploy/releases/latest/download/linuxdeploy-x86_64.AppImage"
+          chmod +x /tmp/linuxdeploy-x86_64.AppImage
+          wget -qO /tmp/appimagetool.AppImage "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x /tmp/appimagetool.AppImage
+
+      - name: Create AppImage
+        run: |
+          set -e
+          /tmp/linuxdeploy-x86_64.AppImage \
+            --appdir ${{ env.PLATFORM_APPIMAGE_PATH }} \
+            --desktop-file=${{ env.PLATFORM_APPIMAGE_PATH }}/openmortal.desktop \
+            --icon-file=${{ env.PLATFORM_APPIMAGE_PATH }}/usr/share/icons/hicolor/32x32/apps/openmortal.png
+          /tmp/appimagetool.AppImage ${{ env.PLATFORM_APPIMAGE_PATH }}
+          mv ./*.AppImage openmortal-${{ env.DEV_TAG }}_linux_${{ env.PLATFORM }}.AppImage
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-build-linux-${{ env.PLATFORM }}
+          path: |
+            openmortal-*.tar.gz
+            openmortal-*.AppImage
+          retention-days: 7
+
+  windows-x86-64:
+    runs-on: windows-latest
+    env:
+      PLATFORM: x86-64
+      MSYS_TARGET: x86_64
+      MSYSTEM: MINGW64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Define paths
+        shell: bash
+        run: |
+          echo "DEV_TAG=${{ inputs.tag || github.ref_name }}" >> $GITHUB_ENV
+          echo "PLATFORM_BUILD_PATH=${{ runner.temp }}/distribution/windows-${{ env.PLATFORM }}_build" >> $GITHUB_ENV
+          echo "PLATFORM_PACKAGE_PATH=${{ runner.temp }}/distribution/windows-${{ env.PLATFORM }}_package" >> $GITHUB_ENV
+
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ env.MSYSTEM }}
+          update: true
+          install: >-
+            base-devel
+            automake
+            autoconf
+            libtool
+            mingw-w64-${{ env.MSYS_TARGET }}-perl
+            mingw-w64-${{ env.MSYS_TARGET }}-icu
+            mingw-w64-${{ env.MSYS_TARGET }}-libiconv
+            mingw-w64-${{ env.MSYS_TARGET }}-toolchain
+            mingw-w64-${{ env.MSYS_TARGET }}-make
+            mingw-w64-${{ env.MSYS_TARGET }}-pkg-config
+            mingw-w64-${{ env.MSYS_TARGET }}-SDL
+            mingw-w64-${{ env.MSYS_TARGET }}-SDL_image
+            mingw-w64-${{ env.MSYS_TARGET }}-SDL_mixer
+            mingw-w64-${{ env.MSYS_TARGET }}-SDL_net
+            mingw-w64-${{ env.MSYS_TARGET }}-freetype
+            mingw-w64-${{ env.MSYS_TARGET }}-giflib
+            mingw-w64-${{ env.MSYS_TARGET }}-ntldd
+
+      - name: Configure project
+        shell: msys2 {0}
+        run: |
+          autoreconf -i -f
+          ./configure --prefix=/mingw64 --host=x86_64-w64-mingw32
+
+      - name: Build
+        shell: msys2 {0}
+        run: make -j$(nproc)
+
+      - name: Install
+        shell: msys2 {0}
+        run: make DESTDIR="${PLATFORM_BUILD_PATH}" install
+
+      - name: Package
+        shell: msys2 {0}
+        run: |
+          mkdir -p ${PLATFORM_PACKAGE_PATH}/mingw64/bin
+          mkdir -p ${PLATFORM_PACKAGE_PATH}/mingw64/share/openmortal
+          cp -a ${PLATFORM_BUILD_PATH}/mingw64/share ${PLATFORM_PACKAGE_PATH}/mingw64/
+          install -m755 ${PLATFORM_BUILD_PATH}/mingw64/bin/openmortal.exe ${PLATFORM_PACKAGE_PATH}/mingw64/bin/openmortal.exe
+          ntldd -R ${PLATFORM_BUILD_PATH}/mingw64/bin/openmortal.exe \
+            | grep -v -i "system32" \
+            | grep -i -v "winsxs" \
+            | grep -v -i "not found" \
+            | awk '{print $3}' \
+            | xargs -d '\n' -I{} cp -- "{}" ${PLATFORM_PACKAGE_PATH}/mingw64/bin/
+          tar zcvf openmortal-${DEV_TAG}_windows_${PLATFORM}.tar.gz -C ${PLATFORM_PACKAGE_PATH} .
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-build-windows-${{ env.PLATFORM }}
+          path: openmortal-*_windows_*.tar.gz
+          retention-days: 7
+
+  release:
+    needs: [linux-x86-64, windows-x86-64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine tag
+        run: echo "DEV_TAG=${{ inputs.tag || github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: dev-build-*
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.DEV_TAG }}
+          name: "Dev build: ${{ env.DEV_TAG }}"
+          prerelease: true
+          generate_release_notes: true
+          body: |
+            Automated developer/test build from tag `${{ env.DEV_TAG }}`.
+            Not a stable release -- for testing only.
+          files: artifacts/*
