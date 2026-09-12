@@ -11,7 +11,9 @@
 #include "common.h"
 
 #ifdef _WIN32
+#undef DATADIR                // GRRR.. windows keyword... (objidl.h's IDataObject direction enum)
 #include <windows.h>
+#define DATADIR "../data"
 #else
 #include <dirent.h>
 #endif
