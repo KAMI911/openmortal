@@ -178,7 +178,7 @@ void GameOver( int a_iPlayerWon )
 			SDL_BlitSurface( poFoot, NULL, gamescreen, &oRect );
 		}
 		
-		SDL_Flip( gamescreen );
+		PresentScreen();
 		
 		if ( g_oState.m_bQuitFlag || 
 			SState::IN_DEMO == g_oState.m_enGameMode || 
@@ -202,13 +202,13 @@ void GameOver( int a_iPlayerWon )
 		SDL_UnlockSurface( gamescreen );
 		DrawGradientText( "SPLAT!", titleFont, 220, gamescreen );
 		Audio->PlaySample( "GAME_OVER_SPLAT" );
-		SDL_Flip( gamescreen );
+		PresentScreen();
 		SDL_Delay( 1500 );
 		g_oState.m_enGameMode = SState::IN_DEMO;
 	}
 	else
 	{
-		SDL_Flip( gamescreen );
+		PresentScreen();
 	}
 
 	SDL_FreeSurface( poBackground );

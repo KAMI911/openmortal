@@ -381,7 +381,7 @@ CPlayerSelectView::CPlayerSelectView( bool a_bNetworkGame, bool a_bTeamMode )
 	for ( i=0; i<MAXPLAYERS; ++i ) m_apoTeamDisplays[i] = NULL;
 
 	SDL_FillRect( gamescreen, NULL, C_BLACK );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 	m_poBackground = LoadBackground( "FighterStats.jpg", 64 ); //m_bNetworkGame ? "PlayerSelect_chat.png" : "PlayerSelect.png", 111 );
 	if ( m_poBackground ) SDL_SetColorKey( m_poBackground, 0, 0 );
 
@@ -548,7 +548,7 @@ void CPlayerSelectView::Draw()
 			x, gamescreen->h - 40 + m_iFighterNameYOffset );
 	}
 
-	SDL_Flip( gamescreen );
+	PresentScreen();
 }
 
 

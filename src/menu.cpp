@@ -62,6 +62,11 @@ int g_piNumPlayers[] = { 2, 3, 4 };
 const char* g_ppcYesNo[] = { "Yes", "No", NULL };
 int g_piYesNo[] = { 1, 0 };
 
+const char* g_ppcWindowScale[] = { "1X", "2X", NULL };
+int g_piWindowScale[] = { 1, 2 };
+const char* g_ppcWindowScaleOnly1[] = { "1X", NULL };
+int g_piWindowScaleOnly1[] = { 1 };
+
 const char* g_ppcMusicMode[] = { "ORIGINAL", "RANDOM", "OFF", NULL };
 const int   g_piMusicMode[]  = { SState::Music_ORIGINAL, SState::Music_RANDOM, SState::Music_OFF };
 
@@ -79,7 +84,7 @@ void InputKeys( int a_iPlayerNumber )
 {
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
 	DrawGradientText( "Input keys", titleFont, 10, gamescreen );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 	
 	static const char* apcKeyNames[9] = { "up", "down", "left", "right", "block", 
 		"low punch", "high punch", "low kick", "high kick" };
@@ -119,7 +124,7 @@ void InputKeys( int a_iPlayerNumber )
 		if ( SDLK_ESCAPE == enKey )
 		{
 			SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
-			SDL_Flip( gamescreen );
+			PresentScreen();
 
 			return;
 		}
@@ -140,7 +145,7 @@ void InputKeys( int a_iPlayerNumber )
 	DrawTextMSZ( "Thanks!", inkFont, gamescreen->w/2, iY + 20, UseShadow | AlignCenter, C_WHITE, gamescreen );
 	GetKey( true );
 	SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 }
 
 
@@ -159,7 +164,7 @@ void MortalNetworkResetMessages( bool a_bClear )
 	if ( a_bClear )
 	{
 		SDL_FillRect( gamescreen, NULL, C_BLACK );
-		SDL_Flip( gamescreen );
+		PresentScreen();
 		g_iMessageY = 185;
 	}
 	else
@@ -319,7 +324,7 @@ CNetworkMenu::~CNetworkMenu() {}
 void CNetworkMenu::Connect()
 {
 	Clear();
-	SDL_Flip( gamescreen );
+	PresentScreen();
 
 	m_bOK = ::Connect( m_bServer ? NULL : m_sHostname.c_str() );
 	
@@ -509,7 +514,7 @@ void MenuItem::Draw()
 		m_bEnabled ? (m_bActive ? m_iHighColor : m_iLowColor) : m_iInactiveColor,
 		gamescreen );
 	
-	SDL_UpdateRect( gamescreen, m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );	
+	PresentScreenRect( m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );	
 }
 
 
@@ -527,7 +532,7 @@ void MenuItem::Clear()
 
 	}
 	
-	SDL_UpdateRect( gamescreen, m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );	
+	PresentScreenRect( m_oPosition.x, m_oPosition.y, m_oPosition.w, m_oPosition.h );	
 }
 
 
@@ -951,9 +956,13 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 				SDL_FillRect( gamescreen, NULL, 0 );
 			}
 			a_poMenuItem->SetText( g_oState.m_bFullscreen ? "~FULLSCREEN ON" : "~FULLSCREEN OFF", true );
+			{
+				MenuItem* poItem = GetMenuItem( MENU_WINDOW_SCALE );
+				if ( poItem ) poItem->SetEnabled( !g_oState.m_bFullscreen );
+			}
 			Draw();
 			break;
-		
+
 		case MENU_OPTIONS_OK:
 			m_bDone = true;
 			m_iReturnCode = -1;
@@ -971,6 +980,14 @@ void Menu::ItemActivated( int a_iItemCode, MenuItem* a_poMenuItem )
 			}
 			poMenu->AddMenuItem( "~SOUND", SDLK_s, MENU_SOUND );
 			poMenu->AddMenuItem( g_oState.m_bFullscreen ? "~FULLSCREEN ON" : "~FULLSCREEN OFF", SDLK_f, MENU_FULLSCREEN );
+			{
+				bool bCanScale2 = CanUseWindowScale2();
+				poMenu->AddEnumMenuItem( "WINDOW SIZE: ", g_oState.m_iWindowScale,
+						bCanScale2 ? g_ppcWindowScale : g_ppcWindowScaleOnly1,
+						bCanScale2 ? g_piWindowScale : g_piWindowScaleOnly1,
+						MENU_WINDOW_SCALE )
+					->SetEnabled( !g_oState.m_bFullscreen );
+			}
 			poMenu->AddMenuItem( "~RIGHT PLAYER KEYS", SDLK_r, MENU_KEYS_RIGHT );
 			poMenu->AddMenuItem( "~LEFT PLAYER KEYS", SDLK_l, MENU_KEYS_LEFT );
 			poMenu->AddOkCancel( MENU_OPTIONS_OK );
@@ -1095,6 +1112,19 @@ void Menu::ItemChanged( int a_iItemCode, int a_iValue, MenuItem* a_poMenuItem )
 			Clear();
 			Draw();
 			break;
+
+		case MENU_WINDOW_SCALE:
+			g_oState.SetWindowScale( a_iValue );
+			if ( NULL != poBackground )
+			{
+				SDL_BlitSurface( poBackground, NULL, gamescreen, NULL );
+			}
+			else
+			{
+				SDL_FillRect( gamescreen, NULL, 0 );
+			}
+			Draw();
+			break;
 	} // end of switch a_iItemCode
 }
 
@@ -1196,7 +1226,7 @@ void Menu::Draw()
 		(*it)->Draw();
 	}
 
-	SDL_Flip( gamescreen );
+	PresentScreen();
 
 }
 
@@ -1316,7 +1346,7 @@ void MakeMenuBackground()
 	}
 
 	SDL_BlitSurface( poBackground, 0, gamescreen, 0 );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 }
 
 

@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include "sge_surface.h"
+#include "gfx.h"
 
 
 /* Globals used for sge_Update/sge_Lock */
@@ -87,18 +88,26 @@ Uint8 sge_getLock(void)
 //==================================================================================
 void sge_UpdateRect(SDL_Surface *screen, Sint16 x, Sint16 y, Uint16 w, Uint16 h)
 {
-	if(_sge_update!=1 || screen != SDL_GetVideoSurface()){return;}
-	
+	if(_sge_update!=1){return;}
+
+	// gamescreen MAY NOT BE THE ACTUAL, PHYSICAL VIDEO SURFACE (SEE PresentScreen()
+	// IN gfx.cpp, USED WHEN THE WINDOW IS PIXEL-DOUBLED) -- ROUTE THOSE UPDATES
+	// THROUGH THE WRAPPER THAT KNOWS HOW TO PRESENT THEM PROPERLY.
+
+	if(screen == gamescreen){ PresentScreenRect(x,y,w,h); return; }
+
+	if(screen != SDL_GetVideoSurface()){return;}
+
 	if(x>=screen->w || y>=screen->h){return;}
-	
+
 	Sint16 a,b;
 
 	a=w; b=h;
 
-	
+
 	if(x < 0){x=0;}
 	if(y < 0){y=0;}
-	
+
 	if(a+x > screen->w){a=screen->w-x;}
 	if(b+y > screen->h){b=screen->h-y;}
 

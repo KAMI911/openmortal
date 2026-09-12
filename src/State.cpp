@@ -105,6 +105,8 @@ SState::SState()
 		m_bFullscreen = false;
 	#endif
 
+	m_iWindowScale = 1;
+
 	m_iChannels = 2;
 	m_iMixingRate = MIX_DEFAULT_FREQUENCY;
 	m_iMixingBits = 2;
@@ -256,6 +258,20 @@ void SState::ToggleFullscreen()
 }
 
 
+void SState::SetWindowScale( int a_iScale )
+{
+	m_iWindowScale = ( a_iScale == 2 ) ? 2 : 1;
+
+	// ONLY TAKES EFFECT IN WINDOWED MODE; IF WE'RE CURRENTLY FULLSCREEN, IT WILL
+	// APPLY THE NEXT TIME FULLSCREEN IS TURNED OFF.
+
+	if ( !m_bFullscreen )
+	{
+		SetVideoMode( gamescreen->w > 640, m_bFullscreen );
+	}
+}
+
+
 
 void SState::SetLanguage( const char* a_pcLanguage )
 {
@@ -312,6 +328,8 @@ void SState::Load()
 	poSv = get_sv("GAMESPEED", FALSE); if (poSv) m_iGameSpeed = SvIV( poSv );
 
 	poSv = get_sv("FULLSCREEN", FALSE); if (poSv) m_bFullscreen = SvIV( poSv );
+	poSv = get_sv("WINDOWSCALE", FALSE); if (poSv) m_iWindowScale = SvIV( poSv );
+	if ( m_iWindowScale != 2 ) m_iWindowScale = 1;
 	poSv = get_sv("CHANNELS", FALSE); if (poSv) m_iChannels = SvIV( poSv );
 	poSv = get_sv("MIXINGRATE", FALSE); if (poSv) m_iMixingRate = SvIV( poSv );
 	poSv = get_sv("MIXINGBITS", FALSE); if (poSv) m_iMixingBits = SvIV( poSv );
@@ -362,6 +380,7 @@ void SState::Save()
 	oStream << "GAMESPEED=" << m_iGameSpeed << '\n';
 
 	oStream << "FULLSCREEN=" << m_bFullscreen << '\n';
+	oStream << "WINDOWSCALE=" << m_iWindowScale << '\n';
 	oStream << "CHANNELS=" << m_iChannels << '\n';
 	oStream << "MIXINGRATE=" << m_iMixingRate << '\n';
 	oStream << "MIXINGBITS=" << m_iMixingBits << '\n';

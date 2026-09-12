@@ -229,7 +229,7 @@ int init()
 	SetVideoMode( false, g_oState.m_bFullscreen );
 	if (gamescreen == NULL)
 	{
-		fprintf(stderr, "failed to set video mode: %s\n", SDL_GetError());
+		Complain( (std::string("Failed to set video mode: ") + SDL_GetError()).c_str() );
 		return -1;
 	}
 	
@@ -346,7 +346,7 @@ int DrawMainScreen()
 	RlePack pack( sStaffFilename.c_str(), 256 );
 	pack.ApplyPalette();
 	SDL_BlitSurface( background, NULL, gamescreen, &r );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 
 /*	char* filename[15] = {
 		"Jacint.pl", "Jozsi.pl", "Agent.pl", "Mrsmith.pl",
@@ -370,7 +370,7 @@ int DrawMainScreen()
 	for ( i=0; i<15; ++i )
 	{
 		pack.Draw( i, x[i], y[i], false );
-		SDL_Flip( gamescreen );
+		PresentScreen();
 		if ( filename[i] != NULL )
 		{
 			debug( "Loading fighter %s", filename[i] );
@@ -402,7 +402,7 @@ int DrawMainScreen()
 		
 		if ( i < 15 ) {
 			pack.Draw( i, x[i], y[i], false );
-			SDL_Flip( gamescreen );
+			PresentScreen();
 		}
 	}
 	

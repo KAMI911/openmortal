@@ -657,7 +657,7 @@ void Game::Draw()
 		sge_BF_textoutf( gamescreen, fastFont, 2, 455 + m_iYOffset, "%d fps", oFpsCounter.m_iFps );
 	}
 	
-	SDL_Flip( gamescreen );
+	PresentScreen();
 }
 
 

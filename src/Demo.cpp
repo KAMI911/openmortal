@@ -63,7 +63,7 @@ int Demo::Advance( int a_iNumFrames, bool a_bFlip )
 	
 	if ( a_bFlip )
 	{
-		SDL_Flip( gamescreen );
+		PresentScreen();
 	}
 	
 	return iRetVal;
@@ -334,7 +334,7 @@ public:
 		m_poPack = new RlePack( sStaffFilename.c_str(), 255 );
 		m_poPack->ApplyPalette();
 		SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
-		SDL_Flip( gamescreen );
+		PresentScreen();
 
 		int j, k, l;
 		for ( j=0; j<14; ++j )
@@ -382,7 +382,7 @@ public:
 					m_poPack->Draw( j, x[j], y[j], false );
 				}
 			}
-			SDL_Flip( gamescreen );
+			PresentScreen();
 			++i;
 			m_iTimeLeft += 20;
 			if ( i >= 14 )

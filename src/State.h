@@ -71,6 +71,7 @@ struct SState
 	int		m_iGameSpeed;		// The speed of the game (fps = 1000/GameSpeed)
 	
 	bool	m_bFullscreen;		// True in fullscreen mode.
+	int		m_iWindowScale;		// 1 or 2. Only applies in windowed mode (pixel-doubles the window).
 	
 	int		m_iChannels;		// 1: mono, 2: stereo
 	int		m_iMixingRate;		// The mixing rate, in kHz
@@ -106,6 +107,7 @@ struct SState
 	void Load();
 	void Save();
 	void ToggleFullscreen();
+	void SetWindowScale( int a_iScale );
 	void SetLanguage( const char* a_pcLanguage );
 	void SetServer( const char* a_pcServer );
 };

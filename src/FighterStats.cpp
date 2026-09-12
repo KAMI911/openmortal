@@ -83,7 +83,7 @@ FighterStatsDemo::FighterStatsDemo( FighterEnum a_iFighter )
 	DrawGradientText( "Fighter Stats", titleFont, 10, m_poBackground );
 
 	SDL_BlitSurface( m_poBackground, NULL, gamescreen, NULL );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 	
 	if ( mg_iLastFighter < 0 )
 	{
@@ -248,7 +248,7 @@ int FighterStatsDemo::Advance( int a_iNumFrames, bool a_bFlip )
 		sge_BF_textout( gamescreen, fastFont, Translate("Press F1 to skip..."), 230, 450 );
 	}
 	
-	SDL_Flip( gamescreen );
+	PresentScreen();
 	
 	return (m_iTimeLeft > 0) ? 0 : 1;
 }

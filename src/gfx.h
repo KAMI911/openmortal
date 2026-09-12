@@ -43,6 +43,18 @@ SDL_Surface*	LoadImage( const char* a_pcFilename );
 
 bool			SetVideoMode( bool a_bLarge, bool a_bFullscreen, int a_iAdditionalFlags=0 );
 
+// Whether the desktop is big enough to fit a 2x-scaled window (i.e. 1280x960 for
+// the normal, non-wide game resolution). Used to decide whether to offer the
+// "2X" window scale option in the menu.
+bool			CanUseWindowScale2();
+
+// Presents (flips/updates) gamescreen to the real, physical display. Use these
+// instead of SDL_Flip( gamescreen ) / SDL_UpdateRect( gamescreen, ... ) directly:
+// in windowed mode with a window scale > 1, gamescreen is a logical, low-resolution
+// offscreen surface that gets pixel-scaled into the real (bigger) window on present.
+void			PresentScreen();
+void			PresentScreenRect( int x, int y, int w, int h );
+
 extern SDL_Surface* gamescreen;
 
 /**

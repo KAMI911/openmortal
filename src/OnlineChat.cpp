@@ -268,7 +268,7 @@ bool COnlineChat::Start()
 	}
 
 	SDL_BlitSurface( m_poBackground, NULL, m_poScreen, NULL );
-	SDL_Flip( m_poScreen );
+	PresentScreen();
 
 	MortalNetworkResetMessages( false );
 	MortalNetworkMessage( Translate("Resolving hostname (%s)..."), MORTALNETSERVER );
@@ -565,7 +565,7 @@ void COnlineChat::Redraw()
 	m_poReadline->Redraw();
 	m_poTextArea->Redraw();
 	DrawNickList();
-	SDL_Flip( m_poScreen );
+	PresentScreen();
 }
 
 
@@ -596,7 +596,7 @@ void COnlineChat::DrawNickList()
 		sge_tt_textout( m_poScreen, chatFont, (it->first).c_str(), oNickListRect.x, y, iColor, C_BLACK, 255 );
 	}
 
-	SDL_UpdateRect( m_poScreen, oNickListRect.x, oNickListRect.y, oNickListRect.w, oNickListRect.h );
+	PresentScreenRect( oNickListRect.x, oNickListRect.y, oNickListRect.w, oNickListRect.h );
 	SDL_SetClipRect( m_poScreen, NULL );
 }
 
@@ -622,7 +622,7 @@ void COnlineChat::DoOnlineChat()
 	SDL_Event	event;
 
 	SDL_BlitSurface( m_poBackground, NULL, m_poScreen, NULL );
-	SDL_Flip( m_poScreen );
+	PresentScreen();
 
 	m_poTextArea = new CTextArea( m_poScreen, chatFont, 10, 10, NICKLIST_X-20, READLINE_Y-20 );
 	m_poTextArea->TintBackground( C_DARKGRAY, 128 );

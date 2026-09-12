@@ -259,7 +259,14 @@ void DrawGradientText( const char* text, _sge_TTFont* font, int y, SDL_Surface* 
 
 	SDL_BlitSurface( surface, NULL, target, &size );
 	SDL_FreeSurface( surface );
-	SDL_UpdateRect( target, size.x, size.y, size.w, size.h );
+	if ( target == gamescreen )
+	{
+		PresentScreenRect( size.x, size.y, size.w, size.h );
+	}
+	else
+	{
+		SDL_UpdateRect( target, size.x, size.y, size.w, size.h );
+	}
 }
 
 
@@ -418,6 +425,98 @@ SDL_Surface *LoadImage( const char* a_pcFilename )
 }
 
 
+// WHEN g_iScreenScale > 1 (windowed mode, pixel-doubled), gamescreen is a plain
+// offscreen surface at the game's native, logical resolution, and g_poPhysicalScreen
+// is the real, bigger window surface returned by SDL_SetVideoMode. When
+// g_iScreenScale == 1 (the common case, including fullscreen), the two are the very
+// same surface, exactly like before this feature existed.
+
+static SDL_Surface*	g_poPhysicalScreen = NULL;
+static int				g_iScreenScale = 1;
+
+
+// Nearest-neighbour upscale of one pixel format size (2 or 4 bytes/pixel).
+
+template <typename T>
+static void ScaleBlit2xRect( SDL_Surface* a_poSrc, SDL_Surface* a_poDst, SDL_Rect a_oRect )
+{
+	for ( int y = 0; y < a_oRect.h; ++y )
+	{
+		const T* pSrc = (const T*)( (Uint8*)a_poSrc->pixels + (a_oRect.y+y)*a_poSrc->pitch ) + a_oRect.x;
+		T* pDst0 = (T*)( (Uint8*)a_poDst->pixels + (a_oRect.y+y)*2*a_poDst->pitch ) + a_oRect.x*2;
+		T* pDst1 = (T*)( (Uint8*)pDst0 + a_poDst->pitch );
+
+		for ( int x = 0; x < a_oRect.w; ++x )
+		{
+			T iPixel = pSrc[x];
+			pDst0[x*2] = iPixel; pDst0[x*2+1] = iPixel;
+			pDst1[x*2] = iPixel; pDst1[x*2+1] = iPixel;
+		}
+	}
+}
+
+
+static void PresentScreenRectScaled( SDL_Rect a_oRect )
+{
+	if ( SDL_MUSTLOCK( gamescreen ) ) SDL_LockSurface( gamescreen );
+	if ( SDL_MUSTLOCK( g_poPhysicalScreen ) ) SDL_LockSurface( g_poPhysicalScreen );
+
+	if ( gamescreen->format->BytesPerPixel == 4 )
+	{
+		ScaleBlit2xRect<Uint32>( gamescreen, g_poPhysicalScreen, a_oRect );
+	}
+	else
+	{
+		ScaleBlit2xRect<Uint16>( gamescreen, g_poPhysicalScreen, a_oRect );
+	}
+
+	if ( SDL_MUSTLOCK( g_poPhysicalScreen ) ) SDL_UnlockSurface( g_poPhysicalScreen );
+	if ( SDL_MUSTLOCK( gamescreen ) ) SDL_UnlockSurface( gamescreen );
+}
+
+
+void PresentScreen()
+{
+	if ( g_iScreenScale != 1 )
+	{
+		SDL_Rect oRect = { 0, 0, (Uint16)gamescreen->w, (Uint16)gamescreen->h };
+		PresentScreenRectScaled( oRect );
+	}
+	SDL_Flip( g_poPhysicalScreen );
+}
+
+
+void PresentScreenRect( int x, int y, int w, int h )
+{
+	// CLAMP, MIRRORING WHAT SDL_UpdateRect/sge_UpdateRect USED TO DO FOR US.
+
+	if ( x >= gamescreen->w || y >= gamescreen->h ) return;
+	if ( x < 0 ) { w += x; x = 0; }
+	if ( y < 0 ) { h += y; y = 0; }
+	if ( x+w > gamescreen->w ) w = gamescreen->w - x;
+	if ( y+h > gamescreen->h ) h = gamescreen->h - y;
+	if ( w <= 0 || h <= 0 ) return;
+
+	if ( g_iScreenScale != 1 )
+	{
+		SDL_Rect oRect = { (Sint16)x, (Sint16)y, (Uint16)w, (Uint16)h };
+		PresentScreenRectScaled( oRect );
+		SDL_UpdateRect( g_poPhysicalScreen, x*g_iScreenScale, y*g_iScreenScale, w*g_iScreenScale, h*g_iScreenScale );
+	}
+	else
+	{
+		SDL_UpdateRect( g_poPhysicalScreen, x, y, w, h );
+	}
+}
+
+
+bool CanUseWindowScale2()
+{
+	const SDL_VideoInfo* poInfo = SDL_GetVideoInfo();
+	return ( NULL != poInfo && poInfo->current_w >= 640*2 && poInfo->current_h >= 480*2 );
+}
+
+
 bool SetVideoMode( bool a_bLarge, bool a_bFullScreen, int a_iAdditionalFlags )
 {
 	// SET THE PARAMETERS FOR THE VIDEO MODE
@@ -428,11 +527,25 @@ bool SetVideoMode( bool a_bLarge, bool a_bFullScreen, int a_iAdditionalFlags )
 		iBpp = gamescreen->format->BitsPerPixel;
 	}
 
+	// IF THE PREVIOUS MODE WAS WINDOW-SCALED, gamescreen IS A SEPARATELY ALLOCATED
+	// OFFSCREEN SURFACE (NOT THE ONE SDL_SetVideoMode MANAGES) THAT WE OWN AND MUST
+	// FREE OURSELVES ONCE WE NO LONGER NEED IT.
+
+	SDL_Surface* poOldLogicalScreen = ( g_iScreenScale != 1 ) ? gamescreen : NULL;
+
 	int iFlags = a_iAdditionalFlags;
 	if ( a_bFullScreen )
 	{
 		iFlags |= SDL_FULLSCREEN;
 	}
+
+	// A WINDOW SCALE > 1 ONLY MAKES SENSE (AND IS ONLY OFFERED) IN WINDOWED MODE.
+	// IT PIXEL-DOUBLES THE GAME INTO A BIGGER WINDOW, WHICH IS HANDY ON A
+	// HIGH-RESOLUTION (e.g. 4K) DISPLAY WHERE THE NATIVE, TINY GAME WINDOW WOULD
+	// OTHERWISE LOOK MINISCULE -- OR WHERE EXCLUSIVE FULLSCREEN AT SUCH A LOW
+	// RESOLUTION IS REFUSED BY THE GRAPHICS DRIVER (SEEN WITH SOME NVIDIA SETUPS).
+
+	int iScale = ( !a_bFullScreen && g_oState.m_iWindowScale == 2 ) ? 2 : 1;
 
 	// CALL SDL_SetVideoMode
 
@@ -440,27 +553,77 @@ bool SetVideoMode( bool a_bLarge, bool a_bFullScreen, int a_iAdditionalFlags )
 	int iHeight = a_bLarge ? 600 : 480;
 //	if ( !a_bFullScreen ) iHeight = 480;
 
-	gamescreen = SDL_SetVideoMode( iWidth, iHeight, iBpp, iFlags );
-	if ( NULL == gamescreen ) 
+	if ( iScale == 2 )
 	{
-		debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed.\n", iWidth, iHeight, iBpp, iFlags );
+		const SDL_VideoInfo* poInfo = SDL_GetVideoInfo();
+		if ( NULL == poInfo || poInfo->current_w < iWidth*2 || poInfo->current_h < iHeight*2 )
+		{
+			debug( "Window scale 2x doesn't fit on this display, falling back to 1x.\n" );
+			iScale = 1;
+			g_oState.m_iWindowScale = 1;
+		}
+	}
+
+	g_poPhysicalScreen = SDL_SetVideoMode( iWidth*iScale, iHeight*iScale, iBpp, iFlags );
+	if ( NULL == g_poPhysicalScreen && a_bFullScreen )
+	{
+		// SOME DRIVERS (e.g. on high-resolution displays) REFUSE TO SWITCH
+		// TO THIS LOW A RESOLUTION IN EXCLUSIVE FULLSCREEN MODE. FALL BACK
+		// TO WINDOWED MODE RATHER THAN LEAVING THE USER WITH NO WINDOW AT ALL.
+
+		debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed, retrying windowed.\n", iWidth, iHeight, iBpp, iFlags );
+		iFlags &= ~SDL_FULLSCREEN;
+		g_oState.m_bFullscreen = false;
+		g_poPhysicalScreen = SDL_SetVideoMode( iWidth*iScale, iHeight*iScale, iBpp, iFlags );
+	}
+	if ( NULL == g_poPhysicalScreen )
+	{
+		debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed.\n", iWidth*iScale, iHeight*iScale, iBpp, iFlags );
+		gamescreen = NULL;
 		return false;
 	}
 
 	// IF THE DISPLAY IS 24BPP OR 8 BPP OR LESS, EMULATE 16 BPP INSTEAD
 	// (because we are lazy and won't write 8bpp and 24bpp code anymore)
 
-	if ( gamescreen->format->BytesPerPixel != 2
-		&& gamescreen->format->BytesPerPixel != 4 )
+	if ( g_poPhysicalScreen->format->BytesPerPixel != 2
+		&& g_poPhysicalScreen->format->BytesPerPixel != 4 )
 	{
-		gamescreen = SDL_SetVideoMode( iWidth, iHeight, 16, iFlags );
-		if ( NULL == gamescreen )
+		g_poPhysicalScreen = SDL_SetVideoMode( iWidth*iScale, iHeight*iScale, 16, iFlags );
+		if ( NULL == g_poPhysicalScreen )
 		{
-			debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed.\n", iWidth, iHeight, 16, iFlags );
+			debug( "SDL_SetVideoMode( %d, %d, %d, %d ) failed.\n", iWidth*iScale, iHeight*iScale, 16, iFlags );
+			gamescreen = NULL;
 			return false;
 		}
 	}
-	
+
+	// THE OLD LOGICAL SURFACE (IF ANY) WAS OUR OWN ALLOCATION AND IS NOW OBSOLETE.
+
+	if ( NULL != poOldLogicalScreen )
+	{
+		SDL_FreeSurface( poOldLogicalScreen );
+	}
+
+	if ( iScale == 1 )
+	{
+		gamescreen = g_poPhysicalScreen;
+	}
+	else
+	{
+		SDL_PixelFormat* poFormat = g_poPhysicalScreen->format;
+		gamescreen = SDL_CreateRGBSurface( SDL_SWSURFACE, iWidth, iHeight, poFormat->BitsPerPixel,
+			poFormat->Rmask, poFormat->Gmask, poFormat->Bmask, poFormat->Amask );
+		if ( NULL == gamescreen )
+		{
+			debug( "Couldn't allocate %dx%d logical screen surface for window scaling.\n", iWidth, iHeight );
+			gamescreen = g_poPhysicalScreen;
+			iScale = 1;
+		}
+	}
+
+	g_iScreenScale = iScale;
+
 	return true;
 }
 

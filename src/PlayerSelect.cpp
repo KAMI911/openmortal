@@ -476,7 +476,7 @@ void PlayerSelect::DoPlayerSelect()
 	}
 
 	SDL_FillRect( gamescreen, NULL, C_BLACK );
-	SDL_Flip( gamescreen );
+	PresentScreen();
 
 	SDL_Surface* poBackground = LoadBackground( bNetworkMode ? "PlayerSelect_chat.png" : "PlayerSelect.png", 111 );
 
@@ -754,7 +754,7 @@ void PlayerSelect::DoPlayerSelect()
 				x, gamescreen->h - 30 + iYOffset - (bNetworkMode ? 40 : 0) );
 		}
 		
-		SDL_Flip( gamescreen );
+		PresentScreen();
 		
 		if (over || g_oState.m_bQuitFlag || SState::IN_DEMO == g_oState.m_enGameMode) break;
 	}
