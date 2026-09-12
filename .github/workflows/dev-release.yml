@@ -63,7 +63,12 @@ jobs:
       - name: Build from source
         run: |
           set -e
+          # See the Windows job's "Configure project" step for why these are
+          # removed first: a fresh checkout's timestamps can make autoreconf
+          # think the committed, possibly stale 'configure' is already current.
+          rm -f configure aclocal.m4 config.h.in
           autoreconf -i -f
+          grep -q pkg_cv_FT2 configure || { echo "::error::configure was not regenerated from configure.ac as expected"; exit 1; }
           ./configure --prefix=/usr
           make -j$(nproc)
 
@@ -161,7 +166,16 @@ jobs:
       - name: Configure project
         shell: msys2 {0}
         run: |
+          set -e
+          # The committed 'configure' script is regenerated from configure.ac by
+          # autoreconf below, but a fresh git checkout can give it a timestamp
+          # that makes autoreconf think it's already up to date and skip
+          # regenerating it -- silently leaving the (possibly stale) committed
+          # version in place. Remove the generated files first to force a real
+          # rebuild every time.
+          rm -f configure aclocal.m4 config.h.in
           autoreconf -i -f
+          grep -q pkg_cv_FT2 configure || { echo "::error::configure was not regenerated from configure.ac as expected"; exit 1; }
           ./configure --prefix=/mingw64 --host=x86_64-w64-mingw32
 
       - name: Build
