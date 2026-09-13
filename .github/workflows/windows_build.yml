@@ -17,9 +17,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # i686 (32-bit) is intentionally not built: MSYS2 has dropped several
-          # mingw-w64-i686-* packages this project needs (perl, icu, SDL_mixer),
-          # so a MINGW32 build can no longer complete here.
+          - PLATFORM: x86
+            MSYS_TARGET: i686
+            MSYSTEM: MINGW32
           - PLATFORM: x86-64
             MSYS_TARGET: x86_64
             MSYSTEM: MINGW64
@@ -45,19 +45,56 @@ jobs:
             automake
             autoconf
             libtool
-            mingw-w64-${{ matrix.MSYS_TARGET }}-perl
-            mingw-w64-${{ matrix.MSYS_TARGET }}-icu
+            curl
             mingw-w64-${{ matrix.MSYS_TARGET }}-libiconv
             mingw-w64-${{ matrix.MSYS_TARGET }}-toolchain
             mingw-w64-${{ matrix.MSYS_TARGET }}-make
             mingw-w64-${{ matrix.MSYS_TARGET }}-pkg-config
             mingw-w64-${{ matrix.MSYS_TARGET }}-SDL
             mingw-w64-${{ matrix.MSYS_TARGET }}-SDL_image
-            mingw-w64-${{ matrix.MSYS_TARGET }}-SDL_mixer
             mingw-w64-${{ matrix.MSYS_TARGET }}-SDL_net
             mingw-w64-${{ matrix.MSYS_TARGET }}-freetype
             mingw-w64-${{ matrix.MSYS_TARGET }}-giflib
             mingw-w64-${{ matrix.MSYS_TARGET }}-ntldd
+
+      # perl, icu and SDL_mixer are installed separately below: MSYS2 removed
+      # them from the live i686 (32-bit) repository/database, so the x86 leg
+      # has to pin exact archived package files instead of a normal pacman
+      # install. x86-64 still gets them the normal way.
+
+      - name: Install perl/icu/SDL_mixer (x86-64, from the live MSYS2 repo)
+        if: matrix.PLATFORM == 'x86-64'
+        shell: msys2 {0}
+        run: |
+          set -e
+          pacman -S --noconfirm --needed \
+            mingw-w64-x86_64-perl \
+            mingw-w64-x86_64-icu \
+            mingw-w64-x86_64-SDL_mixer
+
+      - name: Install perl/icu/SDL_mixer (x86, pinned from the MSYS2 package archive)
+        if: matrix.PLATFORM == 'x86'
+        shell: msys2 {0}
+        run: |
+          set -e
+          # mingw-w64-i686-perl, -icu and -SDL_mixer (and two of SDL_mixer's
+          # own dependencies, libmikmod and libmad) were dropped from the live
+          # i686 package database when MSYS2 stopped actively supporting
+          # 32-bit Windows, but the actual package files are still hosted.
+          # SDL_mixer's other dependencies (libvorbis, flac, libogg) are still
+          # live and get resolved normally as part of this same install.
+          ARCHIVE=https://repo.msys2.org/mingw/mingw32
+          mkdir -p /tmp/i686-archive && cd /tmp/i686-archive
+          for pkg in \
+            mingw-w64-i686-perl-5.32.1-6-any.pkg.tar.zst \
+            mingw-w64-i686-icu-76.1-1-any.pkg.tar.zst \
+            mingw-w64-i686-libmikmod-3.3.13-1-any.pkg.tar.zst \
+            mingw-w64-i686-libmad-0.15.1b-5-any.pkg.tar.zst \
+            mingw-w64-i686-SDL_mixer-1.2.12-9-any.pkg.tar.zst \
+          ; do
+            curl -fLO --retry 3 "$ARCHIVE/$pkg"
+          done
+          pacman -U --noconfirm ./*.pkg.tar.zst
 
       - name: Configure project
         shell: msys2 {0}
